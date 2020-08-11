@@ -8,20 +8,29 @@
 # Let's get libraries here, then sort out git then sort out making this a library so we don't have to deal with all the library crap
 # library(sp)
 # library(rgeos)
+library(here)
 library(tidyverse)
 library(sf)
+# library(RNetCDF) # Probably not, raster can handle geographic netCDF
+# library(raster) # maybe?
+library(stars)
+
+
+
 # Data is in QAEL - MER/Model/Data/ANAE
   # tempted to go with a Here, but should really have a library structure
 # use here for now
 # library(here)
 
-# Argh. sort all this crap out later
+# Argh. sort all this directory crap out later
   # Need to have a shared data folder, without tracking in git and without having to do damn setwd()
 
 myhome <- str_remove(path.expand("~"), "/Documents")
 datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
 
 datOut <- "datOut"
+
+
 
 # Read in the ANAE classifications and other data ----------------------------------------
   # takes ~1-2 minutes
@@ -40,8 +49,13 @@ kopSub <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'BoM_Kop
 LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'LTIM_Valleys') %>%
   st_cast("MULTIPOLYGON") # cleans up an issue with multisurfaces
 
-# Skipping the watercourses for now, come back if doing channel stuff, but as a toy based on veg, probably not now
+# and the basin boundary, might be useful, especially for clipping rasters
+basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'MDB_Boundary') %>%
+  st_cast("MULTIPOLYGON")  %>% # cleans up an issue with multisurfaces
+  select(LEVEL2NAME) # no need for other info
 
+# Skipping the watercourses for now, come back if doing channel stuff, but as a toy based on veg, probably not now
+  
 
 # Simplify to carry less data around --------------------------------------
 
@@ -65,9 +79,11 @@ kopCut <- kopSub %>%
 ltimCut <- LTIM_Valleys %>%
   select(ValleyName, ValleyID, ValleyCode) # Three different ways to reference, basically
 
-# Now, some unions and intersections --------------------------------------
+# Sort out overlaying and joining raster and vector --------------------------------------
 
-# combine the regular ANAE and NSW. 
+
+
+# combine the regular ANAE and NSW.  --------------------------------------
 
 # This takes forever
 bothANAE <- bind_rows(wetCut, nswCut) %>%
