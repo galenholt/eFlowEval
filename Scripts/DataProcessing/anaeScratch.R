@@ -17,7 +17,11 @@ library(sf)
 
 # Argh. sort all this crap out later
 
-datDir <- "C:/Users/Galen/Deakin University/QAEL - MER/Model/Data"
+myhome <- str_remove(path.expand("~"), "/Documents")
+datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
+
+datOut <- "datOut"
+
 
 # Let's go for it, using the LTIM valleys first, since it's way smaller but has same structure
 LTIM_Valleys <- read_sf(dsn = paste0(datDir, '/ANAE/MDB_ANAE.gdb'), layer = 'LTIM_Valleys')
@@ -50,6 +54,13 @@ wetlands <- st_cast(wetlands,  "MULTIPOLYGON")
 
 # Trim to the Kow swamp/gunbower area
 trimKow <- st_crop(wetlands, xmin = 144, xmax = 144.5, ymin = -36, ymax = -35.75)
+# Huh, getting the ring self-intersection here too. 
+  # Why is this just showing up now??
+# Takes 2-3 minutes on PC
+system.time(wetlands2 <- sf::st_buffer(wetlands, dist = 0))
+  # Yikes. that takes a long time. I wonder if the way to go is to transform everything to UTM? or something other than lat/long?
+trimKow <- st_crop(wetlands2, xmin = 144, xmax = 144.5, ymin = -36, ymax = -35.75)
+  # I think that worked to do the buffer trick, but slow and hacky
 
 ggplot() + 
   geom_sf(data = trimKow, aes(fill = ANAE_DESC)) + 
