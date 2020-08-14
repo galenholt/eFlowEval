@@ -34,6 +34,10 @@ datOut <- "datOut"
 
 # Read in the ANAE classifications and other data ----------------------------------------
   # takes ~1-2 minutes
+
+# The st_cast and st_make_valid clean things up so the intersects work. 
+# https://www.r-spatial.org/r/2017/03/19/invalid.html says we should make valid,
+# and then cast, but that didn't work for me
 wetlands <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'Wetlands_ANAE_20171025') %>%
   st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
   st_make_valid()
@@ -42,11 +46,12 @@ wetlands <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'Wetla
 wetlandsNSW <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'Interim_Western_NSW_Floodplain_ANAE') %>%
   st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
   st_make_valid()
+  
 
 # Get koppen climate region as a test of the joining of data
 kopSub <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'BoM_Koppen_subregions') %>%
   st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
-st_make_valid()
+  st_make_valid()
 
 # And get the LTIM_Valleys to use to subset for toy models at scale, but not enormous scale
 LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'LTIM_Valleys') %>%
@@ -55,7 +60,7 @@ LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'L
 
 # and the basin boundary, might be useful, especially for clipping rasters
 basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'MDB_Boundary') %>%
-  st_cast("MULTIPOLYGON")  %>% # cleans up an issue with multisurfaces
+  st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
   st_make_valid() %>%
   select(LEVEL2NAME) # no need for other info
 
@@ -94,28 +99,17 @@ ltimCut <- LTIM_Valleys %>%
 # maybeOverlapCheck <- st_intersects(ltimCut)
 # notsure <- st_intersection(ltimCut)
 # notsure <- st_difference(ltimCut)
-# 
+
+# Northern unregulated is a compound of others and so causes issues 
 ltimNoNorth <- ltimCut %>% filter(ValleyName != 'Northern Unregulated')
 
 # # This takes forever
-#   # WHy did this stop working?
-#   # Is it related to the issue with basins?
-# sum(!st_is_valid(kopCut))
-# sum(!st_is_valid(st_make_valid(kopCut)))
-# 
-# sum(!st_is_valid(wetCut))
-# sum(!st_is_valid(st_make_valid(wetCut)))
-# 
-# sum(!st_is_valid(nswCut))
-# sum(!st_is_valid(st_make_valid(nswCut)))
-
 system.time(bothANAE <- bind_rows(wetCut, nswCut) %>%
-  # sf::st_buffer(dist = 0) %>% # This seems to work sometimes?? But now has stopped???? aaaaaa!!!!!!
-  # st_difference() %>% # removes overlaps
+  # sf::st_buffer(dist = 0) %>% # This was an old way of fixing the self intersections
   st_intersection(kopCut) %>% # intersect with Koppen
   st_intersection(ltimNoNorth)) # and add the ltim catchment ## Not sure this is the best way to to this, ie, could probably do it as a selection somehow
 
-# # Does projecting fix it?
+# # Projecting doesn't fix the self-intersect, but should we do it anyway for the intersects? I kind of think not
 # # 3577 doesn't fix it
 # transcode <- 3577 # 3577 is albers equal area, 3112 is lambert conformal, 3395 is worldwide mercator (no zones, etc. Would be shit but maybe a good test)
 # kopCutT <- st_transform(kopCut, crs = transcode)
