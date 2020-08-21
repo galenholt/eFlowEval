@@ -311,3 +311,251 @@ na15 <- ggplot() +
   # geom_stars(data = soilC50, aes(x = longitude, y = latitude, fill = sm_pct)) +
   geom_sf(data = notna, aes(fill = sm_pct))
 na15 + xlim(c(144.35, 144.65)) + ylim(c(-33.85, -33.55))
+
+
+# Try with st_join and then aggregate()... --------------------------------
+# st_join with examples here https://r-spatial.github.io/sf/reference/st_join.html
+
+# So, trying to average the soilC50 raster into the lachCropP polygons
+# I guess a question is whether I'll need to polygonize the rasters. seems likely
+
+jointestL <- st_join(soilC50, lachCropP, as_points = FALSE)
+# Uses default what = 'left1'
+jointestL
+plot(jointestL)
+
+# Throws Warning: In st_join.stars(soilC50, agC50, as_points = FALSE) :
+# st_join found 25 1-to-n matches, taking the first match for each of those
+
+# See ?st_join.stars: it takes te first y that matches an x: so this is runnign into the same issue as aggregate
+
+# So, that's not what I want: it returns a raster grid with only the first match. It's basically wholly backwards
+
+# So, this splits the polygons by the raster. That's one option. 
+jointestI <- st_join(soilC50, lachCropP, as_points = FALSE, what = "inner") # what = 'right' is unsupported?
+jointestI
+plot(jointestI)
+
+# If we DON'T want to split them (typically), can I put them back together? Or is my while loop better?
+
+length(unique(jointestI$SYSID))
+isdup <- duplicated(jointestI$SYSID)
+sum(isdup)
+
+# Would be easy to group_by(SYSID), but two issues: 
+# one is that that is specific to the ANAE, and so would rely on other datasets
+# having a unique ID (though we can always create one, so that's not a huge
+# issue)
+# Second is whether the resulting mean is area-weighted. It SHOULD be easy to
+# do, since each polygon is different size, but not sure it happens automatically
+  # AND, would it return a combined polygon??
+# Let's test
+iddup <- jointestI$SYSID[isdup]
+alldup <- jointestI$SYSID %in% iddup
+
+jointestD <- jointestI[alldup, ]
+
+# what are the naive means as a comparison?
+unweightRef <- jointestD %>% 
+  select(sm_pct, SYSID) %>% 
+  st_drop_geometry() %>%
+  group_by(SYSID) %>%
+  summarize(naiveMean = mean(sm_pct)) %>%
+  ungroup()
+unweightRef
+
+# Now, the exact same thing but WITH the geometry
+withGeom <- jointestD %>%
+  group_by(SYSID) %>%
+  summarize(geoMean = mean(sm_pct)) %>%
+  ungroup() %>%
+  select(geoMean, SYSID)
+withGeom
+
+# Now, do the means match, or were they area-weighted?
+withGeom$geoMean == unweightRef$naiveMean
+# NOT area-weighted. Suppose I could put in an area column to weight by. BUTAND,
+# what happened to the polygons?
+
+# WAIt: DID THIS SPLIT THE POLYGONS? OR DUPLICATE THEM?
+# Plotting the three first ones, all look exactly the same
+plot(slice(jointestD, 1:3)['sm_pct'])
+plot(slice(jointestD, 1)['sm_pct'])
+plot(slice(jointestD, 3)['sm_pct'])
+
+# 6 and 7 have more different values
+plot(slice(jointestD, 6:7)['sm_pct'])
+plot(slice(jointestD, 6)['sm_pct'])
+plot(slice(jointestD, 7)['sm_pct'])
+
+# Yeah, that's the same damn polygon. SO... it's been duplicated, not split.
+# Which means I CAN'T mean-weight
+
+# SO, we can try to actually DO the intersection splitting explicitly, and then
+# do what I was about to do. Or, we can use the while loop.
+
+
+# The while loop exists. Let's see if we can do the intersection splitting?
+  # Fails on stars object, so making the raster a polygon
+soilSF <- st_as_sf(soilC50)
+plot(soilSF)
+plot(soilC50)
+intC50 <- st_intersection(lachCropP, soilSF)
+intC50
+plot(intC50['sm_pct'])
+
+# Now, as we were before, let's look at the dups and make sure they worked right.
+# This time, let's START with the dup'ed polygon plots to check
+length(unique(intC50$SYSID))
+isdup <- duplicated(intC50$SYSID)
+sum(isdup)
+
+# Would be easy to group_by(SYSID), but two issues: 
+# one is that that is specific to the ANAE, and so would rely on other datasets
+# having a unique ID (though we can always create one, so that's not a huge
+# issue)
+# Second is whether the resulting mean is area-weighted. It SHOULD be easy to
+# do, since each polygon is different size, but not sure it happens automatically
+# AND, would it return a combined polygon??
+# Let's test
+iddup <- intC50$SYSID[isdup]
+alldup <- intC50$SYSID %in% iddup
+
+jointestD <- intC50[alldup, ]
+jointestD
+
+# Look at the polygons
+# Crap. Can't slice because out of order
+jointestD <- arrange(jointestD, SYSID)
+plot(slice(jointestD, 1:3)['sm_pct'])
+plot(slice(jointestD, 1)['sm_pct'])
+plot(slice(jointestD, 2)['sm_pct'])
+plot(slice(jointestD, 3)['sm_pct'])
+
+# 6 and 7 have more different values
+plot(slice(jointestD, 6:7)['sm_pct'])
+plot(slice(jointestD, 6)['sm_pct'])
+plot(slice(jointestD, 7)['sm_pct'])
+
+# Cool. So, that has actually worked!
+
+# Now, let's see how we can combine them. Need to look at both aggregate and group_by() %>% summarize()
+
+# what are the naive means as a comparison?
+unweightRef <- jointestD %>% 
+  select(sm_pct, SYSID) %>% 
+  st_drop_geometry() %>%
+  group_by(SYSID) %>%
+  summarize(naiveMean = mean(sm_pct)) %>%
+  ungroup()
+unweightRef
+
+# Now, the exact same thing but WITH the geometry
+withGeom <- jointestD %>%
+  group_by(SYSID) %>%
+  summarize(geoMean = mean(sm_pct)) %>%
+  ungroup() %>%
+  select(geoMean, SYSID)
+withGeom
+
+# Now, do the means match, or were they area-weighted?
+withGeom$geoMean == unweightRef$naiveMean
+
+# NOT AREA-WEIGHTED
+
+# How about an aggregate?
+aggCheck <- aggregate(jointestD, by = list(jointestD$SYSID), FUN = mean)
+# Well, that lost everything non-numeric. So we'd have to cut it down and then
+# re-join. But that's not unreasonable, I suppose. OR, could do the original
+# join the other way to only have the sm_pct
+
+aggCheck$sm_pct == withGeom$geoMean
+# STILL not area-weighted
+
+# SO, let's try to make an area column and do a weighted mean using dplyr approacjh
+# Now, the exact same thing but WITH the geometry
+withArea <- jointestD %>%
+  mutate(area = st_area(.)) %>%  
+  select(sm_pct, SYSID, area)
+withArea
+
+# breaking here to plot again, could link with magrittr below easily, (and maybe not even do this select)
+plot(slice(withArea, 1:3))
+plot(slice(withArea, 1))
+plot(slice(withArea, 2))
+plot(slice(withArea, 3))
+
+# 6 and 7 have more different values
+plot(slice(withArea, 6:7))
+plot(slice(withArea, 6))
+plot(slice(withArea, 7))
+
+
+withAreaM <- withArea %>%
+  group_by(SYSID) %>%
+  summarize(geoMean = weighted.mean(sm_pct, as.numeric(area))) %>% # st_area returns a units object, which is good, but breaks weighted.mean
+  ungroup() %>%
+  select(geoMean, SYSID)
+withAreaM
+
+# did the weighting work?
+withAreaM$geoMean == unweightRef$naiveMean
+# Seems to
+
+# what happened to the polygons?
+plot(slice(withArea, 1:3)) # before agg
+plot(slice(withArea, 6:7))
+
+# need to get those sysids
+slice(withArea, 1:3)
+plot(filter(withAreaM, SYSID == 6308))
+slice(withArea, 6:7)
+plot(filter(withAreaM, SYSID == 6936))
+
+# Cool. It puts them back together. SO, THIS HAS NOW GIVEN THE OPTION TO EITHER INTERSECT/SPLIT THE POLY BY RASTER, OR AVERAGE IT.
+
+
+# Do it for the whole cut area --------------------------------------------
+newC50 <- intC50 %>%
+  mutate(area = st_area(.)) %>%  
+  select(sm_pct, SYSID, area) %>%
+  group_by(SYSID) %>%
+  summarize(geoMean = weighted.mean(sm_pct, as.numeric(area))) %>% # st_area returns a units object, which is good, but breaks weighted.mean
+  ungroup() %>%
+  select(geoMean, SYSID)
+newC50
+plot(newC50['geoMean'])
+
+# Cool. But can I not lose the other ANAE info?
+  # Or, not have it in the first place, then join?
+
+# Keep ANAE
+  # usually I'd do a bunch of first() calls in the summarize, but distinct() might be good
+# https://stackoverflow.com/questions/39092110/r-dplyr-summarize-and-retain-other-columns
+
+# The across() in here seems to work, but it is really slow
+system.time(newC50 <- intC50 %>%
+  mutate(area = st_area(.)) %>%  
+  # select(sm_pct, SYSID, area) %>%
+  group_by(SYSID) %>%
+  summarize(geoMean = weighted.mean(sm_pct, as.numeric(area)), 
+            across(-c(geoMean, Shape), first)) %>% # st_area returns a units object, which is good, but breaks weighted.mean
+  ungroup())
+newC50
+plot(newC50[c('geoMean', 'ANAE_DESC')])
+
+# Is it faster to do them separate and rejoin?
+lachCropP
+timetest <- function() {newC50j <- intC50 %>%
+  mutate(area = st_area(.)) %>%  
+  select(sm_pct, SYSID, area) %>% # If go this way, no need to ever have the other attributes
+  group_by(SYSID) %>%
+  summarize(geoMean = weighted.mean(sm_pct, as.numeric(area))) %>% # st_area returns a units object, which is good, but breaks weighted.mean
+  ungroup() %>%
+  # st_drop_geometry() # This strikes me as dangerous, because now we're relying on the summarize working right (which it should, but there's no check)
+newj <- left_join(lachCropP, newC50j, by = 'SYSID')
+}
+system.time(timetest)
+
+# Well, that's certianly faster
+# TODO:: put all these options together; e.g. write up an example of each, so we can pick and choose from a menu
