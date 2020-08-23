@@ -557,5 +557,22 @@ newj <- left_join(lachCropP, newC50j, by = 'SYSID')
 }
 system.time(timetest)
 
+
 # Well, that's certianly faster
-# TODO:: put all these options together; e.g. write up an example of each, so we can pick and choose from a menu
+# TODO:: put all these options together; e.g. write up an example of each, so we can pick and choose from a men
+
+
+# is the while() approach correct? ----------------------------------------
+notna == withAreaM$geoMean 
+notna == unweightRef$naiveMean
+# SORT OUT TIME. DAMN -----------------------------------------------------
+
+# Soil, cut but with time still on it
+soilT <- soilCropR[,,,1:5]
+
+# The 'while' approach ----------------------------------------------------
+  # 
+
+# the split and weighted-average ------------------------------------------
+
+
