@@ -36,3 +36,4 @@ lachPlot <- ggplot() +
   theme_bw() + theme(legend.position = 'none')
 
 lachPlot
+
