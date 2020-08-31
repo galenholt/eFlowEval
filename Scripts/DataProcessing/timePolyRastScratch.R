@@ -45,7 +45,10 @@ basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'MDB_Boun
   # soilMstars comes in as regular, so use that. Though st_warp() likely would
   # do it on a different projection (see help and vignettes)
 whichcrs <- st_crs(soilMstars)
-lachAll <- st_transform(lachAll, whichcrs)
+# Try to fix on mac
+st_crs(lachAll) <- 4283 # This is what's there when I look at st_crs, but it's not registering for some reason. 
+  # TODO:: But check it's right on PC
+lachAll <- st_transform(lachAll, whichcrs) # Why doesnt this work on Mac? AAAAAAAAA!!!!
 ltimCut <- st_transform(ltimCut, whichcrs)
 basin <- st_transform(basin, whichcrs)
 
@@ -184,8 +187,8 @@ lookforna6 + xlim(c(144.35, 144.65)) + ylim(c(-33.85, -33.55))
 # ggplotly(na7) # only works for raster, not sfc_geometry
 
 # WHAT IF THE BBox is way bigger for the raster?
-bbP = st_bbox(c(xmin = 144.4, ymin = -33.8, xmax = 144.6, ymax = -33.6), crs = whichcrs)
-bbR = st_bbox(c(xmin = 144, ymin = -34.2, xmax = 145, ymax = -33.2), crs = whichcrs)
+bbP <- st_bbox(c(xmin = 144.4, ymin = -33.8, xmax = 144.6, ymax = -33.6), crs = whichcrs)
+bbR <- st_bbox(c(xmin = 144, ymin = -34.2, xmax = 145, ymax = -33.2), crs = whichcrs)
 soilCropR <- soilMstars[st_as_sfc(bbR)]
 lachCropP <- st_crop(lachAll, st_as_sfc(bbP))
 agCrop2 <- aggregate(soilCropR, by = lachCropP, FUN = mean, na.rm = TRUE)
@@ -202,8 +205,8 @@ na7
 
 # Argh. haven't been using as_points = FALSe
 # WHAT IF THE BBox is way bigger for the raster?
-bbP = st_bbox(c(xmin = 144.4, ymin = -33.8, xmax = 144.6, ymax = -33.6), crs = whichcrs)
-bbR = st_bbox(c(xmin = 144, ymin = -34.2, xmax = 145, ymax = -33.2), crs = whichcrs)
+bbP <- st_bbox(c(xmin = 144.4, ymin = -33.8, xmax = 144.6, ymax = -33.6), crs = whichcrs)
+bbR <- st_bbox(c(xmin = 144, ymin = -34.2, xmax = 145, ymax = -33.2), crs = whichcrs)
 soilCropR <- soilMstars[st_as_sfc(bbR)]
 lachCropP <- st_crop(lachAll, st_as_sfc(bbP))
 agCrop3 <- aggregate(soilCropR, by = lachCropP, as_points = FALSE, FUN = mean, na.rm = TRUE)
@@ -239,8 +242,8 @@ na10 + xlim(c(144.35, 144.65)) + ylim(c(-33.85, -33.55))
 
 # Now, let's do the st_as_sf earlier, so we can do a series of peelings.
 # WHAT IF THE BBox is way bigger for the raster?
-bbP = st_bbox(c(xmin = 144.4, ymin = -33.8, xmax = 144.6, ymax = -33.6), crs = whichcrs)
-bbR = st_bbox(c(xmin = 144, ymin = -34.2, xmax = 145, ymax = -33.2), crs = whichcrs)
+bbP <- st_bbox(c(xmin = 144.4, ymin = -33.8, xmax = 144.6, ymax = -33.6), crs = whichcrs)
+bbR <- st_bbox(c(xmin = 144, ymin = -34.2, xmax = 145, ymax = -33.2), crs = whichcrs)
 soilCropR <- soilMstars[st_as_sfc(bbR)]
 lachCropP <- st_crop(lachAll, st_as_sfc(bbP))
 soilC50 <- soilCropR[,,,50] %>% adrop()
@@ -561,7 +564,6 @@ system.time(timetest)
 # Well, that's certianly faster
 # TODO:: put all these options together; e.g. write up an example of each, so we can pick and choose from a men
 
-
 # is the while() approach correct? ----------------------------------------
 notna == withAreaM$geoMean 
 notna == unweightRef$naiveMean
@@ -569,10 +571,257 @@ notna == unweightRef$naiveMean
 
 # Soil, cut but with time still on it
 soilT <- soilCropR[,,,1:5]
+soilT
+plot(soilT)
 
-# The 'while' approach ----------------------------------------------------
-  # 
+# How to do this with the time on it?
+
+# can we turn the raster into an sf?
+asSF <- st_as_sf(soilT, as_points = FALSE, merge = FALSE) # including some defaults, to be really explicit
+# Turns it into polygons (good), but loses the sheets for columns (bad)
+  # Might be able to work with that tho. OR... re-sheet them?
+# Could use long = TRUE to make long, but that will take up more memory. I really just want it to be sheets. Why can't I do that?
+
+# Sounds right from fn name, but isn't
+polySt <- st_polygonize(soilT)
+
+# Can we use merge() and then st_set_dimension etc as at 
+# https://r-spatial.github.io/stars/articles/stars1.html
+
+asfM <- merge(asSF) # ah, but it's an sf now
+# make it a stars again
+asfst <- st_as_stars(asSF)
+asfst
+# phew, kept the polygon
+
+# merge() to get back to the right dims and attributes
+asfstm <- merge(asfst)
+asfstm
+
+# But now the dims don't know they're time, and the attribute has lost its name
+st_dimensions(asfstm)
+st_dimensions(soilT)
+
+names(asfstm)
+names(soilT)
+
+st_dimensions(soilT)[3]
+st_dimensions(asfstm)[2]
+
+# Can I just change it?
+st_dimensions(asfstm)[2] <- st_dimensions(soilT)[3]
+st_dimensions(asfstm)[2] # yup, though it's still called X1?
+names(st_dimensions(asfstm))[2] <- names(st_dimensions(soilT))[3]
+
+names(asfstm) <- names(soilT)
+
+asfstm
+soilT
+
+plot(asfstm)
 
 # the split and weighted-average ------------------------------------------
 
+# First step is to get the intersection
+intT <- st_intersection(lachCropP, asfstm)
+# asldkfjasd;fl Doesn't keep the slices OR the attributes; it JUST is the shape;
+# ie it splits the polygons, but doesn't put the numbers in them OR make them
+# time slces
+plot(intT)
 
+# Tempted to develop the 'while' approach, but it's not area-weighted in the aggregation. 
+
+# ah, but intT is now at least cut up, rihgt? so can I aggregate()? 
+# or do the st_intersect in a loop over layers?
+intT
+length(unique(intT$SYSID))
+isdup <- duplicated(intT$SYSID)
+sum(isdup)
+# Same as previous
+
+# Try to aggregate(): hopefully this works without having to while() it
+tsoilag = aggregate(asfstm, by = intT, FUN = mean, na.rm = TRUE)
+tsoilag
+plot(tsoilag)
+# Swears
+  # because the intT is chopped up, but the asfstm ISN'T, it still yields a ton of NAs
+# so, we could while() it.
+
+# OR, we could do the intersect on the flat thing with a million columns
+
+# Let's try to loop over the time slices
+# First, does it work for a single one? This SHOULD be the same damn thing as before
+asfstm[,,2]
+
+intT1 <- st_intersection(lachCropP, asfstm[,,1])
+intT1
+# swears some more. 
+# have to turn it into sf, not a vector cube
+intT1sf <- st_intersection(lachCropP, st_as_sf(asfstm[,,1]))
+intT1sf
+
+# Try to loop. THis could very well be worse than the while, (or the flat then stack), but ;et's see
+intTest <- asfstm # set it up with dims we want
+for (i in 1:5){
+  intTest[,,i] <- st_intersection(lachCropP, st_as_sf(asfstm[,,i]))
+}
+# It doesn't like to write it. 
+
+# The 'while' approach ----------------------------------------------------
+# 
+
+# Can I fill it all in?
+agC50t <- aggregate(asfstm, by = intT, FUN = mean, na.rm = TRUE) # %>%
+  # st_as_sf() # did this before to filter, but it screws up the whole thing with layers
+
+# Now filtering fails. How do we subset out the NA?
+# notna <- filter(agC50t, !is.na(sm_pct))
+# napoly <- filter(agC50t, is.na(sm_pct))
+is.na(agC50t[1,,])
+is.na(agC50t[[1]])
+which(is.na(agC50t[[1]]))
+agC50t[[1]][4]
+agC50t[[1]][which(is.na(agC50t[[1]]))]
+
+na50t <- agC50t
+na50t[[1]] <- agC50t[[1]][which(is.na(agC50t[[1]]))] # breaks dimensions. Not surprising
+
+# can I just do it again? No, because it would need to be the y, which has to be the sf
+agC50t2 <- aggregate(asfstm, by = intT, FUN = mean, na.rm = TRUE)
+agC50t3 <- aggregate(asfstm, by = intT, FUN = mean, na.rm = TRUE)
+
+# This is a pain. go back to the flat approach (below), it basically worked
+# while(nrow(napoly) > 0) {
+#   newag <- aggregate(soilC50, by = napoly, as_points = FALSE, FUN = mean, na.rm = TRUE) %>%
+#     st_as_sf()
+#   newfit <- filter(newag, !is.na(sm_pct))
+#   notna <- bind_rows(notna, newfit)
+#   napoly <- filter(newag, is.na(sm_pct))
+#   
+# }
+# 
+# notna
+# agC50
+
+
+
+# The flat approach: wide -------------------------------------------------
+# can we turn the raster into an sf?
+asSF <- st_as_sf(soilT, as_points = FALSE, merge = FALSE) # including some defaults, to be really explicit
+# Turns it into polygons (good), but loses the sheets for columns (bad)
+
+# Get the intersect
+intF <- st_intersection(lachCropP, asSF) # Will get unweildy
+intF
+# maybe could take off all the unchanging variables, and JUST use the SYSID and geometry?
+  # Might work even better if we did that Tall. Not doing it for wide, because
+  # it will eat memory for duplicated values
+
+# Now, get the averages
+# The across() in here seems to work, but it is really slow
+system.time(avgT <- intF %>%
+              mutate(area = st_area(.)) %>%  
+              # select(sm_pct, SYSID, area) %>%
+              group_by(SYSID) %>%
+              summarize(across(starts_with("X"), ~weighted.mean(.x, as.numeric(area)))) %>%
+              # Same as above, but keeps all the other columns. Way slower
+              # summarize(across(starts_with("X"), ~weighted.mean(.x, as.numeric(area))), 
+              #           across(-c(starts_with("X"), Shape), first)) %>% # st_area returns a units object, which is good, but breaks weighted.mean
+              ungroup())
+avgT # That works, and without the additional , 
+# across(-c(starts_with("X"), Shape), first)
+# it loses everything but sysid (and goes WAY faster)
+plot(avgT[2:6])
+# Well, that works. THey're not indexable by actual time, but that's still pretty ok..
+# And, if it's JUST time, stacking wouldn't be too much more memory-expensive
+# (would cost one more col of sysid and one more shape/geom col. So would be best to avoid, I guess)
+# I'm starting to think flat might be the way to go, because i don't really see
+# how to effiicintly carry the other info around
+  # or, ideally, a cube with a variable AND a sysid as attributes (or sysid as a dimension too???)
+  # I do think that's likely possible, but maybe not worth it now?
+
+
+# Quickly, what happens if I merge?
+meravt <- merge(st_as_stars(avgT))
+meravt 
+# so, we'd have to cut off the sysid, and just use indices. blech.
+# Though Shape should work as a ref. Let's ignore it for the moment. Flat and
+# wide should be approximately as OK as sheets, and we COULD move between them i
+# think, though we'd want to be careful with attributes
+
+# The "do them separate and rejoin" version earlier works out to be what I've
+# done above with the across() other attributes commented out
+  # though there'd need to be a final left_join(). 
+# ignore that for now then
+
+# can I join by the shape column??
+  # and can I do it as sheets?
+
+nosys <- avgT
+nosys[,2:6] # god, the indexing is unintuitive, especially because it changes between sf and stars
+nosys <- select(nosys, starts_with('X'))
+nosysS <- merge(st_as_stars(nosys))
+nosysS
+# Then could do time as above. But not really sure what this gets me. 
+
+# COULD I MABE DO THE SAME WIT SYSID and then join?
+
+# What about xy2sfc? ------------------------------------------------------
+
+# What does this do?
+asxy2 <- st_xy2sfc(soilT, as_points = FALSE, merge = FALSE)
+# makes it a sheeted sf
+
+#What does the intersect do?
+# Get the intersect
+intFxy <- st_intersection(lachCropP, asxy2) # Will get unweildy
+intFxy
+
+# So, same as before, it chops it up, but doesn't include the sm_pct
+
+# What about tall? More memory, but easier to see -------------------------
+# SLOWER TOO, stick with the above.
+
+# can we turn the raster into an sf?
+asSFt <- st_as_sf(soilT, as_points = FALSE, merge = FALSE, long = TRUE) # including some defaults, to be really explicit
+# Turns it into polygons (good), but loses the sheets for columns (bad)
+
+# Get the intersect
+intFt <- st_intersection(lachCropP, asSFt) # Will get unweildy
+intFt
+  # time is now time, so that's good
+
+# maybe could take off all the unchanging variables, and JUST use the SYSID and geometry?
+# Might work even better if we did that Tall. Not doing it for wide, because
+# it will eat memory for duplicated values
+
+# Is it faster to do them separate and rejoin?
+lachCropP
+timetest <- function() {
+  newC50t <- intFt %>%
+  mutate(area = st_area(.)) %>%  
+  select(sm_pct, SYSID, area, time) %>% # If go this way, no need to ever have the other attributes
+  group_by(SYSID, time) %>%
+  summarize(geoMean = weighted.mean(sm_pct, as.numeric(area))) %>% # st_area returns a units object, which is good, but breaks weighted.mean
+  ungroup()
+  # st_drop_geometry() # This strikes me as dangerous, because now we're relying on the summarize working right (which it should, but there's no check)
+  newj <- st_join(lachCropP, newC50t, by = 'SYSID')
+  return(newj)
+}
+
+system.time(timelong <- timetest())
+timelong
+
+# Huh. that's NOT actually faster when i do it right...
+  # maybe
+
+# ignore other vars to make comparable to wide, ie do the same thing as wide, but without the across(X)
+system.time(avgTl <- intFt %>%
+              mutate(area = st_area(.)) %>%  
+              select(sm_pct, SYSID, area, time) %>% # If go this way, no need to ever have the other attributes
+              group_by(SYSID, time) %>%
+              summarize(geoMean = weighted.mean(sm_pct, as.numeric(area))) %>% # st_area returns a units object, which is good, but breaks weighted.mean
+              ungroup())
+avgTl
+# that's gonna be a bear to plot
+# AND it takes ~4x as long

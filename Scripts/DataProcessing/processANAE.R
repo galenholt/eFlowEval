@@ -174,7 +174,6 @@ system.time(bothANAE <- bind_rows(wetCut, nswCut) %>%
 lachAll <- filter(bothANAE, ValleyName == 'Lachlan')
 
 # Check
-<<<<<<< HEAD:Scripts/DataProcessing/makeTestData.R
 ggplot() +
   geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")),
           aes(fill = ValleyName), alpha = 0.5) +
@@ -183,7 +182,7 @@ ggplot() +
   # coord_sf(xlim = c(145.65, 145.71),
   #          ylim = c(-35.94, -35.89)) +
   theme_bw()
-=======
+
 # ggplot() +
 #   geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")),
 #           aes(fill = ValleyName), alpha = 0.5) +
@@ -192,7 +191,6 @@ ggplot() +
 #   # coord_sf(xlim = c(145.65, 145.71),
 #   #          ylim = c(-35.94, -35.89)) +
 #   theme_bw()
->>>>>>> ef81bf62be6ff130fd880cf652e8e08eeded99c3:Scripts/DataProcessing/processANAE.R
 
 # ggplot() +
 #   geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan", "Goulburn")), aes(fill = ValleyName))
