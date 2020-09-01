@@ -825,3 +825,113 @@ system.time(avgTl <- intFt %>%
 avgTl
 # that's gonna be a bear to plot
 # AND it takes ~4x as long
+
+
+# Testing as building addSoilMoist ----------------------------------------
+
+# # debugging the crop missing the edges
+#    # Doesn't really run anymore, since fixed it; commmenting out
+# # Some checking
+# length(avgA_S$SYSID)
+# length(lachAll$SYSID)
+# length(unique(intA_S$SYSID))
+# length(unique(lachAll$SYSID))
+# 
+# all(avgA_S$SYSID == lachAll$SYSID)
+# 
+# # and yet, nothing is easy. Why are there length(unique(lachAll$SYSID)) - length(unique(intA_S$SYSID)) *189* sysids in lachall that aren't in avgA_S?
+# 
+# str(lachAll)
+# 
+# notavgIndex <- which(!(lachAll$SYSID %in% avgA_S$SYSID))
+# notavg <- lachAll$SYSID[notavgIndex]
+# notavg
+# # Nothing obvious
+# 
+# lachnot <- filter(lachAll, SYSID %in% notavg)
+# # That sure looks like an outline...
+# plot(filter(ltimCut, ValleyName == 'Lachlan')[1], reset = FALSE)
+# plot(lachnot[c('SYSID')], add = TRUE)
+# 
+# # They ARE all outside the raster.
+# dev.off()
+# plot(lachSoil[,,,1], reset = FALSE)
+# plot(lachnot[c('SYSID')], add = TRUE)
+# 
+# # Why?
+# dev.off()
+# plot(filter(ltimCut, ValleyName == 'Lachlan')[1], reset = FALSE)
+# plot(lachSoil[,,,1], add = TRUE)
+# # Crop must be based on centers, not total overlap
+# 
+# # So, they're all on the edge. BUT, it's a bit unclear to me why they're getting
+# # tossed. They're not even getting NA filled, they're just gone. and it happens at the intersection, not the means.
+# 
+
+# 
+# # So, now the issue is that lachAll has duplicate SYS2s
+# # It comes in that way. WHY?
+# sum(duplicated(lachAll))
+# # Hmmm. so there are duplicated SYS2s, but NOT fully duplicated records
+# sum(duplicated(lachAll$SYS2))
+# # Which ones?
+# lachdup <- lachAll[duplicated(lachAll$SYS2), ]
+# # does duplicated() grab all, or just the seconds?
+# sum(duplicated(lachdup$SYS2))
+# # just seconds. let's do this differently then
+# dupsys <- lachAll$SYS2[duplicated(lachAll$SYS2)]
+# lachdup <- filter(lachAll, SYS2 %in% dupsys)
+# str(lachdup)
+# arrange(lachdup, SYS2)
+# # huh. that's a mix of mostly different and mostly duplicated, but they really AREN'T mostly duplicated
+# # and there doesn't seem to be a consistent REASON for the duplication.
+# 
+# arrDup <- arrange(lachdup, SYS2)
+# plot(arrDup[,1])
+# plot(arrDup[1:2,'ANAE_DESC']) # Whoa. totally different
+# plot(arrDup[3:4,'ANAE_DESC']) # Same
+# plot(arrDup[5:6,'ANAE_DESC']) # Same
+# dev.off()
+# plot(filter(ltimCut, ValleyName == 'Lachlan')[1], reset = FALSE)
+# plot(arrDup[1:2,'ANAE_DESC'], add = TRUE) # Same
+# # Those are all really similar?? What's up?
+# 
+# # How about the ones that share an ANAE_DESC?
+# plot(arrDup[7:8,'ANAE_DESC']) # These are connected
+# plot(arrDup[9:10,'ANAE_DESC']) # Also connected
+# # are the connected ones separate units?
+# # yes:
+# plot(arrDup[9,'ANAE_DESC']) # Same
+# plot(arrDup[10,'ANAE_DESC']) # Same
+# 
+# lachAll[grep(lachAll$SYS2, pattern = 'DUP'),]
+# 
+# # SO, some are totally different locations, others are connected. I think the
+# # code has ensured they don't OVERLAP, so the issue is what to do. We clearly
+# # CAN'T actually use SYS2 as a unique Identifier, ESPECIALLY if the ANAE_DESC
+# # doesn't match. Guess I need to go read the metadata more carefully, but might
+# # have to make my own unique ID col and use that to map back and forth
+# # The data dictionary lists SYS2 as a primary key, but it sure seems like it's not. UNLESS this all comes about because of the nsw issue
+# # I guess I need to go look at it BEFORE I join the nsw and other. If adding
+# # an appending letter to address which it came from fixes that, that'd be
+# # good. Otherwise will roll my own
+# 
+# # AAAAAAAAAAAAAAAA
+
+# # Some checking
+# length(avgA_S$SYS2)
+# length(lachAll$SYS2)
+# length(unique(intA_S$SYS2))
+# length(unique(lachAll$SYS2))
+# 
+# 
+# # Need to get to the following, but, checking first, because so far it fails
+# all(avgA_S$SYS2 == lachAll$SYS2)
+# all(avgA_S$SYS2 %in% lachAll$SYS2)
+# all(lachAll$SYS2 %in% avgA_S$SYS2)
+# # So, they're all there, but have been rearranged. WHY DOES IT DO THAT?
+# 
+# 
+# all(avgA_S$SYS2 == lachAll$SYS2)
+# all(avgA_S$SYS2 %in% lachAll$SYS2)
+# all(lachAll$SYS2 %in% avgA_S$SYS2)
