@@ -95,52 +95,6 @@ ltimCut <- LTIM_Valleys %>%
 
 # combine the regular ANAE and NSW.  --------------------------------------
 
-<<<<<<< HEAD:Scripts/DataProcessing/makeTestData.R
-# This takes forever
-
-# Trying to fix something 
-# https://gis.stackexchange.com/questions/163445/getting-topologyexception-input-geom-1-is-invalid-which-is-due-to-self-intersec
-
-# # Is not valid the issue? Can we fix it without the buffering
-# sum(!st_is_valid(kopCut))
-# sum(!st_is_valid(ltimCut))
-# sum(!st_is_valid(wetCut)) # takes a LONG time
-# sum(!st_is_valid(nswCut))
-# # Does make valid work?
-# sum(!st_is_valid(st_make_valid(kopCut)))
-
-# # gonna take a million years
-system.time(wetCut <- st_make_valid(wetCut))
-# system.time(print(sum(!st_is_valid(wetCut)))) # takes a LONG time
-# 
-system.time(nswCut <- st_make_valid(nswCut))
-# system.time(print(sum(!st_is_valid(nswCut)))) # takes a LONG time
-# 
-system.time(kopCut <- st_make_valid(kopCut))
-# system.time(print(sum(!st_is_valid(kopCut)))) # takes a LONG time
-# 
-system.time(ltimCut <- st_make_valid(ltimCut))
-# sum(!st_is_valid(ltimCut)) # takes a LONG time
-
-# Try using the albers equal area from aust
-# bothANAE <- bind_rows(wetCut, nswCut) %>%
-#   # Transform doesn't seem to help
-#   # st_make_valid() %>% # 
-#   # slice(125000:150000) %>% # trying to step through to find the problem. But pausing for the moment
-#   # st_transform(crs = 3577) %>% # If go with transform, will need to transform the kopcut and ltimcuts too
-#   # st_buffer(dist = 0) %>% # see above, fixes a self-intersection problem, but adds a ton of time
-#   st_intersection(st_make_valid(kopCut)) %>% # intersect with Koppen
-#   st_intersection(st_make_valid(ltimCut)) # and add the ltim catchment ## Not sure this is the best way to to this, ie, could probably do it as a selection somehow
-# 
-# lachAll <- filter(bothANAE, ValleyName == 'Lachlan')
-
-# Assuming that works, what next?
-  # Bring in the soil moisture, and do the max two ways (or a mean and a max, over different intervals), as a demo of both ways
-    # and maybe do nothing for one of them. IE, a rolling something, and aggregate, and a rolling something of the aggregate()
-
-
-bothANAE <- bind_rows(wetCut, nswCut) %>%
-=======
 # # Some error checking. Something has broken
 # maybeOverlapCheck <- st_intersects(ltimCut)
 # notsure <- st_intersection(ltimCut)
@@ -149,12 +103,48 @@ bothANAE <- bind_rows(wetCut, nswCut) %>%
 # Northern unregulated is a compound of others and so causes issues 
 ltimNoNorth <- ltimCut %>% filter(ValleyName != 'Northern Unregulated')
 
-# # This takes forever
+# # CUT OUT LATER:
+# # ARE DUPLICATE SYSIDS coming in from this join?
+# length(unique(wetCut$SYSID))
+# length(unique(nswCut$SYSID))
+# sum(duplicated(wetCut$SYSID)) 
+# sum(duplicated(nswCut$SYSID))
+# 
+# wtsys <- wetCut$SYSID
+# nswsys <- nswCut$SYSID
+# 
+# sum(nswsys %in% wtsys)
+# inboth <- nswsys[nswsys %in% wtsys]
+# 
+# # NEARLY ALL OF THEM???
+# # I can find nothing particularly useful in the metadata addressing why these are massively overlapped
+#   # They seem to just be entirely different
+# dev.off()
+# plot(nswCut[nswCut$SYSID %in% inboth[1:1000], 'ANAE_DESC'])
+# plot(wetCut[wetCut$SYSID %in% inboth[1:1000], 'ANAE_DESC'])
+
+# Let's just make a new ID column
+# not overwriting SYSID, so it is there for a reference.
+nswCut$SYS2 <- paste0(as.character(nswCut$SYSID), 'nsw')
+wetCut$SYS2 <- paste0(as.character(wetCut$SYSID), 'wet')
+
+# # This takes forever (11700 seconds, ~3.25 hours)
+  # AND, because it splits polygons, it creates duplicate SYSIDs
 system.time(bothANAE <- bind_rows(wetCut, nswCut) %>%
+              select(SYS2, everything()) %>%
   # sf::st_buffer(dist = 0) %>% # This was an old way of fixing the self intersections
->>>>>>> ef81bf62be6ff130fd880cf652e8e08eeded99c3:Scripts/DataProcessing/processANAE.R
   st_intersection(kopCut) %>% # intersect with Koppen
-  st_intersection(ltimNoNorth)) # and add the ltim catchment ## Not sure this is the best way to to this, ie, could probably do it as a selection somehow
+  st_intersection(ltimNoNorth) %>% # and add the ltim catchment ## Not sure this is the best way to to this, ie, could probably do it as a selection somehow
+    mutate(SYS2 = str_c(SYS2, '_', CODE, '_', ValleyCode))) # Keep SYS2 unique
+
+# And, just as an extra check, throw some flags on there. Not sure why this
+# happens, but it does. Just brute force fix it.
+while (any(duplicated(bothANAE$SYS2))) {
+  bothANAE$SYS2[which(duplicated(bothANAE$SYS2))] <- paste0(bothANAE$SYS2, '_DUP')
+}
+
+# And, to make sorting easier wehn we break things up
+bothANAE <- arrange(bothANAE, SYS2)
 
 # # Projecting doesn't fix the self-intersect, but should we do it anyway for the intersects? I kind of think not
 # # 3577 doesn't fix it
@@ -174,15 +164,6 @@ system.time(bothANAE <- bind_rows(wetCut, nswCut) %>%
 lachAll <- filter(bothANAE, ValleyName == 'Lachlan')
 
 # Check
-ggplot() +
-  geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")),
-          aes(fill = ValleyName), alpha = 0.5) +
-  geom_sf(data = lachAll, aes(fill = ANAE_DESC)) +
-   # Fill doesn't work without closed shape, as happens with the coord_sf call below
-  # coord_sf(xlim = c(145.65, 145.71),
-  #          ylim = c(-35.94, -35.89)) +
-  theme_bw()
-
 # ggplot() +
 #   geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")),
 #           aes(fill = ValleyName), alpha = 0.5) +
