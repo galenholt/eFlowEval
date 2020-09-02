@@ -935,3 +935,87 @@ avgTl
 # all(avgA_S$SYS2 == lachAll$SYS2)
 # all(avgA_S$SYS2 %in% lachAll$SYS2)
 # all(lachAll$SYS2 %in% avgA_S$SYS2)
+
+# Testing the new rast spatial integration
+# # # Swear swear swear
+# # sum(avgPR[ ,grouper] != polysf[ ,grouper])
+# # 
+# # all(avgPR$SYS2 %in% polysf$SYS2)
+# # 
+# # all(polysf$SYS2 %in% avgPR$SYS2)
+# # sum(avgPR$SYS2 != polysf$SYS2)
+# # # wtf
+# # sum(avgPR$SYS2 != avgPR[ ,grouper])
+# # str(avgPR[,'SYS2'] %>% st_drop_geometry())
+# # 
+# # sum(avgPR$SYS2 != polysf$SYS2)
+# # 
+# # sum(st_drop_geometry(avgPR[ ,grouper]) != st_drop_geometry(polysf[ ,grouper]))
+# 
+# 
+# 
+# # First, make the stars into sf polygons
+# # TODO: likely going to need to start overwriting objects to keep size down at some point. 
+# # Though, this sf is going to be used for a few things, as is the raster
+# soilSF <- st_as_sf(lachSoil, as_points = FALSE, merge = FALSE)
+# str(soilSF)
+# 
+# # Have to intersect with the ANAE polygons to get average.
+# # Less fiddly (because it's one-to-one), and it ensures the averages area area
+# # weighted (they're not with aggregate; see timePolyRastScratch for testing)
+# intA_S <- st_intersection(lachAll, soilSF)
+# # intF leads with the ANAE cols, and then has date cols all preceded by 'X'
+# 
+# # Get the averages into each ANAE ID at each time
+# # This strips off the other ANAE cols, which is fine. Could do it earlier, but don't see a need?
+# # TODO:: Again, rename to reduce size later on
+# # 255 seconds with 221 cols
+# system.time(avgA_S <- intA_S %>%
+#               mutate(area = st_area(.)) %>%  
+#               group_by(SYS2) %>%
+#               summarize(across(starts_with("X"), ~weighted.mean(.x, as.numeric(area)))) %>% # averages across the cols with x in their name and gets weighted mean
+#               # TODO:: is it faster to pre-allocate these cols? IE just cut to
+#               # only those cols and then summarize everything?
+#               # Tried it and it crashed, but maybe moving out of dplyr syntax
+#               # entirely would speed it up, but be a pain. across() finding
+#               # the indices shouldn't be that slow, really, though. so the
+#               # only issue is if it can't parallelize or something
+#               # Same as above, but keeps all the other columns. Way slower
+#               # summarize(across(starts_with("X"), ~weighted.mean(.x, as.numeric(area))), 
+#               #           across(-c(starts_with("X"), Shape), first)) %>% # st_area returns a units object, which is good, but breaks weighted.mean
+#               ungroup())
+# 
+# # So, that's basically all the data processing for this one, but for format
+# # consistency and letting time be time, let's put it back into a `stars` array
+# 
+# # TODO:: do the checks here that the new SYS2 variable fixes the duplicated SYSIDs. 
+# # then, make the stars with linking vector for confirming indexing
+# # Then, on to the different rollers
+# 
+# # It has been re-sorted for some unknown stupid dplyr reason. Make sure it is sorted to match lachAll
+# avgA_S <- avgA_S %>% arrange(SYS2)
+# lachAll <- lachAll %>% arrange(SYS2)
+# # Check
+# all(avgA_S$SYS2 == lachAll$SYS2)
+# 
+# # And, still, save the indexer column (is it possible to glue this back on as a dimension? Probably not, because it's parallel to shape)
+# avgA_Sindex <- avgA_S$SYS2
+# # at the least, it'll allow me to see if things have gotten jumbled between shape and sys2
+# 
+# # Turn back into a stars
+# avgA_Stars <- avgA_S %>% 
+#   select(-SYS2) %>%
+#   st_as_stars() %>%
+#   merge()
+# # avgA_Stars
+# 
+# # change the time dimension
+# st_dimensions(avgA_Stars)[2] <- st_dimensions(lachSoil)[3]
+# st_dimensions(avgA_Stars)[2] # yup, though it's still called X1?
+# names(st_dimensions(avgA_Stars))[2] <- names(st_dimensions(lachSoil))[3]
+# # and change the name of the attribute
+# names(avgA_Stars) <- names(lachSoil)
+# 
+# # avgA_Stars
+# # plot(avgA_Stars[,,50:51])
+
