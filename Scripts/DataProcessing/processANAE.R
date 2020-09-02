@@ -140,7 +140,7 @@ system.time(bothANAE <- bind_rows(wetCut, nswCut) %>%
 # And, just as an extra check, throw some flags on there. Not sure why this
 # happens, but it does. Just brute force fix it.
 while (any(duplicated(bothANAE$SYS2))) {
-  bothANAE$SYS2[which(duplicated(bothANAE$SYS2))] <- paste0(bothANAE$SYS2, '_DUP')
+  bothANAE$SYS2[which(duplicated(bothANAE$SYS2))] <- paste0(bothANAE$SYS2[which(duplicated(bothANAE$SYS2))], '_DUP')
 }
 
 # And, to make sorting easier wehn we break things up
