@@ -212,7 +212,12 @@ plot(weekmeanSub)
 dailyPolySplitSub <- st_crop(st_as_sf(dailyPolySMsplit[,,10:13]), st_as_sfc(bb))
 plot(dailyPolySplitSub)
 
-
+save(lachAll, 
+     lachSoil, 
+     dailyPolySMavg, 
+     polyTimeSmax_10, 
+     weeklyRastavgSMpoly, 
+     file = file.path(datOut, 'kanDemo.rdata'))
 
 
 
