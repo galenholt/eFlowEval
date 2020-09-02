@@ -5,8 +5,9 @@ library(sf)
 library(stars)
 
 # Argh. sort all this directory crap out later
-source(here('Scripts', 'DataProcessing', 'rastPolyJoin.R'))
-source(here('Scripts', 'DataProcessing', 'timeRoll.R'))
+  # Trying to at least separate scripts and functions, looking towards library
+source(here('Functions', 'rastPolyJoin.R'))
+source(here('Functions', 'timeRoll.R'))
 
 
 myhome <- str_remove(path.expand("~"), "/Documents")
