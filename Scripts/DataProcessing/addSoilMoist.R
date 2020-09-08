@@ -176,6 +176,7 @@ plot(dailyPolySplitSub[,,10:13])
 
 # all the test plots in one place -----------------------------------------
   #including making the subsets and bbox, so we can use something different here, or comment out above
+# load(file.path(datOut, 'kanDemo.rdata'))
 
 # it's a little annoying that st_crop is a hard crop, but the [] cropping lets
 # the polys hang over, and so we get different extents. So doing the polygon
