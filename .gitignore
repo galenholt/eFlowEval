@@ -1,3 +1,4 @@
 *.Rhistory
 *.rdata
 Testing/
+.Rproj.user/
