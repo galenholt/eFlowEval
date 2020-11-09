@@ -76,6 +76,13 @@ system.time(dailySMpolyavg <- rastPolyJoin(polysf = lachAll, rastst = lachSoil, 
   # might be the work sf is doing to put the polygons back together?
     # TODO: see if it's faster to st_drop_geometry, do the summarize, and then join back to lachAll with SYS2?
 
+# Couple size checks to see how this will go moving forward
+format(object.size(lachSoil), units = "auto") # Check size
+format(object.size(dailySMpolyavg), units = "auto") # Check size
+# Will that fit if I go back 10 years?
+format(object.size(dailySMpolyavg)*10, units = "auto") # Check size
+# Yeah, but maybe not the best idea?
+
 # unpack the list
 dailyPolyindex <- dailySMpolyavg[[2]]
 # at least for testing, don't overwrite, or have to run the whole thing again
