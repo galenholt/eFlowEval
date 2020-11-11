@@ -5,7 +5,7 @@ library(sf)
 library(stars)
 
 # Argh. sort all this directory crap out later
-  # Trying to at least separate scripts and functions, looking towards library
+# Trying to at least separate scripts and functions, looking towards library
 source(here('Functions', 'rastPolyJoin.R'))
 source(here('Functions', 'timeRoll.R'))
 
@@ -34,66 +34,66 @@ ltimCut <- LTIM_Valleys %>%
 
 # Arh. the temp doesn't read in the same way as the soil moist. back to the drawing board
 # Try for all
-tempfile <- list.files(file.path(datDir, 'testTemp'), pattern = '.nc')
-temppath <- file.path(datDir, 'testTemp', tempfile)
+tempfile <- list.files(file.path(datDir, 'soilTemp1419'), pattern = '.nc')
+temppath <- file.path(datDir, 'soilTemp1419', tempfile)
 
-# Read_stars brings it in as a stars_proxy
-soilTstarsNC <-  read_ncdf(temppath)
-soilTstars <-  read_stars(temppath)
-# read_stars is failing, unclear why. somethign about $ on atomic vectors. But not getting that on the test file?
-  # Why am I only getting Day_View_Time attribute? Why are there 93 days when I only have one month? WHAT IS THIS DATASET???
-# read_ncdf is failing because it needs to allocate a 95gb vector. So... Going to need to do some exploring, I guess
-  # is there a way to bring in only a subset so we can see what the hell is in it?
-soilTstarsNC
-soilTstars
-
-soilNCtest <- read_ncdf(temppath, var = names(soilTstarsNC)[2])
-soilNCtest
-# The projection is weird. Going to re-send request with WGS84 (ie 4326) specified. I
-# think that's what it was in, but "native projection" is lame and
-# uninformative. I just assumed it would TELL me what that was
-
-# So, the var = bit worked for the ncdf. Does it work for read_stars?
-  # If not, I'll just loop earlier I guess. Esp. if I can sub the big ncdf on
-  # import somehow. Don't REALLY want to submit separate requests just to get
-  # separate files, but I suppose I could
-soilStest <- read_stars(temppath, var = names(soilTstarsNC)[2])
-  # Ah. the time dimension is 3x too long. So it's shoving the times along with
-  # the second and third attributes into it. Which also stuffs up the datatype
-# Changes nothing
-soilStest <- read_stars(temppath, options = names(soilTstarsNC)[2])
-names(soilStest)
-
-# Can I separate somehow?
-st_dimensions(soilStest)$time$values
-# Yikes. That's nonsense
-
-
-st_as_stars(soilStest) # Still 93 time. HOW DO I TELL IT WHAT THE ATTRIBUTES ARE????
-
-# Really looking like maybe the only way to do this is to chunk up the requests
-# and read_ncdf. Would be REALLY nice if I could send a subset request with the
-# read_ncdf though
-
-# A few more tries, just cycling through the poorly documented arguments...
-soilStest <- read_stars(temppath, sub = names(soilTstarsNC)[2])
-soilStest
-
-# HA! That might have done it. Looks like sub *might* be able to subset along dimensions as well. 
-
-# Has it brought over the crs?
-st_crs(soilStest)
-st_crs(soilNCtest)
-# nope, got lost. BUT, we TOLD it to use 4326 this time, so
-
-# Let's see how much of this works
-st_crs(soilStest) <- 4326
-st_crs(soilNCtest) <- 4326
-
-plot(soilStest[,,,1:4])
-plot(soilNCtest[,,,1:4])
-
-# LOTS of NAs. gonna have to keep an eye on that with the big dataset
+# # Read_stars brings it in as a stars_proxy
+# soilTstarsNC <-  read_ncdf(temppath)
+# soilTstars <-  read_stars(temppath)
+# # read_stars is failing, unclear why. somethign about $ on atomic vectors. But not getting that on the test file?
+#   # Why am I only getting Day_View_Time attribute? Why are there 93 days when I only have one month? WHAT IS THIS DATASET???
+# # read_ncdf is failing because it needs to allocate a 95gb vector. So... Going to need to do some exploring, I guess
+#   # is there a way to bring in only a subset so we can see what the hell is in it?
+# soilTstarsNC
+# soilTstars
+# 
+# soilNCtest <- read_ncdf(temppath, var = names(soilTstarsNC)[2])
+# soilNCtest
+# # The projection is weird. Going to re-send request with WGS84 (ie 4326) specified. I
+# # think that's what it was in, but "native projection" is lame and
+# # uninformative. I just assumed it would TELL me what that was
+# 
+# # So, the var = bit worked for the ncdf. Does it work for read_stars?
+#   # If not, I'll just loop earlier I guess. Esp. if I can sub the big ncdf on
+#   # import somehow. Don't REALLY want to submit separate requests just to get
+#   # separate files, but I suppose I could
+# soilStest <- read_stars(temppath, var = names(soilTstarsNC)[2])
+#   # Ah. the time dimension is 3x too long. So it's shoving the times along with
+#   # the second and third attributes into it. Which also stuffs up the datatype
+# # Changes nothing
+# soilStest <- read_stars(temppath, options = names(soilTstarsNC)[2])
+# names(soilStest)
+# 
+# # Can I separate somehow?
+# st_dimensions(soilStest)$time$values
+# # Yikes. That's nonsense
+# 
+# 
+# st_as_stars(soilStest) # Still 93 time. HOW DO I TELL IT WHAT THE ATTRIBUTES ARE????
+# 
+# # Really looking like maybe the only way to do this is to chunk up the requests
+# # and read_ncdf. Would be REALLY nice if I could send a subset request with the
+# # read_ncdf though
+# 
+# # A few more tries, just cycling through the poorly documented arguments...
+# soilStest <- read_stars(temppath, sub = names(soilTstarsNC)[2])
+# soilStest
+# 
+# # HA! That might have done it. Looks like sub *might* be able to subset along dimensions as well. 
+# 
+# # Has it brought over the crs?
+# st_crs(soilStest)
+# st_crs(soilNCtest)
+# # nope, got lost. BUT, we TOLD it to use 4326 this time, so
+# 
+# # Let's see how much of this works
+# st_crs(soilStest) <- 4326
+# st_crs(soilNCtest) <- 4326
+# 
+# plot(soilStest[,,,1:4])
+# plot(soilNCtest[,,,1:4])
+# 
+# # LOTS of NAs. gonna have to keep an eye on that with the big dataset
 
 
 # Read in data (fixed, I think, moving on) -------------------------------------------
@@ -127,8 +127,8 @@ lachTemp <- st_crop(soilTstars, filter(ltimCut, ValleyName == 'Lachlan'), as_poi
 # # check it worked
 
 # Is it the order of operations when it pulls from the proxy object?
-  # Can be HUGE if all days in, careful with this
-  # YES. Phew. so, the plot above was stuffing up the crop. This is going to be tricky to ensure we're doing things right.
+# Can be HUGE if all days in, careful with this
+# YES. Phew. so, the plot above was stuffing up the crop. This is going to be tricky to ensure we're doing things right.
 # proxTest <- st_as_stars(lachTemp)
 # plot(proxTest[,,,1:4])
 
@@ -142,11 +142,20 @@ lachTemp <- st_crop(soilTstars, filter(ltimCut, ValleyName == 'Lachlan'), as_poi
 # system.time(dailySMpolyavg <- rastPolyJoin(polysf = lachAll, rastst = lachSoil, grouper = 'SYS2', maintainPolys = TRUE))
 
 # Runs with st_as_stars(stars_proxy)
-  # Honestly kind of doubt this will fit in memory for the soil temp. BUt hard to check without the full data. Guess it's time to do that.
+# Honestly kind of doubt this will fit in memory for the soil temp. BUt hard to check without the full data. Guess it's time to do that.
+# yaaaa! 610gb. Going to need to sort SOMETHING out here.
+# AND, lachTemp now has negative 'to' values for x and y. that was happening with the bb prevously. Ugh. 
+# So, if I am going to have to subset the proxy in chunks to st_as_stars,
+# should i just read it in as read_ncdf in a loop? It'd be a lot more memory
+# thrashing; ie doing the lachlan cut as a proxy I think probably helps, if
+# possible (ie no negative vals)
+# but, how to test? the full data is SO big... and the test data is small, and so doesn't proxy. Though I think I can force it?
 
-deProxySoil <- st_as_stars(lachSoil) # Not sure we want to do this, rather than put it in the function call so we don't keep it in memory? Will see, I suppose
+deProxySoil <- st_as_stars(lachTemp) # Not sure we want to do this, rather than put it in the function call so we don't keep it in memory? Will see, I suppose
 names(deProxySoil) <- 'sm_pct' # Attributes got named 'attr'. Change it to what it is with read_ncdf for consistency
 format(object.size(deProxySoil), units = "auto") # Check size
+# plot check
+plot(deProxySoil[,,,1:6])
 
 ## TESTING
 # # So, this runs out of RAM, and I'm unsure why. It should be <3Gb. It makes one
@@ -274,10 +283,10 @@ system.time(dailySMpolyavg <- timechunker(chunk1 = chunk1))
 # 2300 seconds for 2014-19 in Lachlan
 
 # 290 seconds with 280 timesteps in Lachlan
-  # There has GOT to be a way to speed this up...
-  # It's the grouped summarize that kills it, NOT the intersection. i think it
-  # might be the work sf is doing to put the polygons back together?
-    # TODO: see if it's faster to st_drop_geometry, do the summarize, and then join back to lachAll with SYS2?
+# There has GOT to be a way to speed this up...
+# It's the grouped summarize that kills it, NOT the intersection. i think it
+# might be the work sf is doing to put the polygons back together?
+# TODO: see if it's faster to st_drop_geometry, do the summarize, and then join back to lachAll with SYS2?
 
 # unpack the list
 dailyPolyindex <- dailySMpolyavg[[2]]
@@ -324,34 +333,34 @@ range(deProxySoil[[1]], na.rm = T)
 hist(deProxySoil[[1]])
 
 # Can we pseudo-inundate? Just making up 80% here as a high threshold, since the max is 0.92
-  # There are ppl doing some fancy modelling to predict inundation from soil
-  # moist, but they have complex eq'ns, and so better to just wait for hydrology
+# There are ppl doing some fancy modelling to predict inundation from soil
+# moist, but they have complex eq'ns, and so better to just wait for hydrology
 # Don't know how long needs to stay inundated for germination.
-  # Let's say 5 days? 
+# Let's say 5 days? 
 sum(dailyPolySMavg[[1]] > 0.8)
 
 # Set up new stars objects to put the results in
-  # These will actually both be rolling mins, just over different timespans.
-  # To meet the "dead if not moist > 10% for 6 weeks" condition, we need to check if min(last 6 weeks) is below 10
-  # To meet the "needs inundation (>80%) for 5 days" condition, we need to check if min(last 5 days) is below 80
+# These will actually both be rolling mins, just over different timespans.
+# To meet the "dead if not moist > 10% for 6 weeks" condition, we need to check if min(last 6 weeks) is below 10
+# To meet the "needs inundation (>80%) for 5 days" condition, we need to check if min(last 5 days) is below 80
 soilMoistMin42 <- dailyPolySMavg 
 soilMoistMin5 <- dailyPolySMavg
 
 # Get a 42-day rolling min for each polygon
 system.time(soilMoistMin42[[1]] <- timeRoll(soilMoistMin42[[1]], 
-                                             FUN = RcppRoll::roll_min, 
-                                             rolln = 42, 
-                                             align = 'right',
-                                             na.rm = TRUE))
+                                            FUN = RcppRoll::roll_min, 
+                                            rolln = 42, 
+                                            align = 'right',
+                                            na.rm = TRUE))
 
 # 10 seconds
 
 # Get a 5-day rolling min for each polygon
 system.time(soilMoistMin5[[1]] <- timeRoll(soilMoistMin5[[1]], 
-                                            FUN = RcppRoll::roll_min, 
-                                            rolln = 5, 
-                                            align = 'right',
-                                            na.rm = TRUE))
+                                           FUN = RcppRoll::roll_min, 
+                                           rolln = 5, 
+                                           align = 'right',
+                                           na.rm = TRUE))
 
 # 5 seconds
 
