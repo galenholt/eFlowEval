@@ -34,8 +34,8 @@ ltimCut <- LTIM_Valleys %>%
 
 # Arh. the temp doesn't read in the same way as the soil moist. back to the drawing board
 # Try for all
-tempfile <- list.files(file.path(datDir, 'soilTemp1419'), pattern = '.nc')
-temppath <- file.path(datDir, 'soilTemp1419', tempfile)
+tempfile <- list.files(file.path(datDir, 'testTemp'), pattern = '.nc')
+temppath <- file.path(datDir, 'testTemp', tempfile)
 
 # # Read_stars brings it in as a stars_proxy
 # soilTstarsNC <-  read_ncdf(temppath)
@@ -97,8 +97,12 @@ temppath <- file.path(datDir, 'soilTemp1419', tempfile)
 
 
 # Read in data (fixed, I think, moving on) -------------------------------------------
-soilTstars <-  read_stars(temppath, sub = "LST_Day_1km")
+soilTstars <-  read_stars(temppath, sub = "LST_Day_1km", proxy = TRUE) # Force a proxy for testing the subsetting
 st_crs(soilTstars) <- 4326
+
+# Getting negative vals after cropping. Do i if I leave it as ncdf?
+soilTnc <- read_ncdf(temppath, var = "LST_Day_1km")
+st_crs(soilTnc) <- 4326
 
 # Previous work -----------------------------------------------------------
 
@@ -122,9 +126,146 @@ ltimCut <- st_transform(ltimCut, whichcrs)
 basin <- st_transform(basin, whichcrs)
 
 # Crop. Have to use as_points = FALSE or it crops to the raster centers, and misses stuff around the edges.
+  # I *think*, but am not sure, that proxies might have to cut on a bounding
+  # box, and this is barfing for some reason. possibly because the raster is
+  # smaller than the box? That would seem dumb, but let's check
+bb <- st_bbox(c(xmin = 144.4, ymin = -33.8, xmax = 144.6, ymax = -33.6), crs = whichcrs)
+bbs <- st_as_sfc(bb)
+
+lachcutter <- filter(ltimCut, ValleyName == 'Lachlan')
 lachTemp <- st_crop(soilTstars, filter(ltimCut, ValleyName == 'Lachlan'), as_points = FALSE)
+lachTemp2 <- st_crop(soilTstars, lachcutter, as_points = FALSE)
+lachTemp3 <- st_crop(soilTstars, bbs, as_points = FALSE)
+# So, that worked, but we had negatives when we used the full data. so unclear what's actually going on. Thinking I might have to do a brute force memory thrash
+# OR, can i read_stars it to read a closer subset, and then st_as_stars()? and then do the crop? ie some sort of double-crop (incl. time?)
+  # Though at that point, I THINK I can use the ncsub argument to read_ncdf:
+# Example
+f <- system.file("nc/reduced.nc", package = "stars")
+read_ncdf(f)
+read_ncdf(f, var = c("anom"))
+read_ncdf(f, var = "anom", ncsub = cbind(start = c(1, 1, 1, 1), count = c(10, 12, 1, 1)))
+
+# How would I set that up?
+soilTnc
+# I'm not sure HOW to find the from/to I want for lat/long? Might have to hunt?
+# They start at 1 for the raster, which means the values I want will be
+# determined by the specific raster I'm reading in. 
+# BUT, maybe I can hunt by reading in one timeslice, cropping, and then putting
+# a bit of a buffer on it
+  # Then there would have to be a big loopy function. blehc
+
+# Start working through how that would work
+#  If the count value is NA then all steps are included. EXCEPt THATS NOT TRUE. IT THROWS AN ERROR
+# So, how to get the WHOLE THING?
+  # The proxy will give it, and doesn't require any RAM. basically, use it as a dimension query
+soilTstars
+# Grab a single day (I'm avoiding 1 just in case there's anything funny)
+
+# I should be able to use st_dimensions to get the numbers programatically
+dimtestS <- st_dimensions(soilTstars)
+
+allspace1time <- cbind(start = c(1,1,10), count = c(dimtestS$x$to, dimtestS$y$to, 1))
+soilTnc1 <- read_ncdf(temppath, var = "LST_Day_1km", ncsub = allspace1time)
+st_crs(soilTnc1) <- 4326
+soilTnc1
+plot(soilTnc1)
+
+# Now, crop that single slice to the lachlan
+lTnc <- st_crop(soilTnc1, filter(ltimCut, ValleyName == 'Lachlan'), as_points = FALSE)
+plot(lTnc)
+
+# And get its fromto
+lTnc
+soilTnc1
+
+# this is a bit funny because this test doesn't fully enclose the lach, but whatever.
+
+# the limits on the lTnc now give the numbers, but will have to back out start and count
+lTnc
+# Get ALL the times this time
+dimtest <- st_dimensions(lTnc)
+
+# lat and long are the clipped
+loncount <- dimtest$lon$to - dimtest$lon$from
+latcount <- dimtest$lat$to - dimtest$lat$from
+
+# Time is all times
+  # Though really, we'll likely be looping over this...
+tcount <- dimtestS$time$to
+
+lachsub <- cbind(start = c(dimtest$lon$from, dimtest$lat$from, 1), count = c(loncount, latcount, tcount))
+
+lachBox <- read_ncdf(temppath, var = "LST_Day_1km", ncsub = lachsub)
+st_crs(lachBox) <- 4326
+
+# Something gets stuffed with the offset (see below). try to fix
+#   # This makes it even worse. 
+# st_dimensions(lachBox)$lon$offset <- dimtest$lon$offset
+# st_dimensions(lachBox)$lat$offset <- dimtest$lat$offset
+lachBox
+plot(lachBox[,,,1:6])
+
+# Compare with the uncropped
+plot(soilTnc1)
+plot(lachBox[,,,10])
+
+lachCrop <- st_crop(lachBox, filter(ltimCut, ValleyName == 'Lachlan'), as_points = FALSE)
+
+# No data?? Yeah, it's there. Dunno what all the NA are griping about
+plot(lachCrop[,,,1:6])
+# plot(lTnc[,,,1:6])
 
 # # check it worked
+# The direct crop
+lachCropFull <- st_crop(soilTnc, filter(ltimCut, ValleyName == 'Lachlan'), as_points = FALSE)
+plot(lachCropFull[,,,1:6])
+
+# Well, that's bad. It seems to have shifted the raster, rather than cropped it or something
+# Something's off wiht the offset.
+st_dimensions(lachBox)
+dimtest
+# Fine to shift the start to 1, but 223*0.00833 != 145.33-141.833
+
+# CAN I shift the lachBox to match what it came from?
+lb2 <- lachBox
+# st_dimensions(lb2)[1:2] <- dimtest[1:2, ]
+lbt <- st_set_dimensions(lb2, "lon", value = dimtest["lon"])
+lbt
+lTnc
+st_dimensions(lb2)$lon$offset <- dimtest$lon$offset
+lb2
+
+# Ok, pull that up above and check
+  # Fails. Jesus. 
+
+# How bad is this to just bring the sheets in a few at a time, crop and process?
+# (And if we're processing to ANAE and discarding, does cropping help?)
+
+
+# TRY WHOLE BASIN? --------------------------------------------------------
+
+tempfile <- list.files(file.path(datDir, 'soilTemp1419'), pattern = '.nc')
+temppath <- file.path(datDir, 'soilTemp1419', tempfile)
+
+soilTstars <-  read_stars(temppath, sub = "LST_Day_1km", proxy = TRUE) # Force a proxy for testing the subsetting
+st_crs(soilTstars) <- 4326
+
+dimtestS <- st_dimensions(soilTstars)
+
+# Try just bringing 1 time in for now to see how huge
+croptime <- cbind(start = c(1,1,1), count = c(dimtestS$x$to, dimtestS$y$to, 2))
+soilTnc <- read_ncdf(temppath, var = "LST_Day_1km", ncsub = croptime)
+st_crs(soilTnc) <- 4326
+soilTnc
+format(object.size(soilTnc), units = "auto") # Check size
+plot(soilTnc)
+# AAAHHHHHHH!! something's wrong with the datum.....SWEARING
+  # Going to go make another request for a smaller number of days, see how that
+  # goes. So far I don't have the data right in any of the possible ways of
+  # doing this
+
+# Now, crop that single slice to the lachlan
+lachTnc <- st_crop(soilTnc, filter(ltimCut, ValleyName == 'Lachlan'), as_points = FALSE)
 
 # Is it the order of operations when it pulls from the proxy object?
 # Can be HUGE if all days in, careful with this
@@ -150,6 +291,11 @@ lachTemp <- st_crop(soilTstars, filter(ltimCut, ValleyName == 'Lachlan'), as_poi
 # thrashing; ie doing the lachlan cut as a proxy I think probably helps, if
 # possible (ie no negative vals)
 # but, how to test? the full data is SO big... and the test data is small, and so doesn't proxy. Though I think I can force it?
+
+# STILL getting negatives on the to vals.... what's going on? It works with
+# read_ncdf. and the ONLY thing that's happening is the st_crop. Which worked
+# for soil moisture as proxy, and is working for temp as ncdf. So I have no idea
+
 
 deProxySoil <- st_as_stars(lachTemp) # Not sure we want to do this, rather than put it in the function call so we don't keep it in memory? Will see, I suppose
 names(deProxySoil) <- 'sm_pct' # Attributes got named 'attr'. Change it to what it is with read_ncdf for consistency
