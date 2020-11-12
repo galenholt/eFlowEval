@@ -244,8 +244,8 @@ lb2
 
 # TRY WHOLE BASIN? --------------------------------------------------------
 
-tempfile <- list.files(file.path(datDir, 'soilTemp1419'), pattern = '.nc')
-temppath <- file.path(datDir, 'soilTemp1419', tempfile)
+tempfile <- list.files(file.path(datDir, 'testTempBasin'), pattern = '.nc')
+temppath <- file.path(datDir, 'testTempBasin', tempfile)
 
 soilTstars <-  read_stars(temppath, sub = "LST_Day_1km", proxy = TRUE) # Force a proxy for testing the subsetting
 st_crs(soilTstars) <- 4326
@@ -253,25 +253,63 @@ st_crs(soilTstars) <- 4326
 dimtestS <- st_dimensions(soilTstars)
 
 # Try just bringing 1 time in for now to see how huge
-croptime <- cbind(start = c(1,1,1), count = c(dimtestS$x$to, dimtestS$y$to, 2))
+croptime <- cbind(start = c(1,1,1), count = c(dimtestS$x$to, dimtestS$y$to, 10))
 soilTnc <- read_ncdf(temppath, var = "LST_Day_1km", ncsub = croptime)
 st_crs(soilTnc) <- 4326
 soilTnc
 format(object.size(soilTnc), units = "auto") # Check size
-plot(soilTnc)
-# AAAHHHHHHH!! something's wrong with the datum.....SWEARING
-  # Going to go make another request for a smaller number of days, see how that
-  # goes. So far I don't have the data right in any of the possible ways of
-  # doing this
+# Cycled through a bunch, 8 is the best as a test (though 5,6, and 9 are good too)
+plot(soilTnc[,,,8], reset = FALSE)
+plot(st_geometry(lachcutter), border = 'red', add = TRUE)
+# well, specifying the datum at least lets me read it in...
+  # Those are pretty crap extents though. Might grab a different set for testing so I can see what I'm doing
 
-# Now, crop that single slice to the lachlan
-lachTnc <- st_crop(soilTnc, filter(ltimCut, ValleyName == 'Lachlan'), as_points = FALSE)
+# Now, crop that to the lachlan
+system.time(lachTnc <- st_crop(soilTnc, filter(ltimCut, ValleyName == 'Lachlan'), as_points = FALSE))
 
-# Is it the order of operations when it pulls from the proxy object?
-# Can be HUGE if all days in, careful with this
-# YES. Phew. so, the plot above was stuffing up the crop. This is going to be tricky to ensure we're doing things right.
-# proxTest <- st_as_stars(lachTemp)
-# plot(proxTest[,,,1:4])
+plot(lachTnc[,,,5:8])
+# OK, and that lines up as it does with the outlines above.
+# So, that'll work, I think.
+
+# Quickly, how long does it take to do the anae smash on that?
+
+# Why did this work for 10, but not for 2?
+system.time(chunk1 <- rastPolyJoin(polysf = lachAll, 
+                                   rastst = lachTnc[,,,1:10], 
+                                   grouper = 'SYS2', 
+                                   maintainPolys = TRUE))
+# 2 sheets
+
+# 10 sheets
+# user  system elapsed 
+# 1159.69   48.48 1220.19 
+# Yikes
+
+# is there any reason to do the st_crop to the lachlan?
+  # IE if what we want is the ANAE averaging, do we need to do the crop?
+  # although, does the crop take much time?
+    # 5 seconds. So, in the margins compared to the rastPolyJoin
+# I suppose I could check whether it's necessary, but that would take 20 mins....at least. 
+
+
+####################################
+# NOTE
+# Basically, we're going to have to read in slices and process them. I was
+# trying to only read in a subset around the lachlan, but that was shifting
+# things around in a weird way. Not sure how muhc it would save anyway.
+  # Also, it's possible it WON'T shift things around if the whole lachlan is THERE in the raster
+# I now have it working to read the whole basin in and crop to the lachlan, so
+# that's good. I suppose the/a question is whether we should (or can) read
+# everything in and crop in a loop, and then use THAT to do the anae averaging,
+# or just do the anae averaging as we go? I think probably the latter, since I
+# doubt we'll be able to hld the whole lachlan for 5 years.
+
+# do we want to (and can we) write the lachlan out as an nc (or a bunch of ncs?)
+# for later use? WOuld be nice to not have to do all the processing every time
+
+
+
+
 
 
 # Cut out lots of plot tests here, because they dont' work without reading in the proxy. And we don't want to do that.
