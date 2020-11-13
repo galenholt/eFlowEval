@@ -9,7 +9,7 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'SYS2', maintainPolys = TRUE)
   # This function calculates a mean. wouldn't be too hard to expand to other metrics.
   
   # turn raster into polygon sf object, time as columns
-  rastSF <- st_as_sf(rastst, as_points = FALSE, merge = FALSE)
+  rastSF <- st_as_sf(rastst, as_points = FALSE, merge = FALSE, na.rm = FALSE)
   
   # Have to intersect with the polygons to get average.
   # Less fiddly (because it's one-to-one), and it ensures the averages area area
