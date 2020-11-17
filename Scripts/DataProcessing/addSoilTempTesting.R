@@ -8,7 +8,7 @@ library(stars)
 # Trying to at least separate scripts and functions, looking towards library
 source(here('Functions', 'rastPolyJoin.R'))
 source(here('Functions', 'timeRoll.R'))
-
+source(here('Functions', 'timeChunkPoly.R'))
 
 myhome <- str_remove(path.expand("~"), "/Documents")
 datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
@@ -34,8 +34,8 @@ ltimCut <- LTIM_Valleys %>%
 
 # Arh. the temp doesn't read in the same way as the soil moist. back to the drawing board
 # Set up where the soil temp data is
-tempfile <- list.files(file.path(datDir, 'testTempBasin'), pattern = '.nc')
-temppath <- file.path(datDir, 'testTempBasin', tempfile)
+tempfile <- list.files(file.path(datDir, 'soilTemp1419'), pattern = '.nc')
+temppath <- file.path(datDir, 'soilTemp1419', tempfile)
 
 # # Read_stars brings it in as a stars_proxy
 # soilTstarsNC <-  read_ncdf(temppath)
@@ -261,130 +261,210 @@ soilTstars
 # get days
 # chunksize <- 2
 
-days <- soilDims$time$to
-# days/chunksize
-# Round up number of chunks
+# days <- soilDims$time$to
+# # days/chunksize
+# # Round up number of chunks
+# # nchunks <- ceiling(days/chunksize)
+# 
+# # do the first chunk outside, so there's something to c() to
+# # from <- 1
+# # # protect short ends
+# # firstend <- ifelse(chunksize < days, chunksize, days)
+# # Get the first chunk
+# 
+# 
+# 
+# # Write a function to grab a chunk from t to t+chunksize
+# chunkprocess <- function(starttime, chunksize) {
+#   
+#   # Deal with fewer days than the size of the chunk
+#   thischunk <- ifelse(starttime + chunksize < days, chunksize, days - starttime)
+#   
+#   # Unlike with soil moist, now I have to do the read-in and cut to lachlan too
+#   croptime <- cbind(start = c(1,1,starttime), count = c(soilDims$x$to, soilDims$y$to, thischunk))
+#   
+# 
+#   soilTnc <- read_ncdf(temppath, var = "LST_Day_1km", ncsub = croptime)
+#   st_crs(soilTnc) <- 4326
+#   
+#   # # Brief looks, cut later
+#   # soilTnc
+#   # format(object.size(soilTnc), units = "auto") # Check size
+#   # # Cycled through a bunch, 8 is the best as a test (though 5,6, and 9 are good too)
+#   # plot(soilTnc[,,,8], reset = FALSE)
+#   # plot(st_geometry(lachcutter), border = 'red', add = TRUE)
+#   # # well, specifying the datum at least lets me read it in...
+#   # # Those are pretty crap extents though. Might grab a different set for testing so I can see what I'm doing
+#   
+#   # Now, crop that to the lachlan
+#   # system.time(lachTnc <- st_crop(soilTnc, filter(ltimCut, ValleyName == 'Lachlan'), as_points = FALSE))
+#   lachTnc <- st_crop(soilTnc, filter(ltimCut, ValleyName == 'Lachlan'), as_points = FALSE)
+#   
+#   # system.time(chunk1 <- rastPolyJoin(polysf = lachAll, 
+#   #                                    rastst = soilTnc, # Doesn't need to be indexed by time now, because the time-indexing is done on read-in and object creation
+#   #                                    grouper = 'SYS2', 
+#   #                                    maintainPolys = TRUE))
+#   chunk <- rastPolyJoin(polysf = lachAll, 
+#                          rastst = lachTnc, # Doesn't need to be indexed by time now, because the time-indexing is done on read-in and object creation
+#                          grouper = 'SYS2', 
+#                          maintainPolys = TRUE)
+#   
+#   # Let's try writing the lachlan as a stars on each loop, see how inefficient that will be
+#   # st_drivers(what = "raster")
+#   
+#   # trying to save as netcdf is barfing. Tif seems to work, though time gets
+#   # turned into band. I think this will get memory-intensive fast though
+#   write_stars(obj = lachTnc, dsn = file.path(datOut, paste0('lachTemp_', as.character(starttime), ".tif")),
+#               layer = "LST_Day_1km")
+#   
+#   return(chunk)
+# }
+# 
+# 
+# # Test timing of various chunksizes
+# system.time(chunk2 <- chunkprocess(1, 2))
+# # user  system elapsed 
+# # 631.04   10.94  667.81
+# 667/2
+# # the tif is 1974kb
+# 
+# system.time(chunk2 <- chunkprocess(1, 10))
+# # user  system elapsed 
+# # 1230.24   60.36 1333.26 
+# 1333/10
+# # tif 9854 # So, that's roughly scaling: 1974*5
+# 
+# # But I was using the wrong raster frame (whole basin instead of the cropped version)...
+# # Doesnt' seem to matter: Just lachlan
+# # user  system elapsed 
+# # 1234.48   28.69 1343.49
+# 1343/10
+# 
+# system.time(chunk2 <- chunkprocess(1, 20))
+# # user  system elapsed 
+# # 2212.61  106.41 2382.81 
+# 2382/20
+# # tif 19704
+# 
+# # So, the TIF is scaling linearly, but the per-second timing of the thing is still decreasing
+#   # tif is about 1,000kb/sheet
+#   # There are 2190 sheets. 2190*1000. Suggests 2.19Gb. Should be OK, so might as well save.
+# 
+# # if we stop at the rate of the 20, we have 119s/sheet
+# (119*2190)/60/60
+#   # 72 hours. yeesh. Sure need to get this running
+# 
+# # Let's try 50, then MAYBe 100?
+# system.time(chunk2 <- chunkprocess(1, 50))
+# 
+# 
+# # Then start a loop over it at 2, now we have the think to append to
+# # is this worth parallelizing? The issue is memory, not processing (I think).
+# # But maybe for HPC? Though then would we just not do this at all?
+# 
+# # Wrap the chunker above in a loop, and append
+# 
+# # Get the number of chunks to loop over
+# chunksize <- 10 # For example
+# 
+# system.time(chunk1 <- chunkprocess(1, chunksize))
+# 
+# # days/chunksize
+# # Round up number of chunks
 # nchunks <- ceiling(days/chunksize)
+# 
+# 
+# timechunker <- function(chunk1) {
+#   for (t in 2:nchunks) {
+#     from <- (t-1)*(chunksize) + 1
+#     dtemp <- chunkprocess(from, chunksize) # The chunkprocess function handles a chunk that wants to go past the end.
+#     
+#     # Do I want to error check? It takes a really long time
+#     # (I think. Will check)
+#     # With checking the loop takes
+#     # user  system elapsed 
+#     # 2032.86  150.85 2265.33 
+#     # Without
+#     # user  system elapsed 
+#     # 2467.63   51.00 2730.60 
+#     # Might as well leave it in.
+#     if (!all(chunk1[[2]] == dtemp[[2]])) {
+#       stop('indexing is off between timechunks')
+#     }
+#     
+#     # c them together.
+#     chunk1[[1]] <- c(chunk1[[1]], dtemp[[1]])
+#   }
+#   return(chunk1)
+# }
+# 
 
-# do the first chunk outside, so there's something to c() to
-# from <- 1
-# # protect short ends
-# firstend <- ifelse(chunksize < days, chunksize, days)
-# Get the first chunk
+# Trying to re-write the above functions to make general and able to be read in
+# New formulation
+days <- soilDims$time$to
+chunksize = 2
+nchunks <- 4 # ceiling(days/chunksize) # 2 for testing
 
+lachcutter <- filter(ltimCut, ValleyName == 'Lachlan')
 
+# Gives it for one; useful for testing
+  # Does this break if it doesn't start at 1?
+system.time(chunk1 <- chunkprocess(rastpath = temppath, rastvar = "LST_Day_1km", 
+                                   totaltime = days, starttime = 3, chunksize = chunksize, 
+                                   catchCrop = lachcutter, polyAvg = lachAll, saverast = TRUE, firstdim = NULL))
 
-# Write a function to grab a chunk from t to t+chunksize
-chunkprocess <- function(starttime, chunksize) {
-  
-  # Deal with fewer days than the size of the chunk
-  thischunk <- ifelse(starttime + chunksize < days, chunksize, days - starttime)
-  
-  # Unlike with soil moist, now I have to do the read-in and cut to lachlan too
-  croptime <- cbind(start = c(1,1,starttime), count = c(soilDims$x$to, soilDims$y$to, thischunk))
-  
+# Why does that barf if I don't start at 1?
+  # Something to do with the time dimension. Testing
+croptime1 <- cbind(start = c(1,1,1), count = c(soilDims$x$to, soilDims$y$to, 2))
+croptime3 <- cbind(start = c(1,1,3), count = c(soilDims$x$to, soilDims$y$to, 2))
 
-  soilTnc <- read_ncdf(temppath, var = "LST_Day_1km", ncsub = croptime)
-  st_crs(soilTnc) <- 4326
-  
-  # # Brief looks, cut later
-  # soilTnc
-  # format(object.size(soilTnc), units = "auto") # Check size
-  # # Cycled through a bunch, 8 is the best as a test (though 5,6, and 9 are good too)
-  # plot(soilTnc[,,,8], reset = FALSE)
-  # plot(st_geometry(lachcutter), border = 'red', add = TRUE)
-  # # well, specifying the datum at least lets me read it in...
-  # # Those are pretty crap extents though. Might grab a different set for testing so I can see what I'm doing
-  
-  # Now, crop that to the lachlan
-  # system.time(lachTnc <- st_crop(soilTnc, filter(ltimCut, ValleyName == 'Lachlan'), as_points = FALSE))
-  lachTnc <- st_crop(soilTnc, filter(ltimCut, ValleyName == 'Lachlan'), as_points = FALSE)
-  
-  # system.time(chunk1 <- rastPolyJoin(polysf = lachAll, 
-  #                                    rastst = soilTnc, # Doesn't need to be indexed by time now, because the time-indexing is done on read-in and object creation
-  #                                    grouper = 'SYS2', 
-  #                                    maintainPolys = TRUE))
-  chunk1 <- rastPolyJoin(polysf = lachAll, 
-                         rastst = soilTnc, # Doesn't need to be indexed by time now, because the time-indexing is done on read-in and object creation
-                         grouper = 'SYS2', 
-                         maintainPolys = TRUE)
-  
-  # Let's try writing the lachlan as a stars on each loop, see how inefficient that will be
-  # st_drivers(what = "raster")
-  
-  # trying to save as netcdf is barfing. Tif seems to work, though time gets
-  # turned into band. I think this will get memory-intensive fast though
-  write_stars(obj = lachTnc, dsn = file.path(datOut, paste0('lachTemp_', as.character(starttime), ".tif")),
-              layer = "LST_Day_1km")
-  
-  return(chunk1)
-}
+rastNC1 <- read_ncdf(temppath, var = "LST_Day_1km", ncsub = croptime1)
+st_crs(rastNC1) <- 4326
+rastNC1
 
+rastNC3 <- read_ncdf(temppath, var = "LST_Day_1km", ncsub = croptime3)
+st_crs(rastNC3) <- 4326
+rastNC3
 
-# Test timing of various chunksizes
-system.time(chunk2 <- chunkprocess(1, 2))
+# Can I brute-force fix it?
+thesedims <- st_dimensions(rastNC3)
+rightdims <- st_dimensions(rastNC1)
+# Looks like we need to change the fromto, and the offset/delta
+  # is it better (correct) to change from/to AND offset, or one or the other? I'm guessing we want to KEEP the offset, and change the from/to
+  # Hoping we can check that by seeing what dates it assigns early in the processing code
+thesedims$time <- rightdims$time
+thesedims$time$from <- 3
+thesedims$time$to <- 4
+# thesedims$time$values <- st_get_dimension_values(soilTstars, which = 'time')[c(3,4)]
+thesedims
+rightdims
+
+rastNC <- rastNC3
+st_dimensions(rastNC) <- thesedims
+rastNC
+# for chunksize of 5,
 # user  system elapsed 
-# 631.04   10.94  667.81
-667/2
-# the tif is 1974kb
+# 839.66   33.23  903.02 
 
-system.time(chunk2 <- chunkprocess(1, 10))
-# user  system elapsed 
-# 1230.24   60.36 1333.26 
-1333/10
-# tif 9854 # So, that's roughly scaling: 1974*5
+# Does that fix it?
+system.time(chunk1 <- chunkprocess(rastpath = temppath, rastvar = "LST_Day_1km", 
+                                   totaltime = days, starttime = 3, chunksize = chunksize, 
+                                   catchCrop = lachcutter, polyAvg = lachAll, saverast = TRUE, firstdim = rightdims))
+# seems to work. Now...
 
-system.time(chunk2 <- chunkprocess(1, 20))
-# user  system elapsed 
-# 2212.61  106.41 2382.81 
-2382/30
-# tif 19704
+# does the whole loop (or, over the first nchunks, I suppose. Useful to do 2 or something to test.)
+  # savepoints are CHUNK numbers, not SHEET numbers
+system.time(dailyTemppolyavg <- chunklooper(nchunks = nchunks, rastpath = temppath, rastvar = "LST_Day_1km", 
+                                            totaltime = days, starttime = 1, chunksize = chunksize, 
+                                            catchCrop = lachcutter, polyAvg = lachAll, saverast = TRUE,
+                                            savepoints = c(2,3), savepath = file.path(datOut, 'tempIntermediate')))
 
-# So, the TIF is scaling linearly, but the per-second timing of the thing is still decreasing
-
-
-# # Test that worked
-# ltnc <- read_stars(file.path(datOut, paste0('lachTemp_', "1", ".tif")), var = "LST_Day_1km")
-# plot(ltnc[,,,5:8])
-
-# Wrap the above in a function so I can get timings on chunksize. THEN, sort out the below
-
-# Then start at 2
-# is this worth parallelizing? The issue is memory, not processing (I think).
-# But maybe for HPC? Though then would we just not do this at all?
-
-# TODO: Once the above is sorted for chunksize, will need to feed into this. Likely with some mods
-# Wrapping in a function to be able to time gets pretty close to parallelizing though.
-timechunker <- function(chunk1) {
-  for (t in 2:nchunks) {
-    from <- (t-1)*(750) + 1
-    to <- ifelse(t * 750 < days, t * 750, days)
-    dtemp <- rastPolyJoin(polysf = lachAll, 
-                          rastst = deProxySoil[,,,from:to], 
-                          grouper = 'SYS2', 
-                          maintainPolys = TRUE)
-    
-    # Do I want to error check? It takes a really long time
-    # (I think. Will check)
-    # With checking the loop takes
-    # user  system elapsed 
-    # 2032.86  150.85 2265.33 
-    # Without
-    # user  system elapsed 
-    # 2467.63   51.00 2730.60 
-    # Might as well leave it in.
-    if (!all(chunk1[[2]] == dtemp[[2]])) {
-      stop('indexing is off between timechunks')
-    }
-    
-    # c them together.
-    chunk1[[1]] <- c(chunk1[[1]], dtemp[[1]])
-  }
-  return(chunk1)
-}
-
-# Run it
-system.time(dailySMpolyavg <- timechunker(chunk1 = chunk1))
+# For 4 chunks of size 2, started at 9:58
+  
+# Just in case things go to hell, save that NOW
+save(lachAll, 
+     dailyTemppolyavg, 
+     file = file.path(datOut, 'lachTempPolyAvg.rdata'))
 
 
 
@@ -394,240 +474,237 @@ system.time(dailySMpolyavg <- timechunker(chunk1 = chunk1))
 
 
 
-
-
-
-# Testing -----------------------------------------------------------------
-
-
-
-# Try just bringing 1 time in for now to see how huge
-croptime <- cbind(start = c(1,1,1), count = c(dimtestS$x$to, dimtestS$y$to, 10))
-soilTnc <- read_ncdf(temppath, var = "LST_Day_1km", ncsub = croptime)
-st_crs(soilTnc) <- 4326
-soilTnc
-format(object.size(soilTnc), units = "auto") # Check size
-# Cycled through a bunch, 8 is the best as a test (though 5,6, and 9 are good too)
-plot(soilTnc[,,,8], reset = FALSE)
-plot(st_geometry(lachcutter), border = 'red', add = TRUE)
-# well, specifying the datum at least lets me read it in...
-  # Those are pretty crap extents though. Might grab a different set for testing so I can see what I'm doing
-
-# Now, crop that to the lachlan
-system.time(lachTnc <- st_crop(soilTnc, filter(ltimCut, ValleyName == 'Lachlan'), as_points = FALSE))
-
-plot(lachTnc[,,,5:8])
-# OK, and that lines up as it does with the outlines above.
-# So, that'll work, I think.
-
-# Quickly, how long does it take to do the anae smash on that?
-
-# Why did this work for 10, but not for 2?
-system.time(chunk1 <- rastPolyJoin(polysf = lachAll, 
-                                   rastst = lachTnc[,,,1:10], 
-                                   grouper = 'SYS2', 
-                                   maintainPolys = TRUE))
-# 2 sheets
-
-# 10 sheets
-# user  system elapsed 
-# 1159.69   48.48 1220.19 
-# Yikes
-
-# is there any reason to do the st_crop to the lachlan?
-  # IE if what we want is the ANAE averaging, do we need to do the crop?
-  # although, does the crop take much time?
-    # 5 seconds. So, in the margins compared to the rastPolyJoin
-# I suppose I could check whether it's necessary, but that would take 20 mins....at least. 
-
-
-####################################
-# NOTE
-# Basically, we're going to have to read in slices and process them. I was
-# trying to only read in a subset around the lachlan, but that was shifting
-# things around in a weird way. Not sure how muhc it would save anyway.
-  # Also, it's possible it WON'T shift things around if the whole lachlan is THERE in the raster
-# I now have it working to read the whole basin in and crop to the lachlan, so
-# that's good. I suppose the/a question is whether we should (or can) read
-# everything in and crop in a loop, and then use THAT to do the anae averaging,
-# or just do the anae averaging as we go? I think probably the latter, since I
-# doubt we'll be able to hld the whole lachlan for 5 years.
-
-# do we want to (and can we) write the lachlan out as an nc (or a bunch of ncs?)
-# for later use? WOuld be nice to not have to do all the processing every time
-
-
-
-
-
-
-# Cut out lots of plot tests here, because they dont' work without reading in the proxy. And we don't want to do that.
-
-# 1. Spatial average of raster into the ANAE polys at each timestep ---------------------------
-
-# Test the new function
-#   # Doesn't work wiht the stars_proxy lachSoil
-# system.time(dailySMpolyavg <- rastPolyJoin(polysf = lachAll, rastst = lachSoil, grouper = 'SYS2', maintainPolys = TRUE))
-
-# Runs with st_as_stars(stars_proxy)
-# Honestly kind of doubt this will fit in memory for the soil temp. BUt hard to check without the full data. Guess it's time to do that.
-# yaaaa! 610gb. Going to need to sort SOMETHING out here.
-# AND, lachTemp now has negative 'to' values for x and y. that was happening with the bb prevously. Ugh. 
-# So, if I am going to have to subset the proxy in chunks to st_as_stars,
-# should i just read it in as read_ncdf in a loop? It'd be a lot more memory
-# thrashing; ie doing the lachlan cut as a proxy I think probably helps, if
-# possible (ie no negative vals)
-# but, how to test? the full data is SO big... and the test data is small, and so doesn't proxy. Though I think I can force it?
-
-# STILL getting negatives on the to vals.... what's going on? It works with
-# read_ncdf. and the ONLY thing that's happening is the st_crop. Which worked
-# for soil moisture as proxy, and is working for temp as ncdf. So I have no idea
-
-
-deProxySoil <- st_as_stars(lachTemp) # Not sure we want to do this, rather than put it in the function call so we don't keep it in memory? Will see, I suppose
-names(deProxySoil) <- 'sm_pct' # Attributes got named 'attr'. Change it to what it is with read_ncdf for consistency
-format(object.size(deProxySoil), units = "auto") # Check size
-# plot check
-plot(deProxySoil[,,,1:6])
-
-## TESTING
-# # So, this runs out of RAM, and I'm unsure why. It should be <3Gb. It makes one
-# # copyf the raster, but that still shouldn't come anywhere near filling up ram.
-# # Also, SUPER slow running for even 5 years. (WAY more than 5x one year). So probably loop anyway.
+# # Testing -----------------------------------------------------------------
 # 
-# # Two options: loop over YEARS, or sheets 
-#   # Or, maybe othertime units, I think stars might be able to do that?
-# # Original
-# system.time(dailySMpolyavg <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil, grouper = 'SYS2', maintainPolys = TRUE))
 # 
-# # Loopy
 # 
-# # Testing first: If we break up a big stars, how do we put it back together?
-# d1 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:10], grouper = 'SYS2', maintainPolys = TRUE)
-# d2 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,11:20], grouper = 'SYS2', maintainPolys = TRUE)
-# d3 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,21:30], grouper = 'SYS2', maintainPolys = TRUE)
+# # Try just bringing 1 time in for now to see how huge
+# croptime <- cbind(start = c(1,1,1), count = c(dimtestS$x$to, dimtestS$y$to, 10))
+# soilTnc <- read_ncdf(temppath, var = "LST_Day_1km", ncsub = croptime)
+# st_crs(soilTnc) <- 4326
+# soilTnc
+# format(object.size(soilTnc), units = "auto") # Check size
+# # Cycled through a bunch, 8 is the best as a test (though 5,6, and 9 are good too)
+# plot(soilTnc[,,,8], reset = FALSE)
+# plot(st_geometry(lachcutter), border = 'red', add = TRUE)
+# # well, specifying the datum at least lets me read it in...
+#   # Those are pretty crap extents though. Might grab a different set for testing so I can see what I'm doing
 # 
-# # The output of raspolyjoin is a list with the stars and the index
-# d1[[1]]
-# d1[[2]]
-# d2[[2]] == d1[[2]]
+# # Now, crop that to the lachlan
+# system.time(lachTnc <- st_crop(soilTnc, filter(ltimCut, ValleyName == 'Lachlan'), as_points = FALSE))
 # 
-# teststarc <- c(d1[[1]], d2[[1]])
-# teststarc
+# plot(lachTnc[,,,5:8])
+# # OK, and that lines up as it does with the outlines above.
+# # So, that'll work, I think.
 # 
-# # Can I c over a list? doesn't really look like it
-# starlist <- list(d1[[1]], d2[[1]], d3[[1]])
-# teststarc <- c(starlist)
-# teststarc
+# # Quickly, how long does it take to do the anae smash on that?
 # 
-# # How bout some timings. Is there an optimal number of days? Or, more coarsely, how does this cale?
-# system.time(d10 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:10], grouper = 'SYS2', maintainPolys = TRUE))
+# # Why did this work for 10, but not for 2?
+# system.time(chunk1 <- rastPolyJoin(polysf = lachAll, 
+#                                    rastst = lachTnc[,,,1:10], 
+#                                    grouper = 'SYS2', 
+#                                    maintainPolys = TRUE))
+# # 2 sheets
+# 
+# # 10 sheets
 # # user  system elapsed 
-# # 137.32    0.47  146.47 
-# 146/10
-# system.time(d100 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:100], grouper = 'SYS2', maintainPolys = TRUE))
-# # user  system elapsed 
-# # 190.22    0.35  191.45
-# 191/100
-# # Anothe rround    
-# # user  system elapsed 
-# # 228.98    0.44  233.91 
-# 233/100
-# system.time(d500 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:500], grouper = 'SYS2', maintainPolys = TRUE))
-# # user  system elapsed 
-# # 575.69    3.09  616.82 
-# 616/500
-# system.time(d200 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:200], grouper = 'SYS2', maintainPolys = TRUE))
-# # user  system elapsed 
-# # 321.61    0.65  342.98
-# 342/200
-# system.time(d150 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:150], grouper = 'SYS2', maintainPolys = TRUE))
-# # user  system elapsed 
-# # 278.66    0.59  288.09 
-# 288/150
+# # 1159.69   48.48 1220.19 
+# # Yikes
 # 
-# # So, the 500 FELT long, but was actually way faster on a seconds/layer measure. Let's keep ratcheting up
-# system.time(d750 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:750], grouper = 'SYS2', maintainPolys = TRUE))
-# # user  system elapsed 
-# # 1010.96    5.86 1070.57 
-# 750/1070
+# # is there any reason to do the st_crop to the lachlan?
+#   # IE if what we want is the ANAE averaging, do we need to do the crop?
+#   # although, does the crop take much time?
+#     # 5 seconds. So, in the margins compared to the rastPolyJoin
+# # I suppose I could check whether it's necessary, but that would take 20 mins....at least. 
 # 
-# # Tried 1000, and barfed,
-# # system.time(d1000 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:1000], grouper = 'SYS2', maintainPolys = TRUE))
-
-# TODO: CHUNK IT UP INTO 750-day chunks, run, and put back together
-# I could do a fancy optimization thing here to get the larges possible number
-# evenly split or something, (ie 750 was just chosen by hand, and often leaves a
-# short tail). But not worth it now. And how much of this is even necessary on
-# the HPC? Probably getting to be time to start just writing HPC code
-
-# get days
-chunksize <- 750
-days <- dim(deProxySoil[[1]])[3]
-days/chunksize
-# Round up number of chunks
-nchunks <- ceiling(days/chunksize)
-
-# do the first chunk outside, so there's something to c() to
-from <- 1
-# protect short ends
-firstend <- ifelse(chunksize < days, chunksize, days)
-# Get the first chunk
-system.time(chunk1 <- rastPolyJoin(polysf = lachAll, 
-                                   rastst = deProxySoil[,,,1:chunksize], 
-                                   grouper = 'SYS2', 
-                                   maintainPolys = TRUE))
-
-# Then start at 2
-# is this worth parallelizing? The issue is memory, not processing (I think).
-# But maybe for HPC? Though then would we just not do this at all?
-
-# Wrapping in a function to be able to time gets pretty close to parallelizing though.
-timechunker <- function(chunk1) {
-  for (t in 2:nchunks) {
-    from <- (t-1)*(750) + 1
-    to <- ifelse(t * 750 < days, t * 750, days)
-    dtemp <- rastPolyJoin(polysf = lachAll, 
-                          rastst = deProxySoil[,,,from:to], 
-                          grouper = 'SYS2', 
-                          maintainPolys = TRUE)
-    
-    # Do I want to error check? It takes a really long time
-    # (I think. Will check)
-    # With checking the loop takes
-    # user  system elapsed 
-    # 2032.86  150.85 2265.33 
-    # Without
-    # user  system elapsed 
-    # 2467.63   51.00 2730.60 
-    # Might as well leave it in.
-    if (!all(chunk1[[2]] == dtemp[[2]])) {
-      stop('indexing is off between timechunks')
-    }
-    
-    # c them together.
-    chunk1[[1]] <- c(chunk1[[1]], dtemp[[1]])
-  }
-  return(chunk1)
-}
-
-# Run it
-system.time(dailySMpolyavg <- timechunker(chunk1 = chunk1))
-# 2300 seconds for 2014-19 in Lachlan
-
-# 290 seconds with 280 timesteps in Lachlan
-# There has GOT to be a way to speed this up...
-# It's the grouped summarize that kills it, NOT the intersection. i think it
-# might be the work sf is doing to put the polygons back together?
-# TODO: see if it's faster to st_drop_geometry, do the summarize, and then join back to lachAll with SYS2?
+# 
+# ####################################
+# # NOTE
+# # Basically, we're going to have to read in slices and process them. I was
+# # trying to only read in a subset around the lachlan, but that was shifting
+# # things around in a weird way. Not sure how muhc it would save anyway.
+#   # Also, it's possible it WON'T shift things around if the whole lachlan is THERE in the raster
+# # I now have it working to read the whole basin in and crop to the lachlan, so
+# # that's good. I suppose the/a question is whether we should (or can) read
+# # everything in and crop in a loop, and then use THAT to do the anae averaging,
+# # or just do the anae averaging as we go? I think probably the latter, since I
+# # doubt we'll be able to hld the whole lachlan for 5 years.
+# 
+# # do we want to (and can we) write the lachlan out as an nc (or a bunch of ncs?)
+# # for later use? WOuld be nice to not have to do all the processing every time
+# 
+# 
+# 
+# 
+# 
+# # 
+# # # Cut out lots of plot tests here, because they dont' work without reading in the proxy. And we don't want to do that.
+# # 
+# # # 1. Spatial average of raster into the ANAE polys at each timestep ---------------------------
+# # 
+# # # Test the new function
+# # #   # Doesn't work wiht the stars_proxy lachSoil
+# # # system.time(dailySMpolyavg <- rastPolyJoin(polysf = lachAll, rastst = lachSoil, grouper = 'SYS2', maintainPolys = TRUE))
+# # 
+# # # Runs with st_as_stars(stars_proxy)
+# # # Honestly kind of doubt this will fit in memory for the soil temp. BUt hard to check without the full data. Guess it's time to do that.
+# # # yaaaa! 610gb. Going to need to sort SOMETHING out here.
+# # # AND, lachTemp now has negative 'to' values for x and y. that was happening with the bb prevously. Ugh. 
+# # # So, if I am going to have to subset the proxy in chunks to st_as_stars,
+# # # should i just read it in as read_ncdf in a loop? It'd be a lot more memory
+# # # thrashing; ie doing the lachlan cut as a proxy I think probably helps, if
+# # # possible (ie no negative vals)
+# # # but, how to test? the full data is SO big... and the test data is small, and so doesn't proxy. Though I think I can force it?
+# # 
+# # # STILL getting negatives on the to vals.... what's going on? It works with
+# # # read_ncdf. and the ONLY thing that's happening is the st_crop. Which worked
+# # # for soil moisture as proxy, and is working for temp as ncdf. So I have no idea
+# # 
+# # 
+# # deProxySoil <- st_as_stars(lachTemp) # Not sure we want to do this, rather than put it in the function call so we don't keep it in memory? Will see, I suppose
+# # names(deProxySoil) <- 'sm_pct' # Attributes got named 'attr'. Change it to what it is with read_ncdf for consistency
+# # format(object.size(deProxySoil), units = "auto") # Check size
+# # # plot check
+# # plot(deProxySoil[,,,1:6])
+# # 
+# # ## TESTING
+# # # # So, this runs out of RAM, and I'm unsure why. It should be <3Gb. It makes one
+# # # # copyf the raster, but that still shouldn't come anywhere near filling up ram.
+# # # # Also, SUPER slow running for even 5 years. (WAY more than 5x one year). So probably loop anyway.
+# # # 
+# # # # Two options: loop over YEARS, or sheets 
+# # #   # Or, maybe othertime units, I think stars might be able to do that?
+# # # # Original
+# # # system.time(dailySMpolyavg <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil, grouper = 'SYS2', maintainPolys = TRUE))
+# # # 
+# # # # Loopy
+# # # 
+# # # # Testing first: If we break up a big stars, how do we put it back together?
+# # # d1 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:10], grouper = 'SYS2', maintainPolys = TRUE)
+# # # d2 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,11:20], grouper = 'SYS2', maintainPolys = TRUE)
+# # # d3 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,21:30], grouper = 'SYS2', maintainPolys = TRUE)
+# # # 
+# # # # The output of raspolyjoin is a list with the stars and the index
+# # # d1[[1]]
+# # # d1[[2]]
+# # # d2[[2]] == d1[[2]]
+# # # 
+# # # teststarc <- c(d1[[1]], d2[[1]])
+# # # teststarc
+# # # 
+# # # # Can I c over a list? doesn't really look like it
+# # # starlist <- list(d1[[1]], d2[[1]], d3[[1]])
+# # # teststarc <- c(starlist)
+# # # teststarc
+# # # 
+# # # # How bout some timings. Is there an optimal number of days? Or, more coarsely, how does this cale?
+# # # system.time(d10 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:10], grouper = 'SYS2', maintainPolys = TRUE))
+# # # # user  system elapsed 
+# # # # 137.32    0.47  146.47 
+# # # 146/10
+# # # system.time(d100 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:100], grouper = 'SYS2', maintainPolys = TRUE))
+# # # # user  system elapsed 
+# # # # 190.22    0.35  191.45
+# # # 191/100
+# # # # Anothe rround    
+# # # # user  system elapsed 
+# # # # 228.98    0.44  233.91 
+# # # 233/100
+# # # system.time(d500 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:500], grouper = 'SYS2', maintainPolys = TRUE))
+# # # # user  system elapsed 
+# # # # 575.69    3.09  616.82 
+# # # 616/500
+# # # system.time(d200 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:200], grouper = 'SYS2', maintainPolys = TRUE))
+# # # # user  system elapsed 
+# # # # 321.61    0.65  342.98
+# # # 342/200
+# # # system.time(d150 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:150], grouper = 'SYS2', maintainPolys = TRUE))
+# # # # user  system elapsed 
+# # # # 278.66    0.59  288.09 
+# # # 288/150
+# # # 
+# # # # So, the 500 FELT long, but was actually way faster on a seconds/layer measure. Let's keep ratcheting up
+# # # system.time(d750 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:750], grouper = 'SYS2', maintainPolys = TRUE))
+# # # # user  system elapsed 
+# # # # 1010.96    5.86 1070.57 
+# # # 750/1070
+# # # 
+# # # # Tried 1000, and barfed,
+# # # # system.time(d1000 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:1000], grouper = 'SYS2', maintainPolys = TRUE))
+# # 
+# # # TODO: CHUNK IT UP INTO 750-day chunks, run, and put back together
+# # # I could do a fancy optimization thing here to get the larges possible number
+# # # evenly split or something, (ie 750 was just chosen by hand, and often leaves a
+# # # short tail). But not worth it now. And how much of this is even necessary on
+# # # the HPC? Probably getting to be time to start just writing HPC code
+# # 
+# # # get days
+# # chunksize <- 750
+# # days <- dim(deProxySoil[[1]])[3]
+# # days/chunksize
+# # # Round up number of chunks
+# # nchunks <- ceiling(days/chunksize)
+# # 
+# # # do the first chunk outside, so there's something to c() to
+# # from <- 1
+# # # protect short ends
+# # firstend <- ifelse(chunksize < days, chunksize, days)
+# # # Get the first chunk
+# # system.time(chunk1 <- rastPolyJoin(polysf = lachAll, 
+# #                                    rastst = deProxySoil[,,,1:chunksize], 
+# #                                    grouper = 'SYS2', 
+# #                                    maintainPolys = TRUE))
+# # 
+# # # Then start at 2
+# # # is this worth parallelizing? The issue is memory, not processing (I think).
+# # # But maybe for HPC? Though then would we just not do this at all?
+# # 
+# # # Wrapping in a function to be able to time gets pretty close to parallelizing though.
+# # timechunker <- function(chunk1) {
+# #   for (t in 2:nchunks) {
+# #     from <- (t-1)*(750) + 1
+# #     to <- ifelse(t * 750 < days, t * 750, days)
+# #     dtemp <- rastPolyJoin(polysf = lachAll, 
+# #                           rastst = deProxySoil[,,,from:to], 
+# #                           grouper = 'SYS2', 
+# #                           maintainPolys = TRUE)
+# #     
+# #     # Do I want to error check? It takes a really long time
+# #     # (I think. Will check)
+# #     # With checking the loop takes
+# #     # user  system elapsed 
+# #     # 2032.86  150.85 2265.33 
+# #     # Without
+# #     # user  system elapsed 
+# #     # 2467.63   51.00 2730.60 
+# #     # Might as well leave it in.
+# #     if (!all(chunk1[[2]] == dtemp[[2]])) {
+# #       stop('indexing is off between timechunks')
+# #     }
+# #     
+# #     # c them together.
+# #     chunk1[[1]] <- c(chunk1[[1]], dtemp[[1]])
+# #   }
+# #   return(chunk1)
+# # }
+# # 
+# # # Run it
+# # system.time(dailySMpolyavg <- timechunker(chunk1 = chunk1))
+# # # 2300 seconds for 2014-19 in Lachlan
+# 
+# # 290 seconds with 280 timesteps in Lachlan
+# # There has GOT to be a way to speed this up...
+# # It's the grouped summarize that kills it, NOT the intersection. i think it
+# # might be the work sf is doing to put the polygons back together?
+# # TODO: see if it's faster to st_drop_geometry, do the summarize, and then join back to lachAll with SYS2?
 
 # unpack the list
-dailyPolyindex <- dailySMpolyavg[[2]]
+dailyPolyindex <- dailyTemppolyavg[[2]]
 # at least for testing, don't overwrite, or have to run the whole thing again
-dailyPolySMavg <- dailySMpolyavg[[1]]
+dailyPolyTempavg <- dailyTemppolyavg[[1]]
 
 # Get rid of the list to save space
-rm(dailySMpolyavg)
+rm(dailyTemppolyavg)
 # Why not keep the list and not do the above? I dunno. There was a reason.
 
 # Check ordering
@@ -636,7 +713,7 @@ all(dailyPolyindex$SYS2 == lachAll$SYS2)
 # Test plot
 # Let's set up a bbox for subsampled plotting without taking 8 million years
 bb <- st_bbox(c(xmin = 144.4, ymin = -33.8, xmax = 144.6, ymax = -33.6), crs = whichcrs)
-dailyPolySub <- dailyPolySMavg[st_as_sfc(bb)]
+dailyPolySub <- dailyPolyTempavg[st_as_sfc(bb)]
 plot(dailyPolySub[,,10:13])
 
 # ggplot is a bigger pain, skip for now, we just want to look at things
@@ -646,31 +723,7 @@ plot(dailyPolySub[,,10:13])
 # testDaily
 
 # Rolling through time over the spatial polygons ---------------------
-
-# From Cherie via Ash:
-# Soil moisture (at a minimum % content??) – moist, >10%, – needs to be
-# maintained for a certain period of time (??) – for 6 to 8 weeks – to enable
-# plants to produce fruits and set-seed
-# So, let's get the 42-day min
-
-# And inundation is important for germ
-# sadly the number 1 stricture is seed germination during inundation.  not sure
-# where it is worth trying a soil moisture analogue at this point.
-
-# data note
-# The Actual soil moisture grids estimate the actual percentage of available water 
-# content for each time-step (rather than actual total soil water volume or depth)
-# But is it IN percent? Or 0-1?
-# probably should have rm(deProcySoil) by now, but glad I didn't
-range(deProxySoil[[1]], na.rm = T)
-hist(deProxySoil[[1]])
-
-# Can we pseudo-inundate? Just making up 80% here as a high threshold, since the max is 0.92
-# There are ppl doing some fancy modelling to predict inundation from soil
-# moist, but they have complex eq'ns, and so better to just wait for hydrology
-# Don't know how long needs to stay inundated for germination.
-# Let's say 5 days? 
-sum(dailyPolySMavg[[1]] > 0.8)
+# TODO: figure out what the strictures are.
 
 # Set up new stars objects to put the results in
 # These will actually both be rolling mins, just over different timespans.
