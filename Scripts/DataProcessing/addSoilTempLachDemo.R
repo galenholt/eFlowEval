@@ -159,3 +159,28 @@ save(lachAll,
 save(lachAll,
      soilTempMax28,
      file = file.path(datOut, 'lachSoilTempMax28.rdata'))
+
+# A check that we saved the things we want to
+# load(file.path(datOut, 'tempIntermediate_22.rdata'))
+# chunk1[[1]]
+# dailyTemppolyavg[[1]]
+
+
+# Careful with below; do checks in new session ----------------------------
+
+
+# Open a new session so don't overwrite
+# load(file.path(datOut, 'tempIntermediate_22.rdata'))
+# load(file.path(datOut, 'lachTempPolyAvg.rdata'))
+
+# For the raster, the x,y have turned into polygons (because that's how we
+# processed it), and time has turned into "band", but that's fixable, but the
+# data's there.
+# testrast <- read_stars(file.path(datOut, 'catchCrop_LST_Day_1km_101.tif'))
+# testrast
+# plot(testrast[,,,1:6])
+
+# 'band' does reset for each one, so be careful with that.
+# testrast2 <- read_stars(file.path(datOut, 'catchCrop_LST_Day_1km_201.tif'))
+# testrast2
+# plot(testrast2[,,,1:6])
