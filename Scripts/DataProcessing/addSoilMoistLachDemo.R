@@ -222,6 +222,13 @@ system.time(dailySMpolyavg <- timechunker(chunk1 = chunk1))
   # might be the work sf is doing to put the polygons back together?
     # TODO: see if it's faster to st_drop_geometry, do the summarize, and then join back to lachAll with SYS2?
 
+
+# Save that NOW. 
+save(lachAll, 
+     dailySMpolyavg, 
+     file = file.path(datOut, 'lachMoistPolyAvg.rdata'))
+
+
 # unpack the list
 dailyPolyindex <- dailySMpolyavg[[2]]
 # at least for testing, don't overwrite, or have to run the whole thing again
