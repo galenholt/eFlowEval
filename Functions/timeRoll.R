@@ -1,5 +1,5 @@
 # timeRoll function
-
+# what the hell does this even mean??
 timeRoll <- function(stardat, 
                      tDim = NULL, FUN = RcppRoll::roll_mean, rolln = 1L,
                      align = 'center', fill = c(NA, NA, NA), na.rm = FALSE) {
