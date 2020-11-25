@@ -39,6 +39,7 @@ moist10_80 <- moist10 & moist80
 # Aggregate to timescale (years?) -----------------------------------------
 
 # How MANY days in each year met each condition?
+  # to water year
 m10y <- aggregate(moist10, by = "years", FUN = sum, na.rm = TRUE)
 
 # Could easily imagine aggregating something like the 80 condition as a logical
