@@ -282,6 +282,10 @@ windowThresh <- 10 # days required above threshold
 
 # return stars with single slice == whether soil moisture stayed above a critical threshold for total X day during
 # window startDay:EndDay
+
+# Galen note: I think this can be done with aggregate, feeding it intervals instead of somethign like 'years'
+  # But would need to be a stars, not an sf
+
 threshSM <- function(avgSM = avgSM, dailyThresh = 0.01, startDay = NULL, endDay = NULL, windowThresh = NULL){
   
   dayz <- st_get_dimension_values(avgSM, "time")
@@ -334,7 +338,7 @@ system.time(f <-  threshSM(dailyPolySMavg, 0.01, "2020-01-01", "2020-01-31", 20)
 #  
 
 # ** If I am subsetting to taxa distributions to ANAE_CODE need to do that before rastPolyJoin as it returns stars minus ANAE_CODE
-
+  # G note: I'd keep all ANAE codes for consistency/safety, and zeros are real, and so better to keep than discard
 
 
 # ------- Whats the benefit of st_dim_to_attr ?? ----
@@ -391,6 +395,9 @@ taxa1str <- subAvgSM[,,1:length(yrs)]
 taxa1str <- st_set_dimensions(taxa1str,"time", values = yrs, names = "yrs") # yrs not posix
 
 
+# G comment: this can get huge. If we keep the strictures separate but with same
+# dimensions, we can also avoid the applys, and just do element-wise operations,
+# which will all be C-optimized
 
 e <- c(b,c,d, along = "strNum") # THIS combines 3 stars object into a stack with each as a slice 
 
@@ -550,7 +557,13 @@ threshSMsf <- function(avgSMsf = avgSMsf, dailyThresh = 0.01, startDay = NULL, e
   return(SMstr) #return 1 column 1/0 (+sys2 and geom) stricture sf
 }
 
-
+# G note: So, fundamentally, this is asking whether > 20 days in Jan 2020 are above soil moisture of 1%
+  # Then the plan would be to loop over months?
+  # Basically, this is windowed rather than rolling, and then summed to check.
+  # Just thinking through implementation both ways, either are possible in the
+  # stars method too, but rolling 30-day (or 28, or whatever) wouldn't impose
+  # arbitrary breakpoints at month transitions. Then could have the roll sum up
+  # days with > 0.01 over 30 days, and the stricture test ask if that is > 20
 b <- threshSMsf(avgSMsf = avgSMsf, dailyThresh = 0.01, 
               startDay = "2020-01-01", endDay = "2020-01-31", windowThresh = 20) 
 
@@ -595,6 +608,8 @@ crs(soilMoistMin42)
 
 # Pull out 
 
+# G note: I've been thinking these would be logical checks as well: Give 1s to
+# the ANAE codes and 0s elsewhere. Easy to do to either stars or sf
 
 Taxa1ANAE <- c("Pt1.2.1","Pt1.8.1")
 
