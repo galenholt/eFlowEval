@@ -1,0 +1,323 @@
+# lippia strictures
+
+# Quick strict development
+
+library(here)
+library(tidyverse)
+library(sf)
+library(stars)
+library(cubelyr)
+library(viridis)
+
+# Argh. sort all this directory crap out later
+# Trying to at least separate scripts and functions, looking towards library
+source(here('Functions', 'rastPolyJoin.R'))
+source(here('Functions', 'timeRoll.R'))
+source(here('Functions', 'helpers.R'))
+
+myhome <- str_remove(path.expand("~"), "/Documents")
+datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
+
+datOut <- "datOut"
+
+
+# Read in soil moisture in ANAEs--------------------------------------------------
+
+load(file.path(datOut, 'lachSoilprocessedAllOut.rdata'))
+
+# Read in soil temp in ANAEs --------------------------------------------
+
+load(file.path(datOut, 'lachSoilTempprocessedAllOut.rdata'))
+# 
+# # So, soil moist goes to Oct 2020 (currently)
+# max(st_get_dimension_values(dailyPolySMavg, which = 'time'))
+# # While temp goes to Dec 28 2019 (not sure why I didn't get the last few days of 2019)
+# max(st_get_dimension_values(dailyPolyTempavg, which = 'time'))
+
+# So, need to cut moist back to match temp or the matched logicals barfs
+# Re-write into self, or end up using a ton of memory
+tempmax <- max(st_get_dimension_values(dailyPolyTempavg, which = 'time'))
+dailyPolySMavg <- filter(dailyPolySMavg, time <= tempmax) # Check safety, had trouble with filter previously, but this SHOULD be ok since contiguous
+# 
+# dailyPolySMavg
+# max(st_get_dimension_values(dailyPolySMavg, which = 'time'))
+# max(st_get_dimension_values(dailyPolyTempavg, which = 'time'))
+
+moistmin <- min(st_get_dimension_values(dailyPolySMavg, which = 'time'))
+# And, they're off by 12 hours. argh. for now, just toss noon on dec 31 2013 in the temp too
+dailyPolyTempavg <- filter(dailyPolyTempavg, time >= moistmin) # Check safety, had trouble with filter previously, but this SHOULD be ok since contiguous
+# dailyPolyTempavg
+# testlogic <- dailyPolySMavg < dailyPolyTempavg
+# testlogic
+# 
+# max(st_get_dimension_values(dailyPolySMavg, which = 'time'))
+# max(st_get_dimension_values(dailyPolyTempavg, which = 'time'))
+# 
+# min(st_get_dimension_values(dailyPolySMavg, which = 'time'))
+# min(st_get_dimension_values(dailyPolyTempavg, which = 'time'))
+# -------------------------------------------------------------------------
+
+# Make stars objects to test against relevant to the strictures -----------
+# These are not the stricture TESTS, but processed data to test the strictures against
+
+# -------------------------------------------------------------------------
+
+
+# These are actually in the data we just read (as of Nov 24 2020), but in
+# future should be made in these scripts, so doing it here again
+
+# Soil Temp ---------------------------------------------------------------
+#
+# "Germination was highest (range 50 to 62 per cent) in temperatures ranging
+# from 25 to 35 °C by day, to 10 to 20 °C by night: a minimum day–night
+# difference of 5 °C was required to trigger germination"
+
+# We don't have night temp currently, but let's just look for day temp in a band from 25-35
+# Do we want to roll this? Maybe not? Maybe a 2-day just to smooth a bit?
+# I'm going to do not, just to demo something where we don't need to roll
+
+# So, here, we'll just ask if the daily temp is >= 25 & <= 35
+# Don't really even need another object, but I'll make one to de-kelvin (and for consistency)
+soilTemp <- dailyPolyTempavg - 273
+
+# Nothing more to do with that until we test the strictures
+
+
+# Soil moisture -----------------------------------------------------------
+
+# Stricture 2: extended floods (>4 wks) of >30cm depth kill adult plants
+# We don't have inundation data yet, so demo-ing this as soil moisture > 80%
+# The period of time inundation is required is 4 weeks, then they die
+
+# To meet the "can't have continuous inundation (>80%) for 4 weeks" condition, 
+# Passing the stricutre would then be if the min over the last 4 weeks is < 80 (ie die if it never drops below 80)
+
+# Get the min soil moisture of the last 4 weeks as a rolling min for each polygon
+soilMoistMin4 <- dailyPolySMavg # initialize
+
+system.time(soilMoistMin4[[1]] <- timeRoll(soilMoistMin4[[1]], 
+                                           FUN = RcppRoll::roll_min, 
+                                           rolln = 28, 
+                                           align = 'right',
+                                           na.rm = TRUE))
+# This is crude; likely 1 day < 80 isn't sufficient, and we should ask whether
+# there are at least x days. But we demonstrate that method with centipeda, and
+# this should be inundation as soon as that data is available, so ignore for now
+
+
+# ANAE type ---------------------------------------------------------------
+
+# same as for centipeda for now. Stolen from Ash's script
+lippiaANAE <- c("Pt1.2.1","Pt1.8.1")
+
+
+
+# -------------------------------------------------------------------------
+
+
+# INDEPENDENT STRICTURE TESTS ---------------------------------------------------------
+
+
+# -------------------------------------------------------------------------
+
+# Check each one separately, first (no interaction)
+
+
+# Germination requires temp 25-35 -----------------------------------------
+
+# Is the temp in the germ band?
+germ2535 <- (soilTemp >= 25) & (soilTemp <= 35)
+# These multi-checks mean it does 3 logical tests. If need be later on, could
+# speed up with Rcpp. Surprised its not available in a package
+# https://stackoverflow.com/questions/34519811/what-is-the-fastest-way-to-perform-multiple-logical-comparisons-in-r
+
+
+# Die if inundated > 4 weeks ----------------------------------------------
+
+# Is the minumum soil moisture over the preceding 4 weeks less than 80%, indicating drying occurred, and so survival?
+surv4 <- soilMoistMin4 < 0.8
+
+
+# ANAE classification -----------------------------------------------------
+
+# True/False. Could also be a which() if we want index numbers
+isLippiaANAE <- lachAll$ANAE_CODE %in% lippiaANAE
+
+
+# -------------------------------------------------------------------------
+
+
+# DEPENDENT STRICTURE TESTS ---------------------------------------------------------
+
+
+# -------------------------------------------------------------------------
+
+# Going to build this up step-by-step
+
+# If the species  requires ANAE zones, not clear where to put: could lead with
+# it or finish. Or in the middle if they're most relevant to a certain life
+# stage
+# I think I'll end with it, because it might be interesting to see how many
+# OTHER zones look like they should work?
+
+
+# Germination not dependent on anything here ------------------------------
+
+
+# adult survival requires germination -------------------------------------
+
+# Unlike centipeda, where we were interested in fruiting, this is just survival,
+# and so instead of needing a growing period between germ and this test (i.e.
+# option 2 in centip), here we can just ask about germination at any time in the
+# past x days (up to a generation). This is more like option1 in centip. No idea growing period, but let's say 2 months (60 days)?
+
+germ3 <- germ2535 # initialize
+
+system.time(germ3[[1]] <- timeRoll(germ2535[[1]], 
+                                        FUN = RcppRoll::roll_sum, 
+                                        rolln = 60, 
+                                        align = 'right',
+                                        na.rm = TRUE))
+# Then the stricture test is whether there was germ and soil moist
+survGerm <- (germ3 > 0) & surv4
+
+
+
+# -------------------------------------------------------------------------
+
+
+# Restrict all to ANAE ----------------------------------------------------
+
+
+# -------------------------------------------------------------------------
+
+germANAE <- germ2535 * isLippiaANAE
+survANAE <- surv4 * isLippiaANAE
+fullLippiaANAE <- survGerm * isLippiaANAE
+
+
+
+# ############################ --------------------------------------------
+
+# I think the stuff below here should probably be separated into a plotting
+# script, and the stuff above should be saved, to enable
+# comparisons/interactions across taxa/themes
+
+
+# ############################################ ----------------------------
+
+
+
+
+
+# -------------------------------------------------------------------------
+
+
+# Summary outputs ---------------------------------------------------------
+
+
+# -------------------------------------------------------------------------
+
+
+# Set up time summary breakpoints
+# Calendar years, months, other things set with character vectors can facet on
+# time itself in the plotting, but giving it dates can't. No idea why
+# by_t <- 'years' # calendar years
+
+# let's just pick some cut points manually to see how this works, then maybe
+# lubridate to make them programatically (e.g. every april 30 or whatever)
+startdate <- min(min(st_get_dimension_values(dailyPolySMavg, which = 'time')),  
+                 min(st_get_dimension_values(dailyPolyTempavg, which = 'time')))
+enddate <-  max(max(st_get_dimension_values(dailyPolySMavg, which = 'time')),  
+                max(st_get_dimension_values(dailyPolyTempavg, which = 'time')))
+
+interDates <- as.POSIXct(c("2014-06-30", "2015-06-30", "2016-06-30", "2017-06-30", "2018-06-30", "2019-06-30"))
+
+# intervals
+# this works, but it causes the scale_id error in ggplot (see facet_scale_id_error.R)
+# That's fixable by faceting by as.character(time). Do we want to do that? Maybe? Should be OK, I think?
+by_t <- c(startdate, interDates,  enddate)
+
+
+# Independent strictures --------------------------------------------------
+
+# Proportion of days each stricture was met each year
+germLippiaYr <- aggregate(germ2535, by = by_t, FUN = propor, na.rm = TRUE)
+
+survLippiaYr <- aggregate(surv4, by = by_t, FUN = propor, na.rm = TRUE)
+
+
+# Dependent strictures ----------------------------------------------------
+
+# Just do the full thing, since there aren't really mulitple steps here
+fullLippiaYr <- aggregate(fullLippiaANAE, by = by_t, FUN = propor, na.rm = TRUE)
+
+
+# -------------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------------
+
+
+# Spatial aggregation at the catchment ------------------------------------
+
+
+# -------------------------------------------------------------------------
+
+
+# Get the catchments in (out of place; move)
+LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'LTIM_Valleys') %>%
+  st_cast("MULTIPOLYGON") # cleans up an issue with multisurfaces
+
+# LTIM areas, useful for plotting
+ltimCut <- LTIM_Valleys %>%
+  select(ValleyName) # Three different ways to reference, basically
+
+ltimCut <- st_transform(ltimCut, st_crs(lachAll))
+
+# Get just the lachlan for plotting
+lachOnly <- filter(ltimCut, ValleyName == "Lachlan")
+
+# Need to get the areas for area-weighting 
+lachArea <- st_area(lachAll)
+
+
+
+# -------------------------------------------------------------------------
+
+
+# Dependent ---------------------------------------------------------------
+
+
+# -------------------------------------------------------------------------
+
+
+# Germination  ------------------------------------------------------
+germCatch <- catchAggW(strict = germLippiaYr, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
+
+germPlot <- catchAggPlot(germCatch)
+germPlot
+
+
+# Survival ----------------------------------------------------------------
+survCatch <- catchAggW(strict = survLippiaYr, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
+
+survPlot <- catchAggPlot(survCatch)
+survPlot
+
+
+# -------------------------------------------------------------------------
+
+
+# Dependent (full cycle) --------------------------------------------------
+
+
+# -------------------------------------------------------------------------
+
+fullCatch <- catchAggW(strict = fullLippiaYr, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
+
+fullPlot <- catchAggPlot(fullCatch)
+fullPlot
+
+
+
