@@ -343,14 +343,14 @@ isANAE_Centipeda <- lachAll$ANAE_CODE %in% centipANAE
 # Independent strictures --------------------------------------------------
 
 # Proportion of days each stricture was met each year
- seedYr_Centipeda <- aggregate(seed60_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
+ seedYr_Centipeda <- tempaggregate(seed60_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
  # test the prop makes sense (did my fun work?)
   # Yes
- # seedYrS <- aggregate(seed60, by = by_t, FUN = sum, na.rm = TRUE)
+ # seedYrS <- tempaggregate(seed60, by = by_t, FUN = sum, na.rm = TRUE)
  
- germYr_Centipeda <- aggregate(germ80_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
+ germYr_Centipeda <- tempaggregate(germ80_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
  
- fruitYr_Centipeda <- aggregate(fruit10_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
+ fruitYr_Centipeda <- tempaggregate(fruit10_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
 
 
   
@@ -364,9 +364,9 @@ isANAE_Centipeda <- lachAll$ANAE_CODE %in% centipANAE
  # but not going to go with/without ANAE, or too many options. Since conditional, use wtih ANAE
  
  # survival already above as independent
- seedGermYrANAE_Centipeda <- aggregate(seedGerm_Centipeda*isANAE_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
+ seedGermYrANAE_Centipeda <- tempaggregate(seedGerm_Centipeda*isANAE_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
  
- fullYr_Centipeda <- aggregate(fullCycleANAE_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
+ fullYr_Centipeda <- tempaggregate(fullCycleANAE_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
  
  # how to present any of this? Could make a map, but lotsa white space. Still, might be fine, depending on the goals
     # Can easily do the zoom in to a bounding box thing if there are areas of interest

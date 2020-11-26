@@ -16,6 +16,14 @@
 # Summaries: 
   # by year(or wateryear, etc): Yr on end
   # by area: _Area (ie. _lachlan
+# If/when we move to a function, the naming will be a bit less important. But
+# then we'd likely only return the final output, so worth thinking about
+# whether/how important the intermediate steps are.And if they're needed
+# elsewhere, we will still have the issue, ie. if lippia GERM rather than full
+# cycle blocked centipeda, would need to get at that earlier one anyway. 
+  # Suppose the answer might be to return them as lists with a standard set of
+  # names, so would ask for lippia$germ or lippia$full, etc
+
 
 # Quick strict development
 
@@ -144,8 +152,12 @@ lippiaANAE <- c("Pt1.2.1","Pt1.8.1")
 
 # Is the temp in the germ band?
 germ2535_Lippia <- (soilTemp >= 25) & (soilTemp <= 35)
+
 # These multi-checks mean it does 3 logical tests. If need be later on, could
-# speed up with Rcpp. Surprised its not available in a package
+# speed up with Rcpp. It's available in dplyr, but doesn't seem to work on soilTemp because it ses a list, not a vector
+  # Can get it to work on the [[1]] array, but not sure it's worth it, at least for now
+# system.time(germ2535_Lippia[[1]] <- between(soilTemp[[1]], 25, 35))
+
 # https://stackoverflow.com/questions/34519811/what-is-the-fastest-way-to-perform-multiple-logical-comparisons-in-r
 
 
@@ -255,21 +267,23 @@ interDates <- as.POSIXct(c("2014-06-30", "2015-06-30", "2016-06-30", "2017-06-30
 # That's fixable by faceting by as.character(time). Do we want to do that? Maybe? Should be OK, I think?
 by_t <- c(startdate, interDates,  enddate)
 
-
 # Independent strictures --------------------------------------------------
 
 # Proportion of days each stricture was met each year
-germYr_Lippia <- aggregate(germ2535_Lippia, by = by_t, FUN = propor, na.rm = TRUE)
+germYr_Lippia <- tempaggregate(germ2535_Lippia, by = by_t, FUN = propor, na.rm = TRUE)
 
-survYr_Lippia <- aggregate(surv4_Lippia, by = by_t, FUN = propor, na.rm = TRUE)
+survYr_Lippia <- tempaggregate(surv4_Lippia, by = by_t, FUN = propor, na.rm = TRUE)
 
 
 # Dependent strictures ----------------------------------------------------
 
 # Just do the full thing, since there aren't really mulitple steps here
-fullYr_Lippia <- aggregate(fullCycleANAE_Lippia, by = by_t, FUN = propor, na.rm = TRUE)
+fullYr_Lippia <- tempaggregate(fullCycleANAE_Lippia, by = by_t, FUN = propor, na.rm = TRUE)
 
+# Let's spit this out and save it, so centipeda can read JUST this in, and not
+# have to source() this whole file
 
+save(fullYr_Lippia, file = file.path('strictOut', 'fullYr_Lippia.rdata'))
 # -------------------------------------------------------------------------
 
 
@@ -335,6 +349,5 @@ fullCatch_Lippia <- catchAggW(strict = fullYr_Lippia, strictWeights = lachArea, 
 
 fullPlot_Lippia <- catchAggPlot(fullCatch_Lippia, title = 'Full Cycle Lippia')
 fullPlot_Lippia
-
 
 
