@@ -1,5 +1,22 @@
 # lippia strictures
 
+
+
+# NAMING CONVENTIONS TO TRY TO STICK TO -----------------------------------
+
+# Environmental variables should be varName_StatNumDays or similar, because they may be used in different places
+  # If no stats or rolls, just name: i.e. soilTemp
+  # If a check and then a roll, append check_statroll, ie. soilTempG60_Max28 for max over 28 days of whether soiltemp is > 60
+# STRICTURES (ie the logicals) should be _Taxon
+  # probably don't really need more than lifestage_taxon, but in case we
+  # represent the stage differently, will leave the little suffixes for now, I
+  # guess, i.e. germ2535_Lippia
+# sequential, ie have to germ then survive: stage1Stage2Stage3_Taxon, ie germSurv_Lippia
+# With/without ANAE limits just stick ANAE on the end
+# Summaries: 
+  # by year(or wateryear, etc): Yr on end
+  # by area: _Area (ie. _lachlan
+
 # Quick strict development
 
 library(here)
@@ -93,9 +110,9 @@ soilTemp <- dailyPolyTempavg - 273
 # Passing the stricutre would then be if the min over the last 4 weeks is < 80 (ie die if it never drops below 80)
 
 # Get the min soil moisture of the last 4 weeks as a rolling min for each polygon
-soilMoistMin4 <- dailyPolySMavg # initialize
+soilMoist_Min28 <- dailyPolySMavg # initialize
 
-system.time(soilMoistMin4[[1]] <- timeRoll(soilMoistMin4[[1]], 
+system.time(soilMoist_Min28[[1]] <- timeRoll(soilMoist_Min28[[1]], 
                                            FUN = RcppRoll::roll_min, 
                                            rolln = 28, 
                                            align = 'right',
@@ -126,7 +143,7 @@ lippiaANAE <- c("Pt1.2.1","Pt1.8.1")
 # Germination requires temp 25-35 -----------------------------------------
 
 # Is the temp in the germ band?
-germ2535 <- (soilTemp >= 25) & (soilTemp <= 35)
+germ2535_Lippia <- (soilTemp >= 25) & (soilTemp <= 35)
 # These multi-checks mean it does 3 logical tests. If need be later on, could
 # speed up with Rcpp. Surprised its not available in a package
 # https://stackoverflow.com/questions/34519811/what-is-the-fastest-way-to-perform-multiple-logical-comparisons-in-r
@@ -135,13 +152,13 @@ germ2535 <- (soilTemp >= 25) & (soilTemp <= 35)
 # Die if inundated > 4 weeks ----------------------------------------------
 
 # Is the minumum soil moisture over the preceding 4 weeks less than 80%, indicating drying occurred, and so survival?
-surv4 <- soilMoistMin4 < 0.8
+surv4_Lippia <- soilMoist_Min28 < 0.8
 
 
 # ANAE classification -----------------------------------------------------
 
 # True/False. Could also be a which() if we want index numbers
-isLippiaANAE <- lachAll$ANAE_CODE %in% lippiaANAE
+isANAE_Lippia <- lachAll$ANAE_CODE %in% lippiaANAE
 
 
 # -------------------------------------------------------------------------
@@ -171,15 +188,15 @@ isLippiaANAE <- lachAll$ANAE_CODE %in% lippiaANAE
 # option 2 in centip), here we can just ask about germination at any time in the
 # past x days (up to a generation). This is more like option1 in centip. No idea growing period, but let's say 2 months (60 days)?
 
-germ3 <- germ2535 # initialize
+germ_Lippia_Sum60 <- germ2535_Lippia # initialize
 
-system.time(germ3[[1]] <- timeRoll(germ2535[[1]], 
+system.time(germ_Lippia_Sum60[[1]] <- timeRoll(germ2535_Lippia[[1]], 
                                         FUN = RcppRoll::roll_sum, 
                                         rolln = 60, 
                                         align = 'right',
                                         na.rm = TRUE))
 # Then the stricture test is whether there was germ and soil moist
-survGerm <- (germ3 > 0) & surv4
+germSurv_Lippia <- (germ_Lippia_Sum60 > 0) & surv4_Lippia
 
 
 
@@ -191,9 +208,9 @@ survGerm <- (germ3 > 0) & surv4
 
 # -------------------------------------------------------------------------
 
-germANAE <- germ2535 * isLippiaANAE
-survANAE <- surv4 * isLippiaANAE
-fullLippiaANAE <- survGerm * isLippiaANAE
+germANAE_Lippia <- germ2535_Lippia * isANAE_Lippia
+survANAE_Lippia <- surv4_Lippia * isANAE_Lippia
+fullCycleANAE_Lippia <- germSurv_Lippia * isANAE_Lippia
 
 
 
@@ -242,15 +259,15 @@ by_t <- c(startdate, interDates,  enddate)
 # Independent strictures --------------------------------------------------
 
 # Proportion of days each stricture was met each year
-germLippiaYr <- aggregate(germ2535, by = by_t, FUN = propor, na.rm = TRUE)
+germYr_Lippia <- aggregate(germ2535_Lippia, by = by_t, FUN = propor, na.rm = TRUE)
 
-survLippiaYr <- aggregate(surv4, by = by_t, FUN = propor, na.rm = TRUE)
+survYr_Lippia <- aggregate(surv4_Lippia, by = by_t, FUN = propor, na.rm = TRUE)
 
 
 # Dependent strictures ----------------------------------------------------
 
 # Just do the full thing, since there aren't really mulitple steps here
-fullLippiaYr <- aggregate(fullLippiaANAE, by = by_t, FUN = propor, na.rm = TRUE)
+fullYr_Lippia <- aggregate(fullCycleANAE_Lippia, by = by_t, FUN = propor, na.rm = TRUE)
 
 
 # -------------------------------------------------------------------------
@@ -286,24 +303,24 @@ lachArea <- st_area(lachAll)
 # -------------------------------------------------------------------------
 
 
-# Dependent ---------------------------------------------------------------
+# Independent ---------------------------------------------------------------
 
 
 # -------------------------------------------------------------------------
 
 
 # Germination  ------------------------------------------------------
-germCatch <- catchAggW(strict = germLippiaYr, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
+germCatch_Lippia <- catchAggW(strict = germYr_Lippia, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
 
-germPlot <- catchAggPlot(germCatch)
-germPlot
+germPlot_Lippia <- catchAggPlot(germCatch_Lippia, title = 'Germ Lippia')
+germPlot_Lippia
 
 
 # Survival ----------------------------------------------------------------
-survCatch <- catchAggW(strict = survLippiaYr, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
+survCatch_Lippia <- catchAggW(strict = survYr_Lippia, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
 
-survPlot <- catchAggPlot(survCatch)
-survPlot
+survPlot_Lippia <- catchAggPlot(survCatch_Lippia, title = 'Adult Survival Lippia')
+survPlot_Lippia
 
 
 # -------------------------------------------------------------------------
@@ -314,10 +331,10 @@ survPlot
 
 # -------------------------------------------------------------------------
 
-fullCatch <- catchAggW(strict = fullLippiaYr, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
+fullCatch_Lippia <- catchAggW(strict = fullYr_Lippia, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
 
-fullPlot <- catchAggPlot(fullCatch)
-fullPlot
+fullPlot_Lippia <- catchAggPlot(fullCatch_Lippia, title = 'Full Cycle Lippia')
+fullPlot_Lippia
 
 
 

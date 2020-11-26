@@ -1,8 +1,7 @@
 # Centipeda strictures
 
-# Quick strict testing
+# Quick strict development
 
-# Script to build on the ANAE without having to reprocess it
 library(here)
 library(tidyverse)
 library(sf)
@@ -14,6 +13,7 @@ library(viridis)
 # Trying to at least separate scripts and functions, looking towards library
 source(here('Functions', 'rastPolyJoin.R'))
 source(here('Functions', 'timeRoll.R'))
+source(here('Functions', 'helpers.R'))
 
 
 myhome <- str_remove(path.expand("~"), "/Documents")
@@ -77,9 +77,9 @@ dailyPolyTempavg <- filter(dailyPolyTempavg, time >= moistmin) # Check safety, h
   # To meet the "needs inundation (>80%) for 5 days" condition, we need to check if min(last 5 days) is below 80
   
 # Get the min soil moisture of the last 5 days as a rolling min for each polygon
-soilMoistMin5 <- dailyPolySMavg # initialize
+soilMoist_Min5 <- dailyPolySMavg # initialize
 
-system.time(soilMoistMin5[[1]] <- timeRoll(soilMoistMin5[[1]], 
+system.time(soilMoist_Min5[[1]] <- timeRoll(soilMoist_Min5[[1]], 
                                            FUN = RcppRoll::roll_min, 
                                            rolln = 5, 
                                            align = 'right',
@@ -92,9 +92,9 @@ system.time(soilMoistMin5[[1]] <- timeRoll(soilMoistMin5[[1]],
   # To meet the "dead if not moist > 10% for 6 weeks" condition, we need to check if min(last 6 weeks) is below 10
   
   # First, get the min soil moisture over the last 6 weeks as a rolling min
-  soilMoistMin42 <- dailyPolySMavg # initialize
+  soilMoist_Min42 <- dailyPolySMavg # initialize
 
-  system.time(soilMoistMin42[[1]] <- timeRoll(soilMoistMin42[[1]], 
+  system.time(soilMoist_Min42[[1]] <- timeRoll(soilMoist_Min42[[1]], 
                                               FUN = RcppRoll::roll_min, 
                                               rolln = 42, 
                                               align = 'right',
@@ -114,25 +114,28 @@ system.time(soilMoistMin5[[1]] <- timeRoll(soilMoistMin5[[1]],
   # range(dailyPolyTempavg[[1]], na.rm = T)-273
   # hist(dailyPolyTempavg[[1]])
   # sum((dailyPolyTempavg[[1]]-273) > 60, na.rm = TRUE)
+ 
+  # Put in C instead of Kelvin
+  soilTemp <- dailyPolyTempavg - 273
   
   # So, let's say the stricture is < 4 out of last 28 days can have soil temp > 60
-  soilTempMax28 <- dailyPolyTempavg # Initialize
-  
-  # Put in C instead of Kelvin
-  soilTempMax28 <- soilTempMax28-273
+ soilTempG60_Max28 <- soilTemp # Intialize
   
   # Logical; ask if the day is > 60 (no rolling at this point)
-  soilTempMax28 <- soilTempMax28 > 60
+    # This isn't done below in the stricture testing section, because it's not
+    # actually testing the stricture (whihc is about number of days). It's
+    # prepping the data to calculate number of days
+  soilTempG60_Max28 <- soilTempG60_Max28 > 60
 
   # How many of the last 28 days are > 60 (rolling sum of the logicals)
-  system.time(soilTempMax28[[1]] <- timeRoll(soilTempMax28[[1]], 
+  system.time(soilTempG60_Max28[[1]] <- timeRoll(soilTempG60_Max28[[1]], 
                                              FUN = RcppRoll::roll_sum, 
                                              rolln = 28, 
                                              align = 'right',
                                              na.rm = TRUE))
   # More data explore to make sure the stricture is reasonable
-  # max(soilTempMax28[[1]], na.rm = T)
-  # sum(soilTempMax28[[1]] > 5, na.rm = T)
+  # max(soilTempG60_Max28[[1]], na.rm = T)
+  # sum(soilTempG60_Max28[[1]] > 5, na.rm = T)
   
 
 # ANAE type ---------------------------------------------------------------
@@ -159,26 +162,26 @@ system.time(soilMoistMin5[[1]] <- timeRoll(soilMoistMin5[[1]],
 
 # Seed survival requires <60 ----------------------------------------------
   # Say no more than 4 days out of previous month > 60
- seed60 <- soilTempMax28 <= 4
+ seed60_Centipeda <- soilTempG60_Max28 <= 4
 
  
 # Germination requires inundation -----------------------------------------
  
  # To meet the "needs inundation (>80%) for 5 days" condition, we need to check if min(last 5 days) is below 80
-germ80 <- soilMoistMin5 > 0.8
+germ80_Centipeda <- soilMoist_Min5 > 0.8
  
 
 # Fruiting requires consistent moisture -----------------------------------
 
  # To meet the "dead if not moist > 10% for 6 weeks" condition, we need to check if min(last 6 weeks) is below 10
- fruit10 <- soilMoistMin42 > 0.1
+ fruit10_Centipeda <- soilMoist_Min42 > 0.1
  
  
 
 # ANAE classification -----------------------------------------------------
 
  # True/False. Could also be a which() if we want index numbers
-rightANAE <- lachAll$ANAE_CODE %in% centipANAE
+isANAE_Centipeda <- lachAll$ANAE_CODE %in% centipANAE
  
  
  # -------------------------------------------------------------------------
@@ -200,28 +203,31 @@ rightANAE <- lachAll$ANAE_CODE %in% centipANAE
  # germination requires seed survival
  # relatively simple for now; if seed60 == 1, seeds have survived to that day, and then can do the moist check
   # So this is just a simple &
- germIntSurv <- seed60 & germ80
+ seedGerm_Centipeda <- seed60_Centipeda & germ80_Centipeda
  
  
   # Fruiting requires germination within the last ?? time period and soil moisture condition
     # there are a few ways to do this; I'll demo them here
-    # use germIntSurv to keep going with the lice-cycle logic from the start
+    # use seedGerm_Centipeda to keep going with the lice-cycle logic from the start
  
  # 1. Simplest: germination and soil moisture check over the same time span: ie
  # has it germinated in last 6 weeks, and has soil moist been above 10%?
   # This is crude, since germ could have happened day before, for ex
  
+# 2 is better, but this feeds into it
  # To get germ in last 6 weeks, roll whether germination happened in prev. 6 weeks as the sum of days with germ
- germ6weeks <- germIntSurv # initialize
- 
- system.time(germ6weeks[[1]] <- timeRoll(germIntSurv[[1]], 
-                                             FUN = RcppRoll::roll_sum, 
-                                             rolln = 42, 
+ seedGerm_Centipeda_Sum42 <- seedGerm_Centipeda # initialize
+
+ system.time(seedGerm_Centipeda_Sum42[[1]] <- timeRoll(seedGerm_Centipeda[[1]],
+                                             FUN = RcppRoll::roll_sum,
+                                             rolln = 42,
                                              align = 'right',
                                              na.rm = TRUE))
  # Then the stricture test is whether there was germ and soil moist
- fruitG_10 <- (germ6weeks > 0) & fruit10
+  # Crap name, probably don't use. in fact, comment out
+ # seedGermFruitconnect_Centipeda <- (seedGerm_Centipeda_Sum42 > 0) & fruit10_Centipeda
  
+  
  # 2. Need some growth period; ie germination needs to have occurred 3 months to
  # 6 weeks ago, then, soil moist needs to have remained above 10% over those 6
  # weeks
@@ -236,19 +242,18 @@ rightANAE <- lachAll$ANAE_CODE %in% centipANAE
     # flexibility on timing, and some safety to ensure growing period
  
  # Going to just keep filling same object to save space
- germ3mo6 <- germIntSurv # initialize
+ seedGerm_Centipeda_Sum90 <- seedGerm_Centipeda # initialize
  
- system.time(germ3mo6[[1]] <- timeRoll(germIntSurv[[1]], 
+ system.time(seedGerm_Centipeda_Sum90[[1]] <- timeRoll(seedGerm_Centipeda[[1]], 
                                          FUN = RcppRoll::roll_sum, 
                                          rolln = 90, 
                                          align = 'right',
                                          na.rm = TRUE))
  
- # Get the germ days in the interval
- germ3mo6 <- germ3mo6 - germ6weeks
- 
+
  # Then, the stricture test is whether there was germ in the interval, followed by soil moisture
- fruitGint_10 <- (germ3mo6 > 0) & fruit10
+  # Subtraction gets the number of germ days in the interval from 90 days ago to 42
+ seedGermFruit_Centipeda <- ((seedGerm_Centipeda_Sum90 - seedGerm_Centipeda_Sum42) > 0) & fruit10_Centipeda
  
  # 3. The best way to do this is to ask if there has been sufficient soil
  # moisture since the last germination event that was long enough ago for the
@@ -268,7 +273,7 @@ rightANAE <- lachAll$ANAE_CODE %in% centipANAE
  # for example. The only catch is that if germ was three months ago, then at 2
  # months it dried out, but the subsequent 6 weeks were wet, we'd miss that
  
- # But maybe we could do a which() on germ3mo6 to get when germ happened in the
+ # But maybe we could do a which() on seedGerm_Centipeda_Sum90m42 to get when germ happened in the
  # window, and if we did max(which()), it'd give us the last germ in the window.
  # Then we'd just need to do the min check on the window. This is likely all
  # more expensive than the time roll, but maybe not too bad? Will just have to try
@@ -279,10 +284,26 @@ rightANAE <- lachAll$ANAE_CODE %in% centipANAE
 
 # And, restrict to the required ANAE --------------------------------------
 
- # Need germ in the interval, and fruit, and ANAE
- fullCycleANAE <- fruitGint_10 & rightANAE
+ # Just the individual and the whole, don't look at other subsets for now
+ fullCycleANAE_Centipeda <- seedGermFruit_Centipeda & isANAE_Centipeda
+ seedANAE_Centipeda <- seed60_Centipeda*isANAE_Centipeda
+ germANAE_Centipeda <- germ80_Centipeda*isANAE_Centipeda
+ fruitANAE_Centipeda <- fruit10_Centipeda*isANAE_Centipeda
  
-
+ 
+ # ############################ --------------------------------------------
+ 
+ # I think the stuff below here should probably be separated into a plotting
+ # script, and the stuff above should be saved, to enable
+ # comparisons/interactions across taxa/themes (i.e. we may not want to hold all
+ # themes in memory to get at interactions, and may not want to do the
+ # interactions in the same place as the plotting)
+ 
+ 
+ # ############################################ ----------------------------
+ 
+ 
+ 
 # -------------------------------------------------------------------------
 
 
@@ -296,10 +317,6 @@ rightANAE <- lachAll$ANAE_CODE %in% centipANAE
  # There are a few different ways to do that, so I'll demo a few
  
 # Some things I'll need
- # Proportion function
- propor <- function(x, na.rm = FALSE) {
-   sum(x, na.rm = na.rm)/length(x)
- }
  
  # Water year breakpoints
   # TBD for now
@@ -326,20 +343,16 @@ rightANAE <- lachAll$ANAE_CODE %in% centipANAE
 # Independent strictures --------------------------------------------------
 
 # Proportion of days each stricture was met each year
- seedYr <- aggregate(seed60, by = by_t, FUN = propor, na.rm = TRUE)
+ seedYr_Centipeda <- aggregate(seed60_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
  # test the prop makes sense (did my fun work?)
   # Yes
  # seedYrS <- aggregate(seed60, by = by_t, FUN = sum, na.rm = TRUE)
  
- germYr <- aggregate(germ80, by = by_t, FUN = propor, na.rm = TRUE)
+ germYr_Centipeda <- aggregate(germ80_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
  
- fruitYr <- aggregate(fruit10, by = by_t, FUN = propor, na.rm = TRUE)
+ fruitYr_Centipeda <- aggregate(fruit10_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
 
- # Those are all just for those strictures (not cut by ANAE)
- # If we want to ONLY look within the right ANAE zones,
- seedANAEYr <- seedYr*rightANAE
- germANAEYr <- germYr*rightANAE
- fruitANAEYr <- fruitYr*rightANAE
+
   
  # 
  
@@ -348,15 +361,15 @@ rightANAE <- lachAll$ANAE_CODE %in% centipANAE
 
 # So, if we go dependent, is there much reason to do subsets of it? ie, got from survival to germ, but not fruiting? Or just do it for the final step?
  # Suppose there might be a point to the intermediates. Make them, I guess
- # but not going to go with/without ANAE, or too many options
+ # but not going to go with/without ANAE, or too many options. Since conditional, use wtih ANAE
  
  # survival already above as independent
- survGermYrANAE <- aggregate(germIntSurv, by = by_t, FUN = propor, na.rm = TRUE)*rightANAE
+ seedGermYrANAE_Centipeda <- aggregate(seedGerm_Centipeda*isANAE_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
  
- fullCycleYr <- aggregate(fullCycleANAE, by = by_t, FUN = propor, na.rm = TRUE)
+ fullYr_Centipeda <- aggregate(fullCycleANAE_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
  
  # how to present any of this? Could make a map, but lotsa white space. Still, might be fine, depending on the goals
-
+    # Can easily do the zoom in to a bounding box thing if there are areas of interest
 # -------------------------------------------------------------------------
 
 
@@ -374,7 +387,10 @@ rightANAE <- lachAll$ANAE_CODE %in% centipANAE
    select(ValleyName) # Three different ways to reference, basically
  
  ltimCut <- st_transform(ltimCut, st_crs(lachAll))
-
+ 
+ # Get just the lachlan for plotting
+ lachOnly <- filter(ltimCut, ValleyName == "Lachlan")
+ 
  # Need to get the areas for area-weighting 
  lachArea <- st_area(lachAll)
  
@@ -393,64 +409,27 @@ rightANAE <- lachAll$ANAE_CODE %in% centipANAE
 
 
 # -------------------------------------------------------------------------
-
- 
  
 
 # Seed bank survival ------------------------------------------------------
- seedArea <- seedANAEYr
- # get area-proportion of success (same as area-days, but divided by days in year)
- seedArea[[1]] <- t(t(seedArea[[1]])*lachArea)
+ seedCatch_Centipeda <- catchAggW(strict = seedYr_Centipeda, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
  
- # Now aggregate over space
- seedCatch <- aggregate(seedArea, by = filter(ltimCut, ValleyName == "Lachlan"), FUN = sum, na.rm = TRUE)
- 
- # Plot. Color ramp traffic light, because we can
- ggplot() +
-   geom_stars(data = seedCatch) +
-   coord_sf() +
-   facet_wrap(~as.character(time)) +
-   theme_void()  +
-   scale_fill_gradient(low = 'firebrick', high = 'forestgreen' )
- 
+ seedPlot_Centipeda <- catchAggPlot(seedCatch_Centipeda, title = 'Seed Surv Centipeda')
+ seedPlot_Centipeda
 
 # Germination -------------------------------------------------------------
 
- germArea <- germANAEYr
- # get area-proportion of success (same as area-days, but divided by days in year)
- germArea[[1]] <- t(t(germArea[[1]])*lachArea)
+ germCatch_Centipeda <- catchAggW(strict = germYr_Centipeda, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
  
- # Now aggregate over space
- germCatch <- aggregate(germArea, by = filter(ltimCut, ValleyName == "Lachlan"), FUN = sum, na.rm = TRUE)
- 
- # Plot. Color ramp traffic light, because we can
- ggplot() +
-   geom_stars(data = germCatch) +
-   coord_sf() +
-   facet_wrap(~as.character(time)) +
-   theme_void()  +
-   scale_fill_gradient(low = 'firebrick', high = 'forestgreen' ) 
- 
- 
+ germPlot_Centipeda <- catchAggPlot(germCatch_Centipeda, title = 'Germ Centipeda')
+ germPlot_Centipeda
 
 # Fruiting ----------------------------------------------------------------
 
- fruitArea <- fruitANAEYr
- # get area-proportion of success (same as area-days, but divided by days in year)
- fruitArea[[1]] <- t(t(fruitArea[[1]])*lachArea)
+ fruitCatch_Centipeda <- catchAggW(strict = fruitYr_Centipeda, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
  
- # Now aggregate over space
- fruitCatch <- aggregate(fruitArea, by = filter(ltimCut, ValleyName == "Lachlan"), FUN = sum, na.rm = TRUE)
- 
- # Plot. Color ramp traffic light, because we can
- ggplot() +
-   geom_stars(data = fruitCatch) +
-   coord_sf() +
-   facet_wrap(~as.character(time)) +
-   theme_void()  +
-   scale_fill_gradient(low = 'firebrick', high = 'forestgreen' ) 
- 
- 
+ fruitPlot_Centipeda <- catchAggPlot(fruitCatch_Centipeda, title = 'Fruiting Centipeda')
+ fruitPlot_Centipeda
 
 # -------------------------------------------------------------------------
 
@@ -463,37 +442,17 @@ rightANAE <- lachAll$ANAE_CODE %in% centipANAE
 
 # survival and germination ------------------------------------------------
 
+ seedGermCatch_Centipeda <- catchAggW(strict = seedGermYrANAE_Centipeda, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
  
- survGermArea <- survGermYrANAE
- # get area-proportion of success (same as area-days, but divided by days in year)
- survGermArea[[1]] <- t(t(survGermArea[[1]])*lachArea)
+ seedGermPlot_Centipeda <- catchAggPlot(seedGermCatch_Centipeda, title = 'Seed Surv + Germ Centipeda')
+ seedGermPlot_Centipeda
  
- # Now aggregate over space
- survGermCatch <- aggregate(survGermArea, by = filter(ltimCut, ValleyName == "Lachlan"), FUN = sum, na.rm = TRUE)
- 
- # Plot. Color ramp traffic light, because we can
- ggplot() +
-   geom_stars(data = survGermCatch) +
-   coord_sf() +
-   facet_wrap(~as.character(time)) +
-   theme_void()  +
-   scale_fill_gradient(low = 'firebrick', high = 'forestgreen' ) 
  
 
 # Full cycle --------------------------------------------------------------
 
- fullCycleArea <- fullCycleYr
- # get area-proportion of success (same as area-days, but divided by days in year)
- fullCycleArea[[1]] <- t(t(fullCycleArea[[1]])*lachArea)
+ fullCatch_Centipeda <- catchAggW(strict = fullYr_Centipeda, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
  
- # Now aggregate over space
- fullCycleCatch <- aggregate(fullCycleArea, by = filter(ltimCut, ValleyName == "Lachlan"), FUN = sum, na.rm = TRUE)
- 
- # Plot. Color ramp traffic light, because we can
- ggplot() +
-   geom_stars(data = fullCycleCatch) +
-   coord_sf() +
-   facet_wrap(~as.character(time)) +
-   theme_void()  +
-   scale_fill_gradient(low = 'firebrick', high = 'forestgreen' )  
+ fullPlot_Centipeda <- catchAggPlot(fullCatch_Centipeda, title = 'Full Cycle Centipeda')
+ fullPlot_Centipeda
  
