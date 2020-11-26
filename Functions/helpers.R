@@ -38,12 +38,13 @@ catchAggW <- function(strict, strictWeights, FUN, summaryPoly) {
   
 }
 
-catchAggPlot <- function(catchAgg) {
+catchAggPlot <- function(catchAgg, title = NULL) {
   # Plot. Color ramp traffic light, because we can
   catchPlot <- ggplot() +
     geom_stars(data = catchAgg) +
     coord_sf() +
     facet_wrap(~as.character(time)) +
     theme_void()  +
-    scale_fill_gradient(low = 'firebrick', high = 'forestgreen' )
+    scale_fill_gradient(low = 'firebrick', high = 'forestgreen' ) +
+    ggtitle(title)
 }
