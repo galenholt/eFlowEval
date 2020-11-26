@@ -1,10 +1,10 @@
 # timeRoll function
-# what the hell does this even mean??
+
 timeRoll <- function(stardat, 
-                     tDim = NULL, FUN = RcppRoll::roll_mean, rolln = 1L,
+                     tDim = NULL, FUN, rolln = 1L,
                      align = 'center', fill = c(NA, NA, NA), na.rm = FALSE) {
   
-  fname <- paste(deparse(substitute(FUN), 50), collapse = "\n")
+  # fname <- paste(deparse(substitute(FUN), 50), collapse = "\n")
   # This takes stardat, which is JUST a single starsobj[[attribute]]. I had thought about getting the whole object, but this allows either replacing or adding
   
   # The data for the attribute may be a matrix or array
