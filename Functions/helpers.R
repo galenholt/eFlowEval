@@ -62,7 +62,7 @@ tempaggregate <- function(starObj, by_t, FUN, na.rm = TRUE) {
     aggObj <- aggregate(starObj, by = by_t, FUN = FUN, na.rm = na.rm)
   } else {
     # If fed a date vector, aggregate needs different settings, and returns a final NA sheet. 
-    if (!(is.POSIXct(by_t) | is.Date(by_t))) {
+    if (!(lubridate::is.POSIXct(by_t) | lubridate::is.Date(by_t))) {
       warning('aggregation fix only tested with POSIXct and Date objects, assuming other non-character objects work the same way')
     }
     # rightmost closed finishes the final day
