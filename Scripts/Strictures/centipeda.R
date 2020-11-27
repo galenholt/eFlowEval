@@ -14,6 +14,7 @@ library(viridis)
 source(here('Functions', 'rastPolyJoin.R'))
 source(here('Functions', 'timeRoll.R'))
 source(here('Functions', 'helpers.R'))
+source(here('Functions', 'unevenTimeMult.R'))
 
 
 myhome <- str_remove(path.expand("~"), "/Documents")
@@ -56,6 +57,13 @@ dailyPolyTempavg <- filter(dailyPolyTempavg, time >= moistmin) # Check safety, h
 # 
 # min(st_get_dimension_values(dailyPolySMavg, which = 'time'))
 # min(st_get_dimension_values(dailyPolyTempavg, which = 'time'))
+
+
+# Read in yearly Lippia success -------------------------------------------
+
+load(file.path("strictOut", 'fullYr_Lippia.rdata'))
+
+
 # -------------------------------------------------------------------------
 
 # Make stars objects to test against relevant to the strictures -----------
@@ -290,6 +298,29 @@ isANAE_Centipeda <- lachAll$ANAE_CODE %in% centipANAE
  germANAE_Centipeda <- germ80_Centipeda*isANAE_Centipeda
  fruitANAE_Centipeda <- fruit10_Centipeda*isANAE_Centipeda
  
+
+# Failure if Lippia made it through in the preceding year -----------------
+
+  # COULD do this earlier and short-circuit everything, but like ANAE, it will
+  # be good to look at the outcomes with and without
+ 
+ # This would be relatively easy to do below where the centipeda is put on the
+ # same timescale, then could just loop with t-1, or add a sheet or something.
+ # BUT, being able to get it on the daily data will be useful because then it
+ # will be available in a more interactive type setup; ie adding it at the end
+ # after summarizing years means it really only works as a summarization to
+ # present, not as a model of process. While we aren't using it here as a
+ # process, really (nothing then depends on it), doing it this way allows that
+ # to happen
+  # And the function I wrote is fairly generic, so we can do things like monthly
+  # etc, as indicated by the biology
+ 
+ # For now, just do it for the final
+ # Not worth doing the lippia alone, because that's just !fullCycleANAE_Lippia, so if we want that, just go get it
+ 
+ # Invert the logic on the lippia, since it is whether it existed, and we want the centip stricture to pass if lippia WASN'T there
+ fullCycleLippia_Centipeda <- unevenTimeMult(fineStars = fullCycleANAE_Centipeda, coarseStars = fullYr_Lippia, 
+                                             lag = 1, invertCoarseLogic = TRUE)
  
  # ############################ --------------------------------------------
  
@@ -368,6 +399,8 @@ isANAE_Centipeda <- lachAll$ANAE_CODE %in% centipANAE
  
  fullYr_Centipeda <- tempaggregate(fullCycleANAE_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
  
+ fullYrLippia_Centipeda <- tempaggregate( fullCycleLippia_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
+
  # how to present any of this? Could make a map, but lotsa white space. Still, might be fine, depending on the goals
     # Can easily do the zoom in to a bounding box thing if there are areas of interest
 # -------------------------------------------------------------------------
@@ -449,10 +482,18 @@ isANAE_Centipeda <- lachAll$ANAE_CODE %in% centipANAE
  
  
 
-# Full cycle --------------------------------------------------------------
+# Full cycle, no lippia --------------------------------------------------------------
 
  fullCatch_Centipeda <- catchAggW(strict = fullYr_Centipeda, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
  
  fullPlot_Centipeda <- catchAggPlot(fullCatch_Centipeda, title = 'Full Cycle Centipeda')
  fullPlot_Centipeda
+ 
+
+# FullCycle, including lippia ---------------------------------------------
+
+ fullCatchLippia_Centipeda <- catchAggW(strict = fullYrLippia_Centipeda, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
+ 
+ fullPlotLippia_Centipeda <- catchAggPlot(fullCatchLippia_Centipeda, title = 'Full Cycle Centipeda (dependent on Lippia)')
+ fullPlotLippia_Centipeda
  
