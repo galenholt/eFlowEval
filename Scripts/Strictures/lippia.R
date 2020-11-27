@@ -39,6 +39,7 @@ library(viridis)
 source(here('Functions', 'rastPolyJoin.R'))
 source(here('Functions', 'timeRoll.R'))
 source(here('Functions', 'helpers.R'))
+source(here('Functions', 'unevenTimeMult.R'))
 
 myhome <- str_remove(path.expand("~"), "/Documents")
 datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
