@@ -31,6 +31,11 @@ load(file.path(datOut, 'lachSoilprocessedAllOut.rdata'))
 
 load(file.path(datOut, 'lachSoilTempprocessedAllOut.rdata'))
 # 
+
+# Temp; cut after pull out of the data processing script 
+rm(soilMoistMin5, soilMoistMin42, soilTempMax28)
+
+
 # # So, soil moist goes to Oct 2020 (currently)
 # max(st_get_dimension_values(dailyPolySMavg, which = 'time'))
 # # While temp goes to Dec 28 2019 (not sure why I didn't get the last few days of 2019)
@@ -145,6 +150,8 @@ system.time(soilMoist_Min5[[1]] <- timeRoll(soilMoist_Min5[[1]],
   # max(soilTempG60_Max28[[1]], na.rm = T)
   # sum(soilTempG60_Max28[[1]] > 5, na.rm = T)
   
+  # The attribute needs a name for what it really is, not inherit from data
+  names(soilTempG60_Max28) <- 'days'
 
 # ANAE type ---------------------------------------------------------------
 
@@ -171,19 +178,23 @@ system.time(soilMoist_Min5[[1]] <- timeRoll(soilMoist_Min5[[1]],
 # Seed survival requires <60 ----------------------------------------------
   # Say no more than 4 days out of previous month > 60
  seed60_Centipeda <- soilTempG60_Max28 <= 4
-
+  # The attribute needs a name for what it really is, not inherit from data
+  names(seed60_Centipeda) <- 'passedStricts'
  
 # Germination requires inundation -----------------------------------------
  
  # To meet the "needs inundation (>80%) for 5 days" condition, we need to check if min(last 5 days) is below 80
-germ80_Centipeda <- soilMoist_Min5 > 0.8
- 
+  # 80 yields no germinaton in Cumbung. Ever. Bump it down to 50, see what happens
+germ_Centipeda <- soilMoist_Min5 > 0.2
+  # The attribute needs a name for what it really is, not inherit from data
+  names(germ_Centipeda) <- 'passedStricts'
 
 # Fruiting requires consistent moisture -----------------------------------
 
  # To meet the "dead if not moist > 10% for 6 weeks" condition, we need to check if min(last 6 weeks) is below 10
  fruit10_Centipeda <- soilMoist_Min42 > 0.1
- 
+  # The attribute needs a name for what it really is, not inherit from data
+  names(fruit10_Centipeda) <- 'passedStricts'
  
 
 # ANAE classification -----------------------------------------------------
@@ -211,9 +222,11 @@ isANAE_Centipeda <- lachAll$ANAE_CODE %in% centipANAE
  # germination requires seed survival
  # relatively simple for now; if seed60 == 1, seeds have survived to that day, and then can do the moist check
   # So this is just a simple &
- seedGerm_Centipeda <- seed60_Centipeda & germ80_Centipeda
+ seedGerm_Centipeda <- seed60_Centipeda & germ_Centipeda
  
- 
+  # The attribute needs a name for what it really is, not inherit from data
+  names(seedGerm_Centipeda) <- 'passedStricts'
+  
   # Fruiting requires germination within the last ?? time period and soil moisture condition
     # there are a few ways to do this; I'll demo them here
     # use seedGerm_Centipeda to keep going with the lice-cycle logic from the start
@@ -235,6 +248,8 @@ isANAE_Centipeda <- lachAll$ANAE_CODE %in% centipANAE
   # Crap name, probably don't use. in fact, comment out
  # seedGermFruitconnect_Centipeda <- (seedGerm_Centipeda_Sum42 > 0) & fruit10_Centipeda
  
+ # The attribute needs a name for what it really is, not inherit from data
+ names(seedGerm_Centipeda_Sum42) <- 'days'
   
  # 2. Need some growth period; ie germination needs to have occurred 3 months to
  # 6 weeks ago, then, soil moist needs to have remained above 10% over those 6
@@ -257,11 +272,15 @@ isANAE_Centipeda <- lachAll$ANAE_CODE %in% centipANAE
                                          rolln = 90, 
                                          align = 'right',
                                          na.rm = TRUE))
- 
+ # The attribute needs a name for what it really is, not inherit from data
+ names(seedGerm_Centipeda_Sum90) <- 'days'
 
  # Then, the stricture test is whether there was germ in the interval, followed by soil moisture
   # Subtraction gets the number of germ days in the interval from 90 days ago to 42
  seedGermFruit_Centipeda <- ((seedGerm_Centipeda_Sum90 - seedGerm_Centipeda_Sum42) > 0) & fruit10_Centipeda
+ 
+ # The attribute needs a name for what it really is, not inherit from data
+ names(seedGermFruit_Centipeda) <- 'passedStricts'
  
  # 3. The best way to do this is to ask if there has been sufficient soil
  # moisture since the last germination event that was long enough ago for the
@@ -295,7 +314,7 @@ isANAE_Centipeda <- lachAll$ANAE_CODE %in% centipANAE
  # Just the individual and the whole, don't look at other subsets for now
  fullCycleANAE_Centipeda <- seedGermFruit_Centipeda & isANAE_Centipeda
  seedANAE_Centipeda <- seed60_Centipeda*isANAE_Centipeda
- germANAE_Centipeda <- germ80_Centipeda*isANAE_Centipeda
+ germANAE_Centipeda <- germ_Centipeda*isANAE_Centipeda
  fruitANAE_Centipeda <- fruit10_Centipeda*isANAE_Centipeda
  
 
@@ -376,15 +395,15 @@ isANAE_Centipeda <- lachAll$ANAE_CODE %in% centipANAE
 # Proportion of days each stricture was met each year
  seedYr_Centipeda <- tempaggregate(seed60_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
  # test the prop makes sense (did my fun work?)
-  # Yes
+ names(seedYr_Centipeda) <- 'propDaysPassed'
+ 
  # seedYrS <- tempaggregate(seed60, by = by_t, FUN = sum, na.rm = TRUE)
  
- germYr_Centipeda <- tempaggregate(germ80_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
+ germYr_Centipeda <- tempaggregate(germ_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
+ names(germYr_Centipeda) <- 'propDaysPassed'
  
  fruitYr_Centipeda <- tempaggregate(fruit10_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
-
-
-  
+ names(fruitYr_Centipeda) <- 'propDaysPassed'
  # 
  
 
@@ -396,11 +415,14 @@ isANAE_Centipeda <- lachAll$ANAE_CODE %in% centipANAE
  
  # survival already above as independent
  seedGermYrANAE_Centipeda <- tempaggregate(seedGerm_Centipeda*isANAE_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
+ names(seedGermYrANAE_Centipeda) <- 'propDaysPassed'
  
  fullYr_Centipeda <- tempaggregate(fullCycleANAE_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
+ names(fullYr_Centipeda) <- 'propDaysPassed'
  
  fullYrLippia_Centipeda <- tempaggregate( fullCycleLippia_Centipeda, by = by_t, FUN = propor, na.rm = TRUE)
-
+ names(fullYrLippia_Centipeda) <- 'propDaysPassed'
+ 
  # how to present any of this? Could make a map, but lotsa white space. Still, might be fine, depending on the goals
     # Can easily do the zoom in to a bounding box thing if there are areas of interest
 # -------------------------------------------------------------------------
@@ -446,6 +468,7 @@ isANAE_Centipeda <- lachAll$ANAE_CODE %in% centipANAE
 
 # Seed bank survival ------------------------------------------------------
  seedCatch_Centipeda <- catchAggW(strict = seedYr_Centipeda, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
+ names(seedCatch_Centipeda) <- 'areaDaysPassed'
  
  seedPlot_Centipeda <- catchAggPlot(seedCatch_Centipeda, title = 'Seed Surv Centipeda')
  seedPlot_Centipeda
@@ -453,6 +476,7 @@ isANAE_Centipeda <- lachAll$ANAE_CODE %in% centipANAE
 # Germination -------------------------------------------------------------
 
  germCatch_Centipeda <- catchAggW(strict = germYr_Centipeda, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
+ names(germCatch_Centipeda) <- 'areaDaysPassed'
  
  germPlot_Centipeda <- catchAggPlot(germCatch_Centipeda, title = 'Germ Centipeda')
  germPlot_Centipeda
@@ -460,7 +484,7 @@ isANAE_Centipeda <- lachAll$ANAE_CODE %in% centipANAE
 # Fruiting ----------------------------------------------------------------
 
  fruitCatch_Centipeda <- catchAggW(strict = fruitYr_Centipeda, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
- 
+ names(fruitCatch_Centipeda) <- 'areaDaysPassed'
  fruitPlot_Centipeda <- catchAggPlot(fruitCatch_Centipeda, title = 'Fruiting Centipeda')
  fruitPlot_Centipeda
 
@@ -476,7 +500,7 @@ isANAE_Centipeda <- lachAll$ANAE_CODE %in% centipANAE
 # survival and germination ------------------------------------------------
 
  seedGermCatch_Centipeda <- catchAggW(strict = seedGermYrANAE_Centipeda, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
- 
+ names(seedGermCatch_Centipeda) <- 'areaDaysPassed'
  seedGermPlot_Centipeda <- catchAggPlot(seedGermCatch_Centipeda, title = 'Seed Surv + Germ Centipeda')
  seedGermPlot_Centipeda
  
@@ -484,16 +508,17 @@ isANAE_Centipeda <- lachAll$ANAE_CODE %in% centipANAE
 
 # Full cycle, no lippia --------------------------------------------------------------
 
- fullCatch_Centipeda <- catchAggW(strict = fullYr_Centipeda, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
- 
- fullPlot_Centipeda <- catchAggPlot(fullCatch_Centipeda, title = 'Full Cycle Centipeda')
+ fullCatch_Centipeda <- catchAggW(strict = fullYr_Centipeda, strictWeights = lachArea, 
+                                  FUN = sum, summaryPoly = lachOnly)
+ names(fullCatch_Centipeda) <- 'areaDaysPassed'
+ fullPlot_Centipeda <- catchAggPlot(fullCatch_Centipeda, title = 'Full Life Cycle Success')
  fullPlot_Centipeda
  
 
 # FullCycle, including lippia ---------------------------------------------
 
  fullCatchLippia_Centipeda <- catchAggW(strict = fullYrLippia_Centipeda, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
- 
+ names(fullCatchLippia_Centipeda) <- 'areaDaysPassed'
  fullPlotLippia_Centipeda <- catchAggPlot(fullCatchLippia_Centipeda, title = 'Full Cycle Centipeda (dependent on Lippia)')
  fullPlotLippia_Centipeda
  
