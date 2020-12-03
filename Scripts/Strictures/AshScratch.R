@@ -617,7 +617,6 @@ taxa1ind <- which(lachAll$ANAE_CODE == Taxa1ANAE)
 
 Str <- lachAll[,]
 
-[,,,]
 
 
 
