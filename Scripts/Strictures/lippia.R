@@ -55,6 +55,11 @@ load(file.path(datOut, 'lachSoilprocessedAllOut.rdata'))
 
 load(file.path(datOut, 'lachSoilTempprocessedAllOut.rdata'))
 # 
+
+# Temp; cut after pull out of the data processing script 
+rm(soilMoistMin5, soilMoistMin42, soilTempMax28)
+
+
 # # So, soil moist goes to Oct 2020 (currently)
 # max(st_get_dimension_values(dailyPolySMavg, which = 'time'))
 # # While temp goes to Dec 28 2019 (not sure why I didn't get the last few days of 2019)
@@ -75,7 +80,9 @@ dailyPolyTempavg <- filter(dailyPolyTempavg, time >= moistmin) # Check safety, h
 # dailyPolyTempavg
 # testlogic <- dailyPolySMavg < dailyPolyTempavg
 # testlogic
-# 
+
+
+
 # max(st_get_dimension_values(dailyPolySMavg, which = 'time'))
 # max(st_get_dimension_values(dailyPolyTempavg, which = 'time'))
 # 
@@ -153,7 +160,8 @@ lippiaANAE <- c("Pt1.2.1","Pt1.8.1")
 
 # Is the temp in the germ band?
 germ2535_Lippia <- (soilTemp >= 25) & (soilTemp <= 35)
-
+# The attribute needs a name for what it really is, not inherit from data
+names(germ2535_Lippia) <- 'passedStricts'
 # These multi-checks mean it does 3 logical tests. If need be later on, could
 # speed up with Rcpp. It's available in dplyr, but doesn't seem to work on soilTemp because it ses a list, not a vector
   # Can get it to work on the [[1]] array, but not sure it's worth it, at least for now
@@ -166,7 +174,8 @@ germ2535_Lippia <- (soilTemp >= 25) & (soilTemp <= 35)
 
 # Is the minumum soil moisture over the preceding 4 weeks less than 80%, indicating drying occurred, and so survival?
 surv4_Lippia <- soilMoist_Min28 < 0.8
-
+# The attribute needs a name for what it really is, not inherit from data
+names(surv4_Lippia) <-'passedStricts'
 
 # ANAE classification -----------------------------------------------------
 
@@ -210,8 +219,8 @@ system.time(germ_Lippia_Sum60[[1]] <- timeRoll(germ2535_Lippia[[1]],
                                         na.rm = TRUE))
 # Then the stricture test is whether there was germ and soil moist
 germSurv_Lippia <- (germ_Lippia_Sum60 > 0) & surv4_Lippia
-
-
+# The attribute needs a name for what it really is, not inherit from data
+names(germSurv_Lippia) <- 'passedStricts'
 
 # -------------------------------------------------------------------------
 
@@ -225,6 +234,7 @@ germANAE_Lippia <- germ2535_Lippia * isANAE_Lippia
 survANAE_Lippia <- surv4_Lippia * isANAE_Lippia
 fullCycleANAE_Lippia <- germSurv_Lippia * isANAE_Lippia
 
+# Not renaming these, they are still whether there was germ, surv, or both. just now that depends on anae
 
 
 # ############################ --------------------------------------------
@@ -272,19 +282,22 @@ by_t <- c(startdate, interDates,  enddate)
 
 # Proportion of days each stricture was met each year
 germYr_Lippia <- tempaggregate(germ2535_Lippia, by = by_t, FUN = propor, na.rm = TRUE)
+# Would be nice if temaggregate could do the rename internally dependent on FUN
+names(germYr_Lippia) <- 'propDaysPassed'
 
 survYr_Lippia <- tempaggregate(surv4_Lippia, by = by_t, FUN = propor, na.rm = TRUE)
-
+names(survYr_Lippia) <- 'propDaysPassed'
 
 # Dependent strictures ----------------------------------------------------
 
 # Just do the full thing, since there aren't really mulitple steps here
 fullYr_Lippia <- tempaggregate(fullCycleANAE_Lippia, by = by_t, FUN = propor, na.rm = TRUE)
-
+names(fullYr_Lippia) <- 'propDaysPassed'
 # Let's spit this out and save it, so centipeda can read JUST this in, and not
 # have to source() this whole file
 
 save(fullYr_Lippia, file = file.path('strictOut', 'fullYr_Lippia.rdata'))
+
 # -------------------------------------------------------------------------
 
 
@@ -296,6 +309,7 @@ save(fullYr_Lippia, file = file.path('strictOut', 'fullYr_Lippia.rdata'))
 
 # -------------------------------------------------------------------------
 
+# TODO: Probably split this into a different script: it's about summarization and presentation, not the strictures
 
 # Get the catchments in (out of place; move)
 LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'LTIM_Valleys') %>%
@@ -326,17 +340,18 @@ lachArea <- st_area(lachAll)
 
 # Germination  ------------------------------------------------------
 germCatch_Lippia <- catchAggW(strict = germYr_Lippia, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
+names(germCatch_Lippia) <- 'areaDaysPassed'
 
-germPlot_Lippia <- catchAggPlot(germCatch_Lippia, title = 'Germ Lippia')
+germPlot_Lippia <- catchAggPlot(germCatch_Lippia, title = 'Germ Lippia', as_sf = FALSE)
 germPlot_Lippia
 
 
 # Survival ----------------------------------------------------------------
 survCatch_Lippia <- catchAggW(strict = survYr_Lippia, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
+names(survCatch_Lippia) <- 'areaDaysPassed'
 
-survPlot_Lippia <- catchAggPlot(survCatch_Lippia, title = 'Adult Survival Lippia')
-survPlot_Lippia
-
+survPlot_Lippia <- catchAggPlot(survCatch_Lippia, varname = 'areaDaysPassed', title = 'Adult Survival Lippia', as_sf = TRUE)
+survPlot_Lippia # + labs(fill = "Survival")
 
 # -------------------------------------------------------------------------
 
@@ -347,8 +362,9 @@ survPlot_Lippia
 # -------------------------------------------------------------------------
 
 fullCatch_Lippia <- catchAggW(strict = fullYr_Lippia, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
+names(fullCatch_Lippia) <- 'areaDaysPassed'
 
-fullPlot_Lippia <- catchAggPlot(fullCatch_Lippia, title = 'Full Cycle Lippia')
-fullPlot_Lippia
+fullPlot_Lippia <- catchAggPlot(fullCatch_Lippia, title = 'Full Cycle Lippia', as_sf = FALSE)
+fullPlot_Lippia # + labs(fill = "Germ &\nSurvival")
 
 

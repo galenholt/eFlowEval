@@ -597,7 +597,7 @@ rm(deProxySoil)
 SMmin42bb <- soilMoistMin42[st_as_sfc(bb)]
 class(SMmin42bb)
 
-plot(SMmin42bb[,,1])
+plot(SMmin42bb)
 
 str(soilMoistMin42)
 
@@ -606,7 +606,7 @@ crs(soilMoistMin42)
 
 # -----
 
-lachbb <- st_crop(lachAll,bb)
+# Pull out 
 
 # G note: I've been thinking these would be logical checks as well: Give 1s to
 # the ANAE codes and 0s elsewhere. Easy to do to either stars or sf
@@ -614,105 +614,11 @@ lachbb <- st_crop(lachAll,bb)
 Taxa1ANAE <- c("Pt1.2.1","Pt1.8.1")
 
 taxa1ind <- which(lachAll$ANAE_CODE == Taxa1ANAE)
-taxa1indbb <- which(lachbb$ANAE_CODE == Taxa1ANAE)
 
 Str <- lachAll[,]
 
-x <- soilMoistMin42[,taxa1ind,1]
-plot(x) # works with errors no non-missing args to min...etc.
-x <- SMmin42bb[,taxa1ind,1]
-plot(x) # doesnpt plot, with same errors 
 
 
-dim(soilMoistMin42[[1]])
-
-plot(SMmin42bb[,taxa1ind,1])
-
-
-
-#initilise stricutre stars
-
-# make blank lach star
-strX <- SMmin42bb[,,1]
-strX$sm_pct <- NULL  # remove attr   1.3 MB
-strX$str <- 0  # add attribute
-strX[1]
-strX[,taxa1indbb,] <- 2
-
-strX$str[taxa1indbb]<-1  #works
-plot(strX) 
-
-
-
-  
-lachNull <- soilMoistMin42[,,1]
-lachNull[[1]] <- NULL
-save(lachNull, file = file.path(datOut, 'lachNull.rdata'))
-lachBB <- lachNull[st_as_sfc(bb)]
-
-str1 <- lachBB
-str1_1 <- c(str1, strX)  # works - adds attribute to Null 
-
-str1 <- c(str1, 
-          threshSM(avgSM = subAvgSM, dailyThresh = 0.01, 
-                   startDay = "2020-01-01", endDay = "2020-01-31", windowThresh = 20)
-          )
-
-b <- threshSM(avgSM = subAvgSM, dailyThresh = 0.01, 
-              startDay = "2020-01-01", endDay = "2020-01-31", windowThresh = 20) 
-
-str1 <- c(str1, b)
-# str1$str <- 1
-
-# output of b is 1D (dim = Shape), whereas str1 has 2D, (shape, time)
-# why does str have a time element??
-
-
-
-# one seed set event = 1 day in moist10 =1 
-moist10 <- soilMoistMin42 > 0.1
-seedSet <- sum(moist10$sm_pct)>1  
-# surely you want the germination event to be followed in time by good soil moisture 
-# i.e. 2 strictures passed in time sequence. 
-
-sum(moist10$sm_pct)
-table(moist10)
-
-
-#what years do we have
-summary(st_get_dimension_values(moist10, "time"))
-# 2014-01-01 00:00:00, 2020-10-27 00:00:00
-
-
-
-#----
-#slice moist to 
-
-startYr <- ""
-yrs <- unique(year(st_get_dimension_values(SMmin42bb, "time")))
-dim(SMmin42bb)
-yr <- 2014
-SMmin42bb <- soilMoistMin42[st_as_sfc(bb)]
-SMmin5bb <- soilMoistMin5[st_as_sfc(bb)]
-
-
-library(cubelyr)
-
-
-
-
-SMmin42yr <- SMmin42bb %>% filter(year(time) == yr)
-
-moist10 <- SMmin42yr > 0.1
-
-m10yL <- aggregate(moist10, by = "years", FUN = max, na.rm = TRUE)
-
-
-
-moist80 <- SMmin5bb > 0.80
-m80yL <- aggregate(moist80, by = "years", FUN = max, na.rm = TRUE)
-
-strMet <- m10yL + m80yL
 
 
 

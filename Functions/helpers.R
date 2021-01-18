@@ -38,15 +38,39 @@ catchAggW <- function(strict, strictWeights, FUN, summaryPoly) {
   
 }
 
-catchAggPlot <- function(catchAgg, title = NULL) {
-  # Plot. Color ramp traffic light, because we can
-  catchPlot <- ggplot() +
-    geom_stars(data = catchAgg) +
-    coord_sf() +
-    facet_wrap(~as.character(time)) +
-    theme_void()  +
-    scale_fill_gradient(low = 'firebrick', high = 'forestgreen' ) +
-    ggtitle(title)
+catchAggPlot <- function(catchAgg, varname = NA, title = NULL, as_sf = FALSE) {
+  # Plot. changing to viridis from red/green traffic light because traffic lights ugly and colorblind
+  # The returned object is easier to modify as an sf, so default to that. It COULD blow up memory and time though
+  if (as_sf) {
+    
+    catchAggsf <- st_as_sf(catchAgg, long = TRUE)
+    
+  if (is.na(varname)) {
+    varname = names(catchAgg)
+  }
+    
+   catchPlot <- ggplot() + 
+      geom_sf(data = catchAggsf, aes_string(fill = varname)) + 
+      facet_wrap(vars(as.character(time))) +
+      scale_fill_viridis(option = 'plasma') +
+      theme_bw() + ggtitle('Yearly Life Cycle Success') +
+      theme_void() +
+      scale_fill_viridis(option = 'plasma') +
+      ggtitle(title)
+   
+  } else {
+    catchPlot <- ggplot() +
+      geom_stars(data = catchAgg) +
+      coord_sf() +
+      facet_wrap(~as.character(time)) +
+      theme_void()  +
+      # scale_fill_gradient(low = 'firebrick', high = 'forestgreen' ) +
+      scale_fill_viridis(option = 'plasma') +
+      ggtitle(title)
+  }
+
+  return(catchPlot)
+  
 }
 
 
@@ -56,6 +80,8 @@ catchAggPlot <- function(catchAgg, title = NULL) {
 # and, rightmost.closed has to be used. So, setting up a wrapper function that fixes it
 
 tempaggregate <- function(starObj, by_t, FUN, na.rm = TRUE) {
+  
+
   
   if (is.character(by_t)) {
     # If character, aggregate handles the time intervals correctly
@@ -78,6 +104,8 @@ tempaggregate <- function(starObj, by_t, FUN, na.rm = TRUE) {
     aggObj <- slice(aggObj, time, -length(by_t))
     
   }
+  
+  # test <- 1
   
   return(aggObj)
   
