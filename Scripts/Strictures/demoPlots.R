@@ -306,3 +306,18 @@ ggplot() +
   scale_fill_manual(values = kelp2) +
   theme_bw() + theme(legend.position = 'none')
 
+
+# Can I plot the whole of the lachlan for just a couple timesteps> --------
+
+# Just use something at random
+lach4d <- st_as_sf(seedGerm_Centipeda_Sum42[,,228:231], long = TRUE)
+
+ggplot() + 
+  geom_sf(data = lachOnly, fill = 'antiquewhite') +
+  geom_sf(data = lach4d, aes(fill = days), color = NA) + 
+  
+  facet_wrap(vars(as.character(as.Date(time))), ncol = 2) +
+  scale_fill_viridis(option = 'plasma', name = 'DaysPassing') +
+  theme_bw() + ggtitle('Yearly Life Cycle Success') +
+  theme(legend.position = c(0.75, 0.1), legend.direction = 'horizontal') 
+
