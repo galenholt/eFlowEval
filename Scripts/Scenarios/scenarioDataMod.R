@@ -97,10 +97,10 @@ dailyPolySMavg[[1]][which(dailyPolySMavg[[1]] > 0.5)] <- 0.95
 dailyPolyTempavg <- dailyPolyTempavg + 2
 
 save(dailyPolyTempavg,
-     file = file.path(datOut, 'lachTempModified.rdata'))
+     file = file.path(datOut, 'lachTemp2deg.rdata'))
 
 save(dailyPolySMavg,
-     file = file.path(datOut, 'lachSMModified.rdata'))
+     file = file.path(datOut, 'lachSMtopup.rdata'))
 
 # Benchmarking other methods of making the changes ------------------------
 # 
