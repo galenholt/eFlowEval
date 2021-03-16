@@ -44,7 +44,7 @@ yearsummary <- function(strictList, whichSave = NULL, outsuffix, datebreaks) {
     
   }
   
-  names(yrlist) <- str_c(names(strictList)[noANAE], '_yr_')
+  names(yrlist) <- str_c(names(strictList)[noANAE], '_yr')
   
   # do we save anything?
   if (!is.null(whichSave)) {
@@ -54,7 +54,7 @@ yearsummary <- function(strictList, whichSave = NULL, outsuffix, datebreaks) {
     
     savestar <- yrlist[[whichSave]] # why do I need to do this?
     save(savestar, 
-         file = file.path('strictOut', paste0(names(yrlist)[whichSave], outsuffix, '.rdata')))
+         file = file.path('strictOut', paste0(names(yrlist)[whichSave], '_', outsuffix, '.rdata')))
   }
 
 

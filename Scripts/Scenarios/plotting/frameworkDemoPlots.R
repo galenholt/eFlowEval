@@ -11,7 +11,6 @@
 library(here)
 library(calecopal)
 library(lubridate)
-source(here('Scripts', 'Strictures', 'centipeda.R'))
 
 # Get the bb stuff and example plots from those and scratch and addSoilMoistLachDemo.R
 
@@ -121,7 +120,24 @@ ggplot() +
 
 
 # Get some base variables -------------------------------------------------
+# Read the files in
+load(file.path(datOut, 'lachTempMatched.rdata'))
+load(file.path(datOut, 'lachSMMatched.rdata'))
 
+# The relevant stars are made and discarded in the stricture functions, so make
+# them again here for illustration. I don't really want to return them there, I
+# don't think. Though I suppose could make it a switch
+
+soilMoist_Min5 <- dailyPolySMavg # initialize
+
+system.time(soilMoist_Min5[[1]] <- timeRoll(soilMoist_Min5[[1]], 
+                                            FUN = RcppRoll::roll_min, 
+                                            rolln = 5, 
+                                            align = 'right',
+                                            na.rm = TRUE))
+
+soilTemp <- dailyPolyTempavg - 273
+rm(dailyPolyTempavg)
 # Booligal is huge and takes forever.
 
 # Soil moisture example (rolling min 5-day), on a couple days
@@ -163,7 +179,7 @@ ggplot() +
 # Seed survival
   # Maybe I should aggregate to year?
   # seedYr is proportion of days stricture met
-seedCrop <- seedYr_Centipeda[,4:5,] # Get time slices first or it's absurd
+seedCrop <- centipeda_baseYr$seed60_Centipeda_yr[,4:5,] # Get time slices first or it's absurd
 seedCrop <- st_as_sf(seedCrop, long = TRUE) # SUPER annoying to have to do this NOW, but it requires a square grid for stars
 seedCrop <- st_crop(seedCrop, st_as_sfc(cumbung)) # Crop
 # ST4Crop
@@ -178,11 +194,11 @@ ggplot() +
   scale_fill_viridis(option = 'plasma', name = 'Proportion\ndays\npassed') +
   theme_bw() + ggtitle('Seed survival')
 
-# Seed survival and germ and ANAE
+# Seed survival and germ
 # Nothing. what does germ look like
 # Maybe I should aggregate to year?
 # seedYr is proportion of days stricture met
-sgaCrop <- seedGermYrANAE_Centipeda[,4:5,] # Get time slices first or it's absurd
+sgaCrop <- centipeda_baseYr$seedGerm_Centipeda_yr[,4:5,] # Get time slices first or it's absurd
 sgaCrop <- st_as_sf(sgaCrop, long = TRUE) # SUPER annoying to have to do this NOW, but it requires a square grid for stars
 sgaCrop <- st_crop(sgaCrop, st_as_sfc(cumbung)) # Crop
 # ST4Crop
@@ -195,12 +211,12 @@ ggplot() +
   geom_sf(data = sgaCrop, aes(fill = propDaysPassed), color = NA) + 
   facet_wrap(vars(as.character(time))) +
   scale_fill_viridis(option = 'plasma', name = 'Proportion\ndays\npassed') +
-  theme_bw() + ggtitle('Survival, Germ, and ANAE')
+  theme_bw() + ggtitle('Survival and germination')
 
 # Nothing. what does germ look like
 
 # Germ
-germCrop <- germYr_Centipeda[,,] # Get time slices first or it's absurd
+germCrop <- centipeda_baseYr$germ_Centipeda_yr[,,] # Get time slices first or it's absurd
 germCrop <- st_as_sf(germCrop, long = TRUE) # SUPER annoying to have to do this NOW, but it requires a square grid for stars
 germCrop <- st_crop(germCrop, st_as_sfc(cumbung)) # Crop
 # ST4Crop
@@ -257,8 +273,9 @@ ggplot() +
 
 
 
-# Make a basin plot -------------------------------------------------------
-fullBasin_Centipeda <- catchAggW(strict = fullYr_Centipeda, strictWeights = lachArea, 
+# Make a basin plot for full cycle wo centipeda but cutting to ANAE -------------------------------------------------------
+fullBasin_Centipeda <- catchAggW(strict = centipeda_baseYr$seedGermFruit_Centipeda_yr*centipeda_base$isANAE_Centipeda, 
+                                 strictWeights = lachArea, 
                                  FUN = sum, summaryPoly = ltimCut)
 names(fullBasin_Centipeda) <- 'areaDaysPassed'
 mdbCent_sf <- st_as_sf(fullBasin_Centipeda, long = TRUE)
@@ -272,7 +289,8 @@ ggplot() +
 
 
 ggplot() + 
-  geom_sf(data = filter(mdbCent_sf, time > ymd('20170501') & time < ymd('20190501')), aes(fill = log(areaDaysPassed))) + 
+  geom_sf(data = filter(mdbCent_sf, time > ymd('20170501') & time < ymd('20190501')), 
+          aes(fill = log(areaDaysPassed))) + 
   facet_wrap(vars(as.character(as.Date(time))), ncol = 2) +
   scale_fill_viridis(option = 'plasma', name = 'Area of\nsuccess\n(log)') +
   theme_bw() + ggtitle('Yearly Life Cycle Success') +
@@ -280,7 +298,8 @@ ggplot() +
 
 
 
-fullBasin_Lippia <- catchAggW(strict = fullYr_Lippia, strictWeights = lachArea, 
+fullBasin_Lippia <- catchAggW(strict = lippia_baseYr$fullCycle_Lippia_yr,
+                              strictWeights = lachArea, 
                                  FUN = sum, summaryPoly = ltimCut)
 names(fullBasin_Lippia) <- 'areaDaysPassed'
 mdbLip_sf <- st_as_sf(fullBasin_Lippia, long = TRUE)
@@ -310,11 +329,19 @@ ggplot() +
 # Can I plot the whole of the lachlan for just a couple timesteps> --------
 
 # Just use something at random
+seedGerm_Centipeda_Sum42 <- centipeda_base$seedGerm_Centipeda # initialize
+
+system.time(seedGerm_Centipeda_Sum42[[1]] <- timeRoll(centipeda_base$seedGerm_Centipeda[[1]],
+                                                      FUN = RcppRoll::roll_sum,
+                                                      rolln = 42,
+                                                      align = 'right',
+                                                      na.rm = TRUE))
+
 lach4d <- st_as_sf(seedGerm_Centipeda_Sum42[,,228:231], long = TRUE)
 
 ggplot() + 
   geom_sf(data = lachOnly, fill = 'antiquewhite') +
-  geom_sf(data = lach4d, aes(fill = days), color = NA) + 
+  geom_sf(data = lach4d, aes(fill = passedStricts), color = NA) + 
   
   facet_wrap(vars(as.character(as.Date(time))), ncol = 2) +
   scale_fill_viridis(option = 'plasma', name = 'DaysPassing') +

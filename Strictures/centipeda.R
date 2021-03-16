@@ -285,7 +285,7 @@ centipedastricts <- function(smFile, tempFile, lippiaFile) {
   # Not worth doing the lippia alone, because that's just !fullCycleANAE_Lippia, so if we want that, just go get it
   
   # Invert the logic on the lippia, since it is whether it existed, and we want the centip stricture to pass if lippia WASN'T there
-  fullCycleLippia_Centipeda <- unevenTimeMult(fineStars = fullCycleANAE_Centipeda, coarseStars = fullYr_Lippia, 
+  fullCycleLippia_Centipeda <- unevenTimeMult(fineStars = fullCycleANAE_Centipeda, coarseStars = lippia_baseYr$fullCycle_Lippia_yr, 
                                               lag = 1, invertCoarseLogic = TRUE)
   
   

@@ -30,7 +30,7 @@
 
 
 # Seed bank survival ------------------------------------------------------
-seedCatch_Centipeda <- catchAggW(strict = seedYr_Centipeda, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
+seedCatch_Centipeda <- catchAggW(strict = centipeda_baseYr$seed60_Centipeda_yr, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
 names(seedCatch_Centipeda) <- 'areaDaysPassed'
 
 seedPlot_Centipeda <- catchAggPlot(seedCatch_Centipeda, title = 'Seed Surv Centipeda')
@@ -38,7 +38,7 @@ seedPlot_Centipeda
 
 # Germination -------------------------------------------------------------
 
-germCatch_Centipeda <- catchAggW(strict = germYr_Centipeda, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
+germCatch_Centipeda <- catchAggW(strict = centipeda_baseYr$germ_Centipeda_yr, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
 names(germCatch_Centipeda) <- 'areaDaysPassed'
 
 germPlot_Centipeda <- catchAggPlot(germCatch_Centipeda, title = 'Germ Centipeda')
@@ -46,7 +46,7 @@ germPlot_Centipeda
 
 # Fruiting ----------------------------------------------------------------
 
-fruitCatch_Centipeda <- catchAggW(strict = fruitYr_Centipeda, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
+fruitCatch_Centipeda <- catchAggW(strict = centipeda_baseYr$fruit10_Centipeda_yr, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
 names(fruitCatch_Centipeda) <- 'areaDaysPassed'
 fruitPlot_Centipeda <- catchAggPlot(fruitCatch_Centipeda, title = 'Fruiting Centipeda')
 fruitPlot_Centipeda
@@ -62,23 +62,23 @@ fruitPlot_Centipeda
 
 # survival and germination ------------------------------------------------
 
-seedGermCatch_Centipeda <- catchAggW(strict = seedGermYrANAE_Centipeda, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
+seedGermCatch_Centipeda <- catchAggW(strict = centipeda_baseYr$seedGerm_Centipeda_yr, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
 names(seedGermCatch_Centipeda) <- 'areaDaysPassed'
 seedGermPlot_Centipeda <- catchAggPlot(seedGermCatch_Centipeda, title = 'Seed Surv + Germ Centipeda')
 seedGermPlot_Centipeda
 
 # Full cycle, no lippia --------------------------------------------------------------
 
-fullCatch_Centipeda <- catchAggW(strict = fullYr_Centipeda, strictWeights = lachArea, 
+fullCatch_Centipeda <- catchAggW(strict = centipeda_baseYr$seedGermFruit_Centipeda_yr, strictWeights = lachArea, 
                                  FUN = sum, summaryPoly = lachOnly)
 names(fullCatch_Centipeda) <- 'areaDaysPassed'
 fullPlot_Centipeda <- catchAggPlot(fullCatch_Centipeda, title = 'Full Life Cycle Success')
 fullPlot_Centipeda
 
 
-# FullCycle, including lippia ---------------------------------------------
+# FullCycle, including lippia and ANAE restriction---------------------------------------------
 
-fullCatchLippia_Centipeda <- catchAggW(strict = fullYrLippia_Centipeda, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
+fullCatchLippia_Centipeda <- catchAggW(strict = centipeda_baseYr$fullCycleLippia_Centipeda_yr, strictWeights = lachArea, FUN = sum, summaryPoly = lachOnly)
 names(fullCatchLippia_Centipeda) <- 'areaDaysPassed'
 fullPlotLippia_Centipeda <- catchAggPlot(fullCatchLippia_Centipeda, title = 'Full Cycle Centipeda (dependent on Lippia)')
 fullPlotLippia_Centipeda

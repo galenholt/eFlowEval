@@ -36,10 +36,17 @@ library(viridis)
 
 # Argh. sort all this directory crap out later
 # Trying to at least separate scripts and functions, looking towards library
-source(here('Functions', 'rastPolyJoin.R'))
-source(here('Functions', 'timeRoll.R'))
-source(here('Functions', 'helpers.R'))
-source(here('Functions', 'unevenTimeMult.R'))
+
+# This is almost EXACTLY a library load at this point. Just need to actually wrap it up and split the git
+basicfuns <- list.files(here('Functions'))
+basicfuns <- here('Functions', basicfuns)
+strictfuns <- list.files(here('Strictures'), pattern = '.R')
+strictfuns <- here('Strictures', strictfuns)
+
+# read in those functions
+sapply(basicfuns, source)
+sapply(strictfuns, source)
+
 
 myhome <- str_remove(path.expand("~"), "/Documents")
 datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
@@ -88,7 +95,7 @@ baseLip <- 'fullCycle_Lippia_yr_base.rdata' # This is made in lippia_analysis.R,
 # Lippia baseline
 lippia_base <- lippiastricts(smFile = baseSM, 
                              tempFile = baseTemp)
-
+# yearly summary
 lippia_baseYr <- yearsummary(lippia_base, 
                              whichSave = 'fullCycle', 
                              outsuffix = 'base', 
@@ -99,30 +106,9 @@ centipeda_base <- centipedastricts(smFile = baseSM,
                                    tempFile = baseTemp, 
                                    lippiaFile = baseLip)
 
-# Don't save anything
+# yearly summary
 centipeda_baseYr <- yearsummary(centipeda_base,
                                 datebreaks = interDates)
-
-
-# The top-up scenario -------------------------------------------------
-topSM <- 'lachSMtopup.rdata'
-# baseTemp <- 'lachTempMatched.rdata'
-topLip <- 'fullCycle_Lippia_yr_top.rdata'
-
-# Lippia baseline
-lippia_top <- lippiastricts(smFile = topSM, 
-                             tempFile = baseTemp)
-
-lippia_topYr <- yearsummary(lippia_top, 
-                             whichSave = 'fullCycle', 
-                             outsuffix = 'top', 
-                             datebreaks = interDates)
-
-
-# Centipeda baseline
-centipeda_top <- centipedastricts(smFile = topSM, 
-                                   tempFile = baseTemp, 
-                                   lippiaFile = topLip)
 
 
 
