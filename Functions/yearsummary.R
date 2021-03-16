@@ -1,6 +1,6 @@
 # Lippia output summary and figures
 
-yearsummary <- function(strictList, whichSave = NULL, outsuffix, datebreaks) {
+yearsummary <- function(strictList, whichSave = NULL, subdir = NULL, outsuffix, datebreaks) {
 
 # Summarise over year -----------------------------------------------------
   # TODO: More flexible time summaries
@@ -53,8 +53,14 @@ yearsummary <- function(strictList, whichSave = NULL, outsuffix, datebreaks) {
     }
     
     savestar <- yrlist[[whichSave]] # why do I need to do this?
+    
+    if (is.null(subdir)) {
+      dirstruct <- file.path('strictOut')
+    } else {
+      dirstruct <- file.path('strictOut', subdir)
+    }
     save(savestar, 
-         file = file.path('strictOut', paste0(names(yrlist)[whichSave], '_', outsuffix, '.rdata')))
+         file = file.path(dirstruct, paste0(names(yrlist)[whichSave], '_', outsuffix, '.rdata')))
   }
 
 
