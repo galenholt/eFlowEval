@@ -53,8 +53,9 @@ datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:
 
 datOut <- "datOut"
 
+scriptOut <- 'scenarioDemo'
 
-
+if (!dir.exists(here('strictOut', scriptOut))) {dir.create(here('strictOut', scriptOut))}
 
 
 # Shared data -------------------------------------------------------------
@@ -91,7 +92,7 @@ interDates <- as.POSIXct(c("2014-06-30", "2015-06-30", "2016-06-30", "2017-06-30
 # Naming them as variables avoids screwing up and having the spp respond to different environments
 baseSM <- 'lachSMMatched.rdata'
 baseTemp <- 'lachTempMatched.rdata'
-baseLip <- 'fullCycle_Lippia_yr_base.rdata' # This is made in lippia_analysis.R, not lippiastricts()
+baseLip <- file.path(scriptOut, 'fullCycle_Lippia_yr_base.rdata') # This is made in lippia_analysis.R, not lippiastricts()
 # TODO: make that full year summary less dependent on running a script
 
 # Lippia baseline
@@ -99,7 +100,8 @@ lippia_base <- lippiastricts(smFile = baseSM,
                              tempFile = baseTemp)
 # yearly summary
 lippia_baseYr <- yearsummary(lippia_base, 
-                             whichSave = 'fullCycle', 
+                             whichSave = 'fullCycle',
+                             subdir = scriptOut,
                              outsuffix = 'base', 
                              datebreaks = interDates)
 
@@ -112,18 +114,24 @@ centipeda_base <- centipedastricts(smFile = baseSM,
 centipeda_baseYr <- yearsummary(centipeda_base,
                                 datebreaks = interDates)
 
+# Save and delete the dailies to save space
+save(lippia_base, centipeda_base, 
+     file = file.path('strictOut', scriptOut, 'base.rdata'))
+# remove to save space
+rm(lippia_base, centipeda_base)
 
 # The top-up scenario -------------------------------------------------
 topSM <- 'lachSMtopup.rdata'
 # baseTemp <- 'lachTempMatched.rdata'
-topLip <- 'fullCycle_Lippia_yr_top.rdata'
+topLip <- file.path(scriptOut, 'fullCycle_Lippia_yr_top.rdata')
 
 # Lippia
 lippia_top <- lippiastricts(smFile = topSM, 
                              tempFile = baseTemp)
 
 lippia_topYr <- yearsummary(lippia_top, 
-                             whichSave = 'fullCycle', 
+                             whichSave = 'fullCycle',
+                            subdir = scriptOut,
                              outsuffix = 'top', 
                              datebreaks = interDates)
 
@@ -133,6 +141,47 @@ centipeda_top <- centipedastricts(smFile = topSM,
                                    tempFile = baseTemp, 
                                    lippiaFile = topLip)
 
+# yearly summary
+centipeda_topYr <- yearsummary(centipeda_top,
+                                datebreaks = interDates)
+
+# Save and delete the dailies to save space
+save(lippia_top, centipeda_top, 
+     file = file.path('strictOut', scriptOut, 'topup.rdata'))
+# remove to save space
+rm(lippia_top, centipeda_top)
 
 
 
+# Top-up + climate scenario -------------------------------------------------
+  # Not sure if better to do both or one at a time. Will run out of memory to do factorial
+  # Doing both for now to demo multiple
+topclimSM <- 'lachSMtopup.rdata'
+topclimTemp <- 'lachTemp2deg.rdata'
+topclimLip <- file.path(scriptOut, 'fullCycle_Lippia_yr_topclim.rdata')
+
+# Lippia
+lippia_topclim <- lippiastricts(smFile = topclimSM, 
+                            tempFile = topclimTemp)
+
+lippia_topclimYr <- yearsummary(lippia_topclim, 
+                            whichSave = 'fullCycle',
+                            subdir = scriptOut,
+                            outsuffix = 'topclim', 
+                            datebreaks = interDates)
+
+
+# Centipeda
+centipeda_topclim <- centipedastricts(smFile = topclimSM, 
+                                  tempFile = topclimTemp, 
+                                  lippiaFile = topclimLip)
+
+# yearly summary
+centipeda_topclimYr <- yearsummary(centipeda_topclim,
+                                datebreaks = interDates)
+
+# Save and delete the dailies to save space
+save(lippia_topclim, centipeda_topclim, 
+     file = file.path('strictOut', scriptOut, 'topclim.rdata'))
+# remove to save space
+rm(lippia_topclim, centipeda_topclim)
