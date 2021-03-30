@@ -1,4 +1,8 @@
-centipedastricts <- function(smFile, tempFile, lippiaFile) {
+centipedastricts <- function(smFile, tempFile, lippiaFile, lippiaThreshold = 0.66) {
+  # lippia threshold is the proportion of days in a year of lippia success that
+  # prevents centipeda success
+    # currently hardcoded as sorted in scenarioPlotScratch
+  
   # Currently specifying the sort of file to read in to remind what's needed.
   # BUT, could just have a list of filenames, and read them all in whatever they
   # are
@@ -282,10 +286,21 @@ centipedastricts <- function(smFile, tempFile, lippiaFile) {
   # etc, as indicated by the biology
   
   # For now, just do it for the final
-  # Not worth doing the lippia alone, because that's just !fullCycleANAE_Lippia, so if we want that, just go get it
+  # Not worth doing the lippia alone, because that's just !fullCycleANAE_Lippia,
+  # so if we want that, just go get it
   
-  # Invert the logic on the lippia, since it is whether it existed, and we want the centip stricture to pass if lippia WASN'T there
-  fullCycleLippia_Centipeda <- unevenTimeMult(fineStars = fullCycleANAE_Centipeda, coarseStars = lippia_baseYr$fullCycle_Lippia_yr, 
+  # Invert the logic on the lippia, since it is whether it existed, and we want
+  # the centip stricture to pass if lippia WASN'T there
+    # savestar is the saved stars object from lippia
+    # it is in proportion of days that lippia was successful for the year. We
+    # really only want to include years where lippia was FULLY successful at
+    # surviving, because otherwise it died. But logical on anything > 0 is true.
+
+  # These are now polygon-years where lippia was successful for lippiaThreshold
+  # proportion of the year, so invert to get polygon-years where centipeda can go through
+  savestar <- savestar > lippiaThreshold 
+  fullCycleLippia_Centipeda <- unevenTimeMult(fineStars = fullCycleANAE_Centipeda, 
+                                              coarseStars = savestar, 
                                               lag = 1, invertCoarseLogic = TRUE)
   
   
