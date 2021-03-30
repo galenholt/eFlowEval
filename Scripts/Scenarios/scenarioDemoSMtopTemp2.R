@@ -71,7 +71,8 @@ LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'L
 
 # LTIM areas, useful for plotting
 ltimCut <- LTIM_Valleys %>%
-  select(ValleyName) # Three different ways to reference, basically
+  select(ValleyName) %>% # Three different ways to reference, basically
+  filter(ValleyName != 'Northern Unregulated') # Deal with the northern unregulated issue
 
 ltimCut <- st_transform(ltimCut, st_crs(lachAll))
 
@@ -122,12 +123,12 @@ rm(lippia_base, centipeda_base)
 
 # The top-up scenario -------------------------------------------------
 topSM <- 'lachSMtopup.rdata'
-# baseTemp <- 'lachTempMatched.rdata'
+topTemp <- 'lachTempMatched.rdata' # for clarity, define the topup as using the base temp
 topLip <- file.path(scriptOut, 'fullCycle_Lippia_yr_top.rdata')
 
 # Lippia
 lippia_top <- lippiastricts(smFile = topSM, 
-                             tempFile = baseTemp)
+                             tempFile = topTemp)
 
 lippia_topYr <- yearsummary(lippia_top, 
                              whichSave = 'fullCycle',
@@ -138,7 +139,7 @@ lippia_topYr <- yearsummary(lippia_top,
 
 # Centipeda
 centipeda_top <- centipedastricts(smFile = topSM, 
-                                   tempFile = baseTemp, 
+                                   tempFile = topTemp, 
                                    lippiaFile = topLip)
 
 # yearly summary
@@ -151,6 +152,36 @@ save(lippia_top, centipeda_top,
 # remove to save space
 rm(lippia_top, centipeda_top)
 
+# The climate alone scenario -------------------------------------------------
+climSM <- 'lachSMMatched.rdata'
+climTemp <- 'lachTemp2deg.rdata'
+climLip <- file.path(scriptOut, 'fullCycle_Lippia_yr_clim.rdata')
+
+# Lippia
+lippia_clim <- lippiastricts(smFile = climSM, 
+                            tempFile = climTemp)
+
+lippia_climYr <- yearsummary(lippia_clim, 
+                            whichSave = 'fullCycle',
+                            subdir = scriptOut,
+                            outsuffix = 'clim', 
+                            datebreaks = interDates)
+
+
+# Centipeda
+centipeda_clim <- centipedastricts(smFile = climSM, 
+                                  tempFile = climTemp, 
+                                  lippiaFile = climLip)
+
+# yearly summary
+centipeda_climYr <- yearsummary(centipeda_clim,
+                               datebreaks = interDates)
+
+# Save and delete the dailies to save space
+save(lippia_clim, centipeda_clim, 
+     file = file.path('strictOut', scriptOut, 'clim.rdata'))
+# remove to save space
+rm(lippia_clim, centipeda_clim)
 
 
 # Top-up + climate scenario -------------------------------------------------

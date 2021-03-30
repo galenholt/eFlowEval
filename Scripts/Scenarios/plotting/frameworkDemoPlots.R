@@ -322,7 +322,7 @@ ggplot() +
   # # geom_sf(data = roads) +
   # coord_sf(xlim = c(144, 145),
   #          ylim = c(-35.5, -36)) +
-  scale_fill_manual(values = kelp2) +
+  scale_fill_manual(values = rev(kelp2)) + # turn the rev() on or off to plot different illustrations of scenario outcomes
   theme_bw() + theme(legend.position = 'none')
 
 
