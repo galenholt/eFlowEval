@@ -43,22 +43,27 @@ fullCatch_Centipeda_base <- catchAggW(strict = centipeda_baseYr$fullCycleLippia_
                                       strictWeights = lachArea, 
                                       FUN = sum, summaryPoly = ltimCut)
 names(fullCatch_Centipeda_base) <- 'areaDaysPassed'
+fullCatch_Centipeda_base[[1]][notlach, ] <- NA
+
 
 fullCatch_Centipeda_clim <- catchAggW(strict = centipeda_climYr$fullCycleLippia_Centipeda_yr, 
                                       strictWeights = lachArea, 
                                       FUN = sum, summaryPoly = ltimCut)
 names(fullCatch_Centipeda_clim) <- 'areaDaysPassed'
+fullCatch_Centipeda_clim[[1]][notlach, ] <- NA
 
 fullCatch_Centipeda_top <- catchAggW(strict = centipeda_topYr$fullCycleLippia_Centipeda_yr, 
                                       strictWeights = lachArea, 
                                       FUN = sum, summaryPoly = ltimCut)
 names(fullCatch_Centipeda_top) <- 'areaDaysPassed'
+fullCatch_Centipeda_top[[1]][notlach, ] <- NA
 
 
 fullCatch_Centipeda_topclim <- catchAggW(strict = centipeda_topclimYr$fullCycleLippia_Centipeda_yr, 
                                       strictWeights = lachArea, 
                                       FUN = sum, summaryPoly = ltimCut)
 names(fullCatch_Centipeda_topclim) <- 'areaDaysPassed'
+fullCatch_Centipeda_topclim[[1]][notlach, ] <- NA
 
 
 # baseline
@@ -258,3 +263,31 @@ plot3CL <- ggplot() +
   scale_fill_viridis(option = 'viridis', begin = 0.25)
 plot3CL
 
+
+## Scenarios but only 3
+# Change due to climate
+centClimvBasePlot3 <- ggplot() +
+  geom_stars(data = centchangeClimvBase[,,4:5]) +
+  coord_sf() +
+  facet_wrap(~as.character(time)) +
+  theme_void()  +
+  scale_fill_viridis(option = 'viridis')
+centClimvBasePlot3
+
+# Change due to management
+centTopvBasePlot3 <- ggplot() +
+  geom_stars(data = centchangeTopvBase[,,4:5]) +
+  coord_sf() +
+  facet_wrap(~as.character(time)) +
+  theme_void()  +
+  scale_fill_viridis(option = 'viridis', end = 0.5) 
+centTopvBasePlot3
+
+# climate + management
+centTopClimvClimPlot3 <- ggplot() +
+  geom_stars(data = centchangeTopClimvClim[,,4:5]) +
+  coord_sf() +
+  facet_wrap(~as.character(time)) +
+  theme_void()  +
+  scale_fill_viridis(option = 'viridis', begin = 0.25, end = 0.75)
+centTopClimvClimPlot3
