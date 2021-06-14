@@ -10,9 +10,9 @@ library(stars)
 
 # Argh. sort all this directory crap out later
 # Trying to at least separate scripts and functions, looking towards library
-source(here('Functions', 'rastPolyJoin.R'))
-source(here('Functions', 'timeRoll.R'))
-source(here('Functions', 'timeChunkPoly.R'))
+source(here::here('Functions', 'rastPolyJoin.R'))
+source(here::here('Functions', 'timeRoll.R'))
+source(here::here('Functions', 'timeChunkPoly.R'))
 
 myhome <- str_remove(path.expand("~"), "/Documents")
 datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
