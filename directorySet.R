@@ -9,7 +9,7 @@ if (grepl('^pearcey', Sys.info()["nodename"])) {
   # Let's assume I cp from flush/scratch/whatever into JOBDIR at the start of the job.
   datDir <-  file.path(Sys.getenv('JOBDIR'), 'dataBase')
   datOut <- file.path(Sys.getenv('JOBDIR'), 'datOut')
-  
+  source(".Rprofile")
 } else if (grepl('^Windows', Sys.info()["sysname"])) {
   myhome <- str_remove(path.expand("~"), "/Documents")
   datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
