@@ -20,7 +20,7 @@ begin=`date +%s`
 
 # Set up the input data
 mkdir -p $JOBDIR/dataBase
-rsync -avr $SCRATCH1DIR/dataBase
+rsync -avr $SCRATCH1DIR/dataBase $JOBDIR/dataBase
 
 postDatain=`date +%s`
 
