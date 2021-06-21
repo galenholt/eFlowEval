@@ -34,7 +34,8 @@ echo Time taken for data readin: $elapsedDat
 
 module load R/4.0.2
 
-cd cc2
+cd  cc2/Scripts/DataProcessing
+
 
 Rscript processANAE.R
 
