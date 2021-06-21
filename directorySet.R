@@ -8,7 +8,9 @@ print('\n')
 
 # Rather than a functtion, I want this to set a few things, so building as a script instead
 # Set directory structure for pearcey
-if (grepl('^pearcey', Sys.info()["nodename"])) {
+# Pearcey seems to have all the nodes named 'c###' 
+# trying to avoid needing to say sysname == Linux, because would be nice to run on local linux
+if (grepl('^pearcey', Sys.info()["nodename"]) | grepl('^c', Sys.info()["nodename"])) {
   # Let's assume I cp from flush/scratch/whatever into JOBDIR at the start of the job.
   datDir <-  file.path(Sys.getenv('SCRATCH1DIR'), 'dataBase')
   datOut <- file.path(Sys.getenv('SCRATCH1DIR'), 'datOut')
