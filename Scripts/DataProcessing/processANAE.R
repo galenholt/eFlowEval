@@ -25,10 +25,12 @@ library(stars)
 # Argh. sort all this directory crap out later
   # Need to have a shared data folder, without tracking in git and without having to do damn setwd()
 
-myhome <- str_remove(path.expand("~"), "/Documents")
-datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
+source('directorySet.R')
 
-datOut <- "datOut"
+# myhome <- str_remove(path.expand("~"), "/Documents")
+# datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
+# 
+# datOut <- "datOut"
 
 
 
