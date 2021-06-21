@@ -4,6 +4,7 @@
 
 # The main ANAE are in MDB_ANAE.gdb/Features/
   # Let's start with Wetlands_ANAE_20171015 and Watercourses_ANAE
+source('directorySet.R')
 
 # Let's get libraries here, then sort out git then sort out making this a library so we don't have to deal with all the library crap
 # library(sp)
@@ -25,7 +26,7 @@ library(stars)
 # Argh. sort all this directory crap out later
   # Need to have a shared data folder, without tracking in git and without having to do damn setwd()
 
-source('directorySet.R')
+
 
 # myhome <- str_remove(path.expand("~"), "/Documents")
 # datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
