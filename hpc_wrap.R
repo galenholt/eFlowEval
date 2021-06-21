@@ -1,3 +1,6 @@
 # HPC wrapper
 source('directorySet.R')
-source('cc2/Scripts/DataProcessing/processANAE.R')
+# What got passed? Setting up for passing which script to run in the sh
+args <- commandArgs()
+print(args)
+source('Scripts/DataProcessing/processANAE.R')

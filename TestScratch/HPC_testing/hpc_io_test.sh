@@ -37,7 +37,7 @@ module load R/4.0.2
 cd cc2
 # cd  cc2/Scripts/DataProcessing
 
-Rscript hpc_wrap.R
+Rscript hpc_wrap.R "Scripts/DataProcessing/processANAE.R"
 # Rscript processANAE.R
 
 # Copy to ruby datastore. Not sure how to copy to/from {lw-mer}...
