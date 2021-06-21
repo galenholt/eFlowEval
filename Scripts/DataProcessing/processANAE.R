@@ -4,6 +4,7 @@
 
 # The main ANAE are in MDB_ANAE.gdb/Features/
   # Let's start with Wetlands_ANAE_20171015 and Watercourses_ANAE
+print(getwd())
 source('directorySet.R')
 
 # Let's get libraries here, then sort out git then sort out making this a library so we don't have to deal with all the library crap
