@@ -2,9 +2,8 @@
 # directorySet <- function() {
 #   # this function 
 # }
-print('opened directoryset\n')
+print('opened directoryset')
 print(Sys.info())
-print('\n')
 
 # Rather than a functtion, I want this to set a few things, so building as a script instead
 # Set directory structure for pearcey
@@ -16,9 +15,10 @@ if (grepl('^pearcey', Sys.info()["nodename"]) | grepl('^c', Sys.info()["nodename
   datOut <- file.path(Sys.getenv('SCRATCH1DIR'), 'datOut')
   # datDir <-  file.path(Sys.getenv('JOBDIR'), 'dataBase')
   # datOut <- file.path(Sys.getenv('JOBDIR'), 'datOut')
-  print('in the grepl\n')
-  print(paste0('datOut is ', datOut, '\n'))
+  print('in the grepl')
+  print(paste0('datOut is ', datOut))
   source(".Rprofile")
+  print(.libPaths())
 } else if (grepl('^Windows', Sys.info()["sysname"])) {
   myhome <- str_remove(path.expand("~"), "/Documents")
   datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"

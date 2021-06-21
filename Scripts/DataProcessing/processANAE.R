@@ -18,7 +18,7 @@ library(sf)
 library(stars)
 
 
-
+print('packages loaded')
 # Data is in QAEL - MER/Model/Data/ANAE
   # tempted to go with a Here, but should really have a library structure
 # use here for now

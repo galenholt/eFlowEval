@@ -1,6 +1,6 @@
 source("renv/activate.R")
 
-if (grepl('^pearcey', Sys.info()["nodename"])) {
+if (grepl('^pearcey', Sys.info()["nodename"]) | grepl('^c', Sys.info()["nodename"])) {
 # options(renv.config.external.libraries = "/apps/R/4.0.2/lib64/R/library")
 # options(renv.config.sandbox.enabled = FALSE)
 
