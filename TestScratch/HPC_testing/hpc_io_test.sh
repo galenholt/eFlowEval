@@ -34,10 +34,11 @@ echo Time taken for data readin: $elapsedDat
 
 module load R/4.0.2
 
-cd  cc2/Scripts/DataProcessing
+cd cc2
+# cd  cc2/Scripts/DataProcessing
 
-
-Rscript processANAE.R
+Rscript hpc_wrap.R
+# Rscript processANAE.R
 
 # Copy to ruby datastore. Not sure how to copy to/from {lw-mer}...
 # cp -rp testout.rdata /datastore/hol436/HPC_testing
