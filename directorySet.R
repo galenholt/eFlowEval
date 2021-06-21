@@ -2,7 +2,7 @@
 # directorySet <- function() {
 #   # this function 
 # }
-print('opened directoryset')
+print(paste0('opened directoryset, time is ', Sys.time(), ', run is ', dataWhere))
 print(Sys.info())
 
 # Rather than a functtion, I want this to set a few things, so building as a script instead
@@ -10,15 +10,29 @@ print(Sys.info())
 # Pearcey seems to have all the nodes named 'c###' 
 # trying to avoid needing to say sysname == Linux, because would be nice to run on local linux
 if (grepl('^pearcey', Sys.info()["nodename"]) | grepl('^c', Sys.info()["nodename"])) {
-  # Let's assume I cp from flush/scratch/whatever into JOBDIR at the start of the job.
-  datDir <-  file.path(Sys.getenv('SCRATCH1DIR'), 'dataBase')
-  datOut <- file.path(Sys.getenv('SCRATCH1DIR'), 'datOut')
-  # datDir <-  file.path(Sys.getenv('JOBDIR'), 'dataBase')
-  # datOut <- file.path(Sys.getenv('JOBDIR'), 'datOut')
-  print('in the grepl')
+  
+  if (dataWhere == 'SCRATCH') {
+    # Let's assume I cp from flush/scratch/whatever into JOBDIR at the start of the job.
+    datDir <-  file.path(Sys.getenv('SCRATCH1DIR'), 'dataBase')
+    datOut <- file.path(Sys.getenv('SCRATCH1DIR'), 'datOut')
+  } else if (dataWhere == 'JOB') {
+    # Or, if we read to jobdir first
+    # This needs a slightly different .sh, because it needs to read into/out of jobdir
+    datDir <-  file.path(Sys.getenv('JOBDIR'), 'dataBase')
+    datOut <- file.path(Sys.getenv('JOBDIR'), 'datOut')
+  } else if (dataWhere == 'MER') {
+    # Or, if we work straight out of Bowen
+    datDir <-  file.path('/datasets/work/lw-mer/work/galen_holt/dataBase')
+    datOut <- file.path('/datasets/work/lw-mer/work/galen_holt/datOut')
+  }
+  
+  
+  
+  
+
   print(paste0('datOut is ', datOut))
   source(".Rprofile")
-  print(.libPaths())
+  # print(.libPaths())
 } else if (grepl('^Windows', Sys.info()["sysname"])) {
   myhome <- str_remove(path.expand("~"), "/Documents")
   datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
@@ -26,7 +40,6 @@ if (grepl('^pearcey', Sys.info()["nodename"]) | grepl('^c', Sys.info()["nodename
   datOut <- "datOut"
 }
 
-print('make it through the ifs')
 # Make the out directory, in case it doesn't exist
 if (!dir.exists(datOut)) {dir.create(datOut, recursive = TRUE)}
 # The in directory has to exist, or there won't be anything to use

@@ -7,7 +7,7 @@
 
 
 #SBATCH --time=6:00:00 # request time (walltime, not compute time)
-#SBATCH --mem=64GB # request memory
+#SBATCH --mem=64GB # request memory, for now same as laptop
 #SBATCH --nodes=1 # number of nodes
 #SBATCH --ntasks-per-node=10 # This is the cores per node # If I want 20 cpus on 2 nodes, for ex, use --nodes=2 --ntasks-per-node=10
 
@@ -19,8 +19,8 @@ begin=`date +%s`
 
 
 # Set up the input data
-# mkdir -p $JOBDIR/dataBase
-# rsync -avr $SCRATCH1DIR/dataBase $JOBDIR/dataBase
+mkdir -p $JOBDIR/dataBase
+rsync -avr $SCRATCH1DIR/dataBase $JOBDIR/dataBase
 
 postDatain=`date +%s`
 
@@ -37,7 +37,7 @@ module load R/4.0.2
 cd cc2
 # cd  cc2/Scripts/DataProcessing
 
-Rscript hpc_wrap.R "Scripts/DataProcessing/processANAE.R" "SCRATCH"
+Rscript hpc_wrap.R "Scripts/DataProcessing/processANAE.R" "JOB"
 # Rscript processANAE.R
 
 # Copy to ruby datastore. copying to the {lw-mer} on bowen is at /datasets/work/lw-mer/work/galen_holt, but need to sort this out a bit better
@@ -54,8 +54,8 @@ echo Time taken for code: $elapsed
 	# Will need to change the name from TESTING, but that's easy enough
 	# make a job and date directory so we don't overwrite.
 	# Might need to rethink this because we actually want to then bring some of this back in, but this'll work for now
-# mkdir -p $SCRATCH1DIR/datOut/TESTING/$(date +"%d-%m-%Y")
-# rsync -avr $JOBDIR/datOut $SCRATCH1DIR/datOut/TESTING/$(date +"%d-%m-%Y")
+mkdir -p $SCRATCH1DIR/datOut/ScratchToJob/$(date +"%d-%m-%Y")
+rsync -avr $JOBDIR/datOut $SCRATCH1DIR/datOut/ScratchToJob/$(date +"%d-%m-%Y")
 
 # This example moves from $HOME to $SCRATCH. But I want to set things up to move in/out of $JOBDIR while jobs are runnign
 # rsync -avr $HOME/cc2/Scripts/Scenarios $SCRATCH1DIR/datOut

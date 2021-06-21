@@ -37,7 +37,7 @@ module load R/4.0.2
 cd cc2
 # cd  cc2/Scripts/DataProcessing
 
-Rscript hpc_wrap.R "Scripts/DataProcessing/processANAE.R" "SCRATCH"
+Rscript hpc_wrap.R "Scripts/DataProcessing/processANAE.R" "MER"
 # Rscript processANAE.R
 
 # Copy to ruby datastore. copying to the {lw-mer} on bowen is at /datasets/work/lw-mer/work/galen_holt, but need to sort this out a bit better

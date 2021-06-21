@@ -18,7 +18,6 @@ library(sf)
 library(stars)
 
 
-print('packages loaded')
 # Data is in QAEL - MER/Model/Data/ANAE
   # tempted to go with a Here, but should really have a library structure
 # use here for now
@@ -34,6 +33,7 @@ print('packages loaded')
 # 
 # datOut <- "datOut"
 
+print(paste0('starting processANAE, time is ', Sys.time(), ', run is ', dataWhere))
 
 
 # Read in the ANAE classifications and other data ----------------------------------------
@@ -132,6 +132,11 @@ ltimNoNorth <- ltimCut %>% filter(ValleyName != 'Northern Unregulated')
 nswCut$SYS2 <- paste0(as.character(nswCut$SYSID), 'nsw')
 wetCut$SYS2 <- paste0(as.character(wetCut$SYSID), 'wet')
 
+
+print(paste0('starting polygon split, time is ', Sys.time(), ', run is ', dataWhere))
+
+
+
 # # This takes forever (11700 seconds, ~3.25 hours)
   # AND, because it splits polygons, it creates duplicate SYSIDs
 system.time(bothANAE <- bind_rows(wetCut, nswCut) %>%
@@ -141,13 +146,17 @@ system.time(bothANAE <- bind_rows(wetCut, nswCut) %>%
   st_intersection(ltimNoNorth) %>% # and add the ltim catchment ## Not sure this is the best way to to this, ie, could probably do it as a selection somehow
     mutate(SYS2 = str_c(SYS2, '_', CODE, '_', ValleyCode))) # Keep SYS2 unique
 
+
+print(paste0('finished polygon split, time is ', Sys.time(), ', run is ', dataWhere))
+
+
 # And, just as an extra check, throw some flags on there. Not sure why this
 # happens, but it does. Just brute force fix it.
 while (any(duplicated(bothANAE$SYS2))) {
   bothANAE$SYS2[which(duplicated(bothANAE$SYS2))] <- paste0(bothANAE$SYS2[which(duplicated(bothANAE$SYS2))], '_DUP')
 }
 
-# And, to make sorting easier wehn we break things up
+# And, to make sorting easier when we break things up
 bothANAE <- arrange(bothANAE, SYS2)
 
 # # Projecting doesn't fix the self-intersect, but should we do it anyway for the intersects? I kind of think not
@@ -184,3 +193,6 @@ if (!dir.exists(datOut)) {dir.create(datOut)}
 
 save(bothANAE, file = file.path(datOut, 'bothANAE.rdata'))
 save(lachAll, ltimCut, file = file.path(datOut, 'lachAll.rdata'))
+
+print(paste0('finished processANAE, time is ', Sys.time(), ', run is ', dataWhere))
+
