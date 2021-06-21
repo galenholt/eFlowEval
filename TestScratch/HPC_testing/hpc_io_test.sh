@@ -19,8 +19,8 @@ begin=`date +%s`
 
 
 # Set up the input data
-mkdir -p $JOBDIR/dataBase
-rsync -avr $SCRATCH1DIR/dataBase $JOBDIR/dataBase
+# mkdir -p $JOBDIR/dataBase
+# rsync -avr $SCRATCH1DIR/dataBase $JOBDIR/dataBase
 
 postDatain=`date +%s`
 
@@ -54,8 +54,8 @@ echo Time taken for code: $elapsed
 	# Will need to change the name from TESTING, but that's easy enough
 	# make a job and date directory so we don't overwrite.
 	# Might need to rethink this because we actually want to then bring some of this back in, but this'll work for now
-mkdir -p $SCRATCH1DIR/datOut/TESTING/$(date +"%d-%m-%Y")
-rsync -avr $JOBDIR/datOut $SCRATCH1DIR/datOut/TESTING/$(date +"%d-%m-%Y")
+# mkdir -p $SCRATCH1DIR/datOut/TESTING/$(date +"%d-%m-%Y")
+# rsync -avr $JOBDIR/datOut $SCRATCH1DIR/datOut/TESTING/$(date +"%d-%m-%Y")
 
 # This example moves from $HOME to $SCRATCH. But I want to set things up to move in/out of $JOBDIR while jobs are runnign
 # rsync -avr $HOME/cc2/Scripts/Scenarios $SCRATCH1DIR/datOut
