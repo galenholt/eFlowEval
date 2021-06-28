@@ -2,7 +2,7 @@
 # directorySet <- function() {
 #   # this function 
 # }
-print(paste0('opened directoryset, time is ', Sys.time(), ', run is ', dataWhere))
+# print(paste0('opened directoryset, time is ', Sys.time(), ', run is ', dataWhere))
 print(Sys.info())
 
 # Rather than a functtion, I want this to set a few things, so building as a script instead
@@ -25,16 +25,13 @@ if (grepl('^pearcey', Sys.info()["nodename"]) | grepl('^c', Sys.info()["nodename
     datDir <-  file.path('/datasets/work/lw-mer/work/galen_holt/dataBase')
     datOut <- file.path('/datasets/work/lw-mer/work/galen_holt/datOut')
   }
-  
-  
-  
-  
 
   print(paste0('datOut is ', datOut))
   source(".Rprofile")
   # print(.libPaths())
+  
 } else if (grepl('^Windows', Sys.info()["sysname"])) {
-  myhome <- str_remove(path.expand("~"), "/Documents")
+  myhome <- stringr::str_remove(path.expand("~"), "/Documents")
   datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
   
   datOut <- "datOut"
