@@ -147,12 +147,12 @@ print(paste0('starting polygon split, time is ', Sys.time(), ', run is ', dataWh
   # First, without splitting anything
 # These are NOT identical to Shane's, likely because the polygons are specified
 # very slightly differently (maybe as a result of the multipolygons and make
-# valids)
-wettest <- wetCut %>%
-  slice(1:10) %>%
-  mutate(UID2 = st_geohash(geometry, precision = 9)) %>%
-  select(UID, UID2)
-wettest
+# # valids)
+# wettest <- wetCut %>%
+#   slice(1:10) %>%
+#   mutate(UID2 = st_geohash(geometry, precision = 9)) %>%
+#   select(UID, UID2)
+# wettest
 
 # # This takes forever (11700 seconds, ~3.25 hours)
   # AND, because it splits polygons, it creates duplicate SYSIDs
