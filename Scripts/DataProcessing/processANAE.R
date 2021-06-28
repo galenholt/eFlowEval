@@ -20,6 +20,7 @@ print(getwd())
 # wrap the script to run locally. Sort out a cleaner way to do this
 source('directorySet.R')
 
+scriptOut <- paste0(datOut, '/ANAEprocessed')
 
 # Let's get libraries here, then sort out git then sort out making this a library so we don't have to deal with all the library crap
 # library(sp)
@@ -191,10 +192,10 @@ print(paste0('finished polygon split, time is ', Sys.time(), ', run is ', dataWh
 #               st_intersection(ltimNoNorthT)) # and add the ltim catchment ## Not sure this is the best way to to this, ie, could probably do it as a selection somehow
 
 
-# Save the processed data
-if (!dir.exists(datOut)) {dir.create(datOut)}
+# Make the out directory, in case it doesn't exist
+if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
 
-save(ANAEbasinclim, ltimNoNorth, file = file.path(datOut, 'ANAEbasinclim.rdata'))
+save(ANAEbasinclim, ltimNoNorth, file = file.path(scriptOut, 'ANAEbasinclim.rdata'))
 print(paste0('saved the full data, time is ', Sys.time(), ', run is ', dataWhere))
 
 # Let's spit these out for ALL the basins, not just lachlan
@@ -208,12 +209,12 @@ for (b in 1:nrow(ltimNoNorth)) {
   thisname <- str_remove_all(valleys[b], ' ')
   thisname <- paste0(thisname, 'ANAE')
   assign(thisname, thisbasin)
-  save(list = c(thisname, 'ltimNoNorth'), file = file.path(datOut, paste0(thisname, '.rdata')))
+  save(list = c(thisname, 'ltimNoNorth'), file = file.path(scriptOut, paste0(thisname, '.rdata')))
 }
 
 # # Testing
-# load(file.path(datOut, 'BarwonDarlingANAE.rdata'))
-# load(file.path(datOut, 'GoulburnANAE.rdata'))
+# load(file.path(scriptOut, 'BarwonDarlingANAE.rdata'))
+# load(file.path(scriptOut, 'GoulburnANAE.rdata'))
 # ggplot(BarwonDarlingANAE, aes(color = ValleyName)) + geom_sf()
 # ggplot(GoulburnANAE, aes(color = ValleyName)) + geom_sf()
 # ggplot(ltimNoNorth, aes(color = ValleyName)) + geom_sf()
@@ -234,7 +235,7 @@ for (b in 1:nrow(ltimNoNorth)) {
 #   geom_sf(data = filter(ltimNoNorth, ValleyName %in% c("Lachlan", "Goulburn")), aes(fill = ValleyName))
 
 # 
-# save(LachlanANAE, ltimNoNorth, file = file.path(datOut, 'LachlanANAE.rdata'))
+# save(LachlanANAE, ltimNoNorth, file = file.path(scriptOut, 'LachlanANAE.rdata'))
 
 print(paste0('finished processANAE, time is ', Sys.time(), ', run is ', dataWhere))
 
