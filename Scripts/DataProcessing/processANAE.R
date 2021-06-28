@@ -7,6 +7,20 @@
 print(getwd())
 # source('directorySet.R')
 
+# Data is in QAEL - MER/Model/Data/ANAE
+# tempted to go with a Here, but should really have a library structure
+# use here for now
+# library(here)
+
+# Argh. sort all this directory crap out later
+# Need to have a shared data folder, without tracking in git and without
+# having to setwd(). And that works on HPC and locally
+
+# The hpc_wrapper tends to source this too, but if I do it here I don't have to
+# wrap the script to run locally. Sort out a cleaner way to do this
+source('directorySet.R')
+
+
 # Let's get libraries here, then sort out git then sort out making this a library so we don't have to deal with all the library crap
 # library(sp)
 # library(rgeos)
@@ -18,20 +32,7 @@ library(sf)
 library(stars)
 
 
-# Data is in QAEL - MER/Model/Data/ANAE
-  # tempted to go with a Here, but should really have a library structure
-# use here for now
-# library(here)
 
-# Argh. sort all this directory crap out later
-  # Need to have a shared data folder, without tracking in git and without having to do damn setwd()
-
-
-
-# myhome <- str_remove(path.expand("~"), "/Documents")
-# datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
-# 
-# datOut <- "datOut"
 
 print(paste0('starting processANAE, time is ', Sys.time(), ', run is ', dataWhere))
 
@@ -42,44 +43,50 @@ print(paste0('starting processANAE, time is ', Sys.time(), ', run is ', dataWher
 # The st_cast and st_make_valid clean things up so the intersects work. 
 # https://www.r-spatial.org/r/2017/03/19/invalid.html says we should make valid,
 # and then cast, but that didn't work for me
-wetlands <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'Wetlands_ANAE_20171025') %>%
+# Takes a while. Didn't time, but > 10 mins
+wetlands <- read_sf(dsn = file.path(datDir, 
+                                    'ANAE/ANAE_Wetlands_v3_24mar2021/Wetlands_ANAE_v3_24mar2021/Wetlands_ANAE_v3_24mar2021.shp')) %>%
   st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
   st_make_valid()
  
-# And the interim NSW data
-wetlandsNSW <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'Interim_Western_NSW_Floodplain_ANAE') %>%
-  st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
-  st_make_valid()
-  
-
+# # And the interim NSW data
+# wetlandsNSW <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'Interim_Western_NSW_Floodplain_ANAE') %>%
+#   st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
+#   st_make_valid()
+#   
+# The rest of this still needs to come from the V2 for now, since V3 is just the shapefiles
 # Get koppen climate region as a test of the joining of data
-kopSub <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'BoM_Koppen_subregions') %>%
+kopSub <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'BoM_Koppen_subregions') %>%
   st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
   st_make_valid()
 
 # And get the LTIM_Valleys to use to subset for toy models at scale, but not enormous scale
-LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'LTIM_Valleys') %>%
+LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'LTIM_Valleys') %>%
   st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
   st_make_valid()
 
 # and the basin boundary, might be useful, especially for clipping rasters
-basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'MDB_Boundary') %>%
+basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'MDB_Boundary') %>%
   st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
   st_make_valid() %>%
   select(LEVEL2NAME) # no need for other info
 
-# Skipping the watercourses for now, come back if doing channel stuff, but as a toy based on veg, probably not now
+# Bring watercourses in in another script, I think
   
 
 # Simplify to carry less data around --------------------------------------
 
 # Wetlands
+# Suppose I'll keep SYSID for now, but really we want to shift over to the
+# geohash UID (see Shane's discussion in the metadata)
+# 'WaterRegim' seems to be a typo- was water regime last time
+# There are others here we might want to bring along, but for now, not
 wetCut <- wetlands %>% 
-  select(SYSID, WaterType, WaterRegime, ANAE_DESC, ANAE_CODE, WOfS)
+  select(UID, SYSID, ANAE_DESC, ANAE_CODE, WaterType, WaterRegim, SystemType, Confidence)
 
-# NSW wetlands
-nswCut <- wetlandsNSW %>% 
-  select(SYSID, WaterType, WaterRegime, ANAE_DESC, ANAE_CODE)
+# # NSW wetlands
+# nswCut <- wetlandsNSW %>% 
+#   select(SYSID, WaterType, WaterRegime, ANAE_DESC, ANAE_CODE)
 
 # Kind of wanted to include landform in the above, but it's called different
 # things (MeanLandform vs Landform, easy enough to fix), but also has different
@@ -127,37 +134,49 @@ ltimNoNorth <- ltimCut %>% filter(ValleyName != 'Northern Unregulated')
 # plot(nswCut[nswCut$SYSID %in% inboth[1:1000], 'ANAE_DESC'])
 # plot(wetCut[wetCut$SYSID %in% inboth[1:1000], 'ANAE_DESC'])
 
-# Let's just make a new ID column
-# not overwriting SYSID, so it is there for a reference.
-nswCut$SYS2 <- paste0(as.character(nswCut$SYSID), 'nsw')
-wetCut$SYS2 <- paste0(as.character(wetCut$SYSID), 'wet')
+# # Let's just make a new ID column
+# NO LONGER NEEDED WITH V3
+# # not overwriting SYSID, so it is there for a reference.
+# nswCut$SYS2 <- paste0(as.character(nswCut$SYSID), 'nsw')
+# wetCut$SYS2 <- paste0(as.character(wetCut$SYSID), 'wet')
 
 
 print(paste0('starting polygon split, time is ', Sys.time(), ', run is ', dataWhere))
 
-
+# Test the re-hashing
+  # First, without splitting anything
+# These are NOT identical to Shane's, likely because the polygons are specified
+# very slightly differently (maybe as a result of the multipolygons and make
+# valids)
+wettest <- wetCut %>%
+  slice(1:10) %>%
+  mutate(UID2 = st_geohash(geometry, precision = 9)) %>%
+  select(UID, UID2)
+wettest
 
 # # This takes forever (11700 seconds, ~3.25 hours)
   # AND, because it splits polygons, it creates duplicate SYSIDs
-system.time(bothANAE <- bind_rows(wetCut, nswCut) %>%
-              select(SYS2, everything()) %>%
-  # sf::st_buffer(dist = 0) %>% # This was an old way of fixing the self intersections
+  # In updating to V3, we can LEAVE the SYSIDs in case we ever want to know they
+  # were originally the same polygon, and re-hash the new polygons
+# This still needs to happen as of V3 because it is pasting the climate and
+# basin info onto the ANAEs (and cutting them if they overlap)
+system.time(ANAEbasinclim <- wetCut %>%
   st_intersection(kopCut) %>% # intersect with Koppen
   st_intersection(ltimNoNorth) %>% # and add the ltim catchment ## Not sure this is the best way to to this, ie, could probably do it as a selection somehow
-    mutate(SYS2 = str_c(SYS2, '_', CODE, '_', ValleyCode))) # Keep SYS2 unique
+  mutate(UID = lwgeom::st_geohash(geometry, precision = 9))) # Re-set the UID. This is the way to keep every polygon unique, and still retains the original SYSIDs from before.
 
 
 print(paste0('finished polygon split, time is ', Sys.time(), ', run is ', dataWhere))
 
 
-# And, just as an extra check, throw some flags on there. Not sure why this
-# happens, but it does. Just brute force fix it.
-while (any(duplicated(bothANAE$SYS2))) {
-  bothANAE$SYS2[which(duplicated(bothANAE$SYS2))] <- paste0(bothANAE$SYS2[which(duplicated(bothANAE$SYS2))], '_DUP')
-}
-
-# And, to make sorting easier when we break things up
-bothANAE <- arrange(bothANAE, SYS2)
+# # And, just as an extra check, throw some flags on there. Not sure why this
+# # happens, but it does. Just brute force fix it.
+# while (any(duplicated(bothANAE$SYS2))) {
+#   bothANAE$SYS2[which(duplicated(bothANAE$SYS2))] <- paste0(bothANAE$SYS2[which(duplicated(bothANAE$SYS2))], '_DUP')
+# }
+# 
+# # And, to make sorting easier when we break things up
+# bothANAE <- arrange(bothANAE, SYS2)
 
 # # Projecting doesn't fix the self-intersect, but should we do it anyway for the intersects? I kind of think not
 # # 3577 doesn't fix it
@@ -171,10 +190,35 @@ bothANAE <- arrange(bothANAE, SYS2)
 #               st_intersection(kopCutT) %>% # intersect with Koppen
 #               st_intersection(ltimNoNorthT)) # and add the ltim catchment ## Not sure this is the best way to to this, ie, could probably do it as a selection somehow
 
-# AAAA. why did this work before???
 
+# Save the processed data
+if (!dir.exists(datOut)) {dir.create(datOut)}
 
-lachAll <- filter(bothANAE, ValleyName == 'Lachlan')
+save(ANAEbasinclim, ltimCut, file = file.path(datOut, 'ANAEbasinclim.rdata'))
+print(paste0('saved the full data, time is ', Sys.time(), ', run is ', dataWhere))
+
+# Let's spit these out for ALL the basins, not just lachlan
+valleys <-ltimNoNorth$ValleyName
+
+for (b in 1:nrow(ltimNoNorth)) {
+  thisbasin <- filter(ANAEbasinclim, ValleyName == valleys[b])
+  # thisbasin <- filter(ltimNoNorth, ValleyName == valleys[b]) # For testing
+  # Usually a bad idea to assign names, but doing it here so when we read them
+  # in we know what they are, and if read in multiple they have different names
+  thisname <- str_remove_all(valleys[b], ' ')
+  thisname <- paste0(thisname, 'ANAE')
+  assign(thisname, thisbasin)
+  save(list = c(thisname, 'ltimNoNorth'), file = file.path(datOut, paste0(thisname, '.rdata')))
+}
+
+# # Testing
+# load(file.path(datOut, 'BarwonDarlingANAE.rdata'))
+# load(file.path(datOut, 'GoulburnANAE.rdata'))
+# ggplot(BarwonDarlingANAE, aes(color = ValleyName)) + geom_sf()
+# ggplot(GoulburnANAE, aes(color = ValleyName)) + geom_sf()
+# ggplot(ltimNoNorth, aes(color = ValleyName)) + geom_sf()
+
+# lachAll <- filter(ANAEbasinclim, ValleyName == 'Lachlan')
 
 # Check
 # ggplot() +
@@ -189,10 +233,8 @@ lachAll <- filter(bothANAE, ValleyName == 'Lachlan')
 # ggplot() +
 #   geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan", "Goulburn")), aes(fill = ValleyName))
 
-if (!dir.exists(datOut)) {dir.create(datOut)}
-
-save(bothANAE, file = file.path(datOut, 'bothANAE.rdata'))
-save(lachAll, ltimCut, file = file.path(datOut, 'lachAll.rdata'))
+# 
+# save(lachAll, ltimCut, file = file.path(datOut, 'lachAll.rdata'))
 
 print(paste0('finished processANAE, time is ', Sys.time(), ', run is ', dataWhere))
 
