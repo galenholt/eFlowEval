@@ -112,7 +112,7 @@ ltimCut <- LTIM_Valleys %>%
 # notsure <- st_difference(ltimNoNorth)
 
 # Northern unregulated is a compound of others and so causes issues 
-ltimNoNorth <- ltimNoNorth %>% filter(ValleyName != 'Northern Unregulated')
+ltimNoNorth <- ltimCut %>% filter(ValleyName != 'Northern Unregulated')
 
 # # CUT OUT LATER:
 # # ARE DUPLICATE SYSIDS coming in from this join?
