@@ -20,17 +20,17 @@ datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:
 datOut <- "datOut"
 
 # load the processed anae files, cut to lachlan
-load(file.path(datOut, 'lachAll.rdata'))
+load(file.path(datOut, 'LachlanANAE.rdata'))
 # load(file.path(datOut, 'bothANAE.rdata'))
 
 # To allow plotting the ltim zones (otherwise their polygons get lost)
-# And get the LTIM_Valleys to use to subset for toy models at scale, but not enormous scale
-LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'LTIM_Valleys') %>%
-  st_cast("MULTIPOLYGON") # cleans up an issue with multisurfaces
-
-# LTIM areas, useful for plotting
-ltimCut <- LTIM_Valleys %>%
-  select(ValleyName, ValleyID, ValleyCode) # Three different ways to reference, basically
+# # And get the LTIM_Valleys to use to subset for toy models at scale, but not enormous scale
+# LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'LTIM_Valleys') %>%
+#   st_cast("MULTIPOLYGON") # cleans up an issue with multisurfaces
+# 
+# # LTIM areas, useful for plotting
+# ltimNoNorth <- LTIM_Valleys %>%
+#   select(ValleyName, ValleyID, ValleyCode) # Three different ways to reference, basically
 
 
 # Read in the soil data
@@ -44,7 +44,7 @@ temppath <- file.path(datDir, 'soilTemp1419', tempfile)
 # Previous work -----------------------------------------------------------
 
 # and the basin boundary, for clipping rasters; though likely will start with lachlan
-basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'MDB_Boundary') %>%
+basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'MDB_Boundary') %>%
   st_cast("MULTIPOLYGON")  %>% # cleans up an issue with multisurfaces
   dplyr::select(LEVEL2NAME) # no need for other info
 
@@ -57,9 +57,9 @@ basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'MDB_Boun
 # do it on a different projection (see help and vignettes)
 whichcrs <- 4326 # st_crs(soilTstars) # this is WGS84, and is what I've told NASA to give me for soil temp (and matches soil moisture as well)
 # TODO:: Check this is right on PC, I didn't need to set the CRS there for some reason
-st_crs(lachAll) <- 4283 # This is what's there when I look at st_crs, but it's not registering for some reason. 
-lachAll <- st_transform(lachAll, whichcrs)
-ltimCut <- st_transform(ltimCut, whichcrs)
+st_crs(LachlanANAE) <- 4283 # This is what's there when I look at st_crs, but it's not registering for some reason. 
+LachlanANAE <- st_transform(LachlanANAE, whichcrs)
+ltimNoNorth <- st_transform(ltimNoNorth, whichcrs)
 basin <- st_transform(basin, whichcrs)
 
 # Do the soil moist read-in and processing in a loop ----------------------
@@ -76,7 +76,7 @@ days <- soilDims$time$to
 chunksize = 100 # Not really sure, needs to be tested better
 nchunks <- ceiling(days/chunksize) # 2 or 4 or something for testing
 
-lachcutter <- filter(ltimCut, ValleyName == 'Lachlan')
+lachcutter <- filter(ltimNoNorth, ValleyName == 'Lachlan')
 
 savechunks <- 1:nchunks # If the chunksize is big, worth saving all of them, probably
 
@@ -84,7 +84,7 @@ savechunks <- 1:nchunks # If the chunksize is big, worth saving all of them, pro
 # savepoints are CHUNK numbers, not SHEET numbers
 system.time(dailyTemppolyavg <- chunklooper(nchunks = nchunks, rastpath = temppath, rastvar = "LST_Day_1km", 
                                             totaltime = days, starttime = 1, chunksize = chunksize, 
-                                            catchCrop = lachcutter, polyAvg = lachAll, saverast = TRUE,
+                                            catchCrop = lachcutter, polyAvg = LachlanANAE, saverast = TRUE,
                                             savepoints = savechunks, savepath = file.path(datOut, 'tempIntermediate')))
 
 # user    system   elapsed 
@@ -92,7 +92,7 @@ system.time(dailyTemppolyavg <- chunklooper(nchunks = nchunks, rastpath = temppa
 155520/60/60
 
 # Save that NOW. 
-save(lachAll, 
+save(LachlanANAE, 
      dailyTemppolyavg, 
      file = file.path(datOut, 'lachTempPolyAvg.rdata'))
 
@@ -110,7 +110,7 @@ dailyPolyTempavg <- dailyTemppolyavg[[1]]
 # Why not keep the list and not do the above? I dunno. There was a reason.
 
 # Check ordering
-all(dailyPolyindex$SYS2 == lachAll$SYS2)
+all(dailyPolyindex$SYS2 == LachlanANAE$SYS2)
 
 # Test plot
 # Let's set up a bbox for subsampled plotting without taking 8 million years
@@ -149,14 +149,14 @@ max28polysub <- soilTempMax28[st_as_sfc(bb)]
 plot(max28polysub[,,10:13])
 
 # Save a lot of stuff
-save(lachAll,
+save(LachlanANAE,
      dailyPolyTempavg,
      soilTempMax28,
      file = file.path(datOut, 'lachSoilTempprocessedAllOut.rdata'))
 
 # Save just the outputs, separately (for memory management on the strictures side)
 
-save(lachAll,
+save(LachlanANAE,
      soilTempMax28,
      file = file.path(datOut, 'lachSoilTempMax28.rdata'))
 

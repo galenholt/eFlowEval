@@ -45,8 +45,8 @@ datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:
 datOut <- "datOut"
 
 # Read in just the ANAEs
-load(file.path(datOut, 'lachAll.rdata'))
-lachAll <- st_transform(lachAll, 4326) # WHY ISN"T THIS LIKE THIS ALREADY?
+load(file.path(datOut, 'LachlanANAE.rdata'))
+LachlanANAE <- st_transform(LachlanANAE, 4326) # WHY ISN"T THIS LIKE THIS ALREADY?
 
 # Read in soil moisture in ANAEs--------------------------------------------------
 

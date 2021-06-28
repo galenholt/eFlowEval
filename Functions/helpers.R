@@ -30,7 +30,7 @@ catchAggW <- function(strict, strictWeights, FUN, summaryPoly) {
   # germArea[[1]] <- t(t(germArea[[1]])*lachArea)
   # 
   # # Now aggregate over space
-  # germCatch2 <- aggregate(germArea, by = filter(ltimCut, ValleyName == "Lachlan"), FUN = sum, na.rm = TRUE)
+  # germCatch2 <- aggregate(germArea, by = filter(ltimNoNorth, ValleyName == "Lachlan"), FUN = sum, na.rm = TRUE)
   # 
   # # Check
   # all(germCatch[[1]] == germCatch2[[1]])

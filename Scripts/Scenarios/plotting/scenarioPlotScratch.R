@@ -4,7 +4,7 @@
 # yearly objects are in memory
 
 # Illustrate local stuff in cumbung again
-whichcrs <- st_crs(lachAll)
+whichcrs <- st_crs(LachlanANAE)
 cumbung <- st_bbox(c(xmin = 143.85, ymin = -34.35, xmax = 144.4, ymax = -34.05), crs = whichcrs)
 
 
@@ -205,7 +205,7 @@ centipeda_topYr$fullCycleLippia_Centipeda_yr == centipeda_baseYr$fullCycleLippia
 # Is it that the differences occur only in the wrong ANAE zones? Yep. At least
 # now I know WHAT's happening. To fix it though...
   # 'Fix' is a funny word, I guess. Make it so there's a visible change
-isANAE <- lachAll$ANAE_CODE %in% c("Pt1.2.1","Pt1.8.1")
+isANAE <- LachlanANAE$ANAE_CODE %in% c("Pt1.2.1","Pt1.8.1")
 centipeda_baseYr$seedGermFruit_Centipeda_yr * isANAE *
   !(lippia_baseYr$fullCycle_Lippia_yr > 0.9)
 centipeda_topYr$seedGermFruit_Centipeda_yr * isANAE *

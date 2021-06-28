@@ -36,7 +36,7 @@ chunkprocess <- function(rastpath, rastvar, totaltime, starttime, chunksize, cat
   # # Those are pretty crap extents though. Might grab a different set for testing so I can see what I'm doing
   
   # Now, crop that to the catchment
-  # system.time(lachTnc <- st_crop(rastNC, filter(ltimCut, ValleyName == 'Lachlan'), as_points = FALSE))
+  # system.time(lachTnc <- st_crop(rastNC, filter(ltimNoNorth, ValleyName == 'Lachlan'), as_points = FALSE))
   cropRast <- st_crop(rastNC, catchCrop, as_points = FALSE)
   
   # system.time(chunk1 <- rastPolyJoin(polysf = polyAvg, 

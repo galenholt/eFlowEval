@@ -110,9 +110,9 @@ centipedastricts <- function(smFile, tempFile, lippiaFile, lippiaThreshold = 0.6
   centipANAE <- c("Pt1.2.1","Pt1.8.1")
   
   #  # Which are those?
-  # antest <- lachAll[which(lachAll$ANAE_CODE %in% centipANAE), 'ANAE_DESC']
+  # antest <- LachlanANAE[which(LachlanANAE$ANAE_CODE %in% centipANAE), 'ANAE_DESC']
   # unique(antest$ANAE_DESC)
-  # taxa1ind <- which(lachAll$ANAE_CODE == Taxa1ANAE)
+  # taxa1ind <- which(LachlanANAE$ANAE_CODE == Taxa1ANAE)
   
   
   # -------------------------------------------------------------------------
@@ -151,7 +151,7 @@ centipedastricts <- function(smFile, tempFile, lippiaFile, lippiaThreshold = 0.6
   # ANAE classification -----------------------------------------------------
   
   # True/False. Could also be a which() if we want index numbers
-  isANAE_Centipeda <- lachAll$ANAE_CODE %in% centipANAE
+  isANAE_Centipeda <- LachlanANAE$ANAE_CODE %in% centipANAE
   
   
   # -------------------------------------------------------------------------

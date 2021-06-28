@@ -251,7 +251,7 @@ ncMask2 <- mask(nc_outline, ncSP)
 # stars-raster-stars for the basin ------------------------------------------------------
 
 # and the basin boundary, might be useful, especially for clipping rasters
-basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'MDB_Boundary') %>%
+basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'MDB_Boundary') %>%
   st_cast("MULTIPOLYGON")  %>% # cleans up an issue with multisurfaces
   dplyr::select(LEVEL2NAME) # no need for other info
 soilMstars <- read_ncdf(file.path(datDir, 'soilmoisture/sm_pct_2020_Actual_day.nc'))

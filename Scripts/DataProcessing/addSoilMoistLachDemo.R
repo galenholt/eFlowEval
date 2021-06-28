@@ -16,17 +16,17 @@ datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:
 datOut <- "datOut"
 
 # load the processed anae files, cut to lachlan
-load(file.path(datOut, 'lachAll.rdata'))
+load(file.path(datOut, 'LachlanANAE.rdata'))
 # load(file.path(datOut, 'bothANAE.rdata'))
 
 # To allow plotting the ltim zones (otherwise their polygons get lost)
 # And get the LTIM_Valleys to use to subset for toy models at scale, but not enormous scale
-LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'LTIM_Valleys') %>%
-  st_cast("MULTIPOLYGON") # cleans up an issue with multisurfaces
+# LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'LTIM_Valleys') %>%
+#   st_cast("MULTIPOLYGON") # cleans up an issue with multisurfaces
 
-# LTIM areas, useful for plotting
-ltimCut <- LTIM_Valleys %>%
-  select(ValleyName, ValleyID, ValleyCode) # Three different ways to reference, basically
+# # LTIM areas, useful for plotting
+# ltimNoNorth <- LTIM_Valleys %>%
+#   select(ValleyName, ValleyID, ValleyCode) # Three different ways to reference, basically
 
 
 # Read in the soil data
@@ -48,7 +48,7 @@ st_crs(soilMstars) <- 4326
 # Previous work -----------------------------------------------------------
 
 # and the basin boundary, for clipping rasters; though likely will start with lachlan
-basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'MDB_Boundary') %>%
+basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'MDB_Boundary') %>%
   st_cast("MULTIPOLYGON")  %>% # cleans up an issue with multisurfaces
   dplyr::select(LEVEL2NAME) # no need for other info
 
@@ -61,13 +61,13 @@ basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'MDB_Boun
 # do it on a different projection (see help and vignettes)
 whichcrs <- st_crs(soilMstars)
 # TODO:: Check this is right on PC, I didn't need to set the CRS there for some reason
-st_crs(lachAll) <- 4283 # This is what's there when I look at st_crs, but it's not registering for some reason. 
-lachAll <- st_transform(lachAll, whichcrs)
-ltimCut <- st_transform(ltimCut, whichcrs)
+st_crs(LachlanANAE) <- 4283 # This is what's there when I look at st_crs, but it's not registering for some reason. 
+LachlanANAE <- st_transform(LachlanANAE, whichcrs)
+ltimNoNorth <- st_transform(ltimNoNorth, whichcrs)
 basin <- st_transform(basin, whichcrs)
 
 # Crop. Have to use as_points = FALSE or it crops to the raster centers, and misses stuff around the edges.
-lachSoil <- st_crop(soilMstars, filter(ltimCut, ValleyName == 'Lachlan'), as_points = FALSE)
+lachSoil <- st_crop(soilMstars, filter(ltimNoNorth, ValleyName == 'Lachlan'), as_points = FALSE)
 
 # # check it worked
 
@@ -84,7 +84,7 @@ lachSoil <- st_crop(soilMstars, filter(ltimCut, ValleyName == 'Lachlan'), as_poi
 
 # Test the new function
 #   # Doesn't work wiht the stars_proxy lachSoil
-# system.time(dailySMpolyavg <- rastPolyJoin(polysf = lachAll, rastst = lachSoil, grouper = 'SYS2', maintainPolys = TRUE))
+# system.time(dailySMpolyavg <- rastPolyJoin(polysf = LachlanANAE, rastst = lachSoil, grouper = 'SYS2', maintainPolys = TRUE))
 
 # Runs with st_as_stars(stars_proxy)
 deProxySoil <- st_as_stars(lachSoil) # Not sure we want to do this, rather than put it in the function call so we don't keep it in memory? Will see, I suppose
@@ -99,14 +99,14 @@ format(object.size(deProxySoil), units = "auto") # Check size
 # # Two options: loop over YEARS, or sheets 
 #   # Or, maybe othertime units, I think stars might be able to do that?
 # # Original
-# system.time(dailySMpolyavg <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil, grouper = 'SYS2', maintainPolys = TRUE))
+# system.time(dailySMpolyavg <- rastPolyJoin(polysf = LachlanANAE, rastst = deProxySoil, grouper = 'SYS2', maintainPolys = TRUE))
 # 
 # # Loopy
 # 
 # # Testing first: If we break up a big stars, how do we put it back together?
-# d1 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:10], grouper = 'SYS2', maintainPolys = TRUE)
-# d2 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,11:20], grouper = 'SYS2', maintainPolys = TRUE)
-# d3 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,21:30], grouper = 'SYS2', maintainPolys = TRUE)
+# d1 <- rastPolyJoin(polysf = LachlanANAE, rastst = deProxySoil[,,,1:10], grouper = 'SYS2', maintainPolys = TRUE)
+# d2 <- rastPolyJoin(polysf = LachlanANAE, rastst = deProxySoil[,,,11:20], grouper = 'SYS2', maintainPolys = TRUE)
+# d3 <- rastPolyJoin(polysf = LachlanANAE, rastst = deProxySoil[,,,21:30], grouper = 'SYS2', maintainPolys = TRUE)
 # 
 # # The output of raspolyjoin is a list with the stars and the index
 # d1[[1]]
@@ -122,11 +122,11 @@ format(object.size(deProxySoil), units = "auto") # Check size
 # teststarc
 # 
 # # How bout some timings. Is there an optimal number of days? Or, more coarsely, how does this cale?
-# system.time(d10 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:10], grouper = 'SYS2', maintainPolys = TRUE))
+# system.time(d10 <- rastPolyJoin(polysf = LachlanANAE, rastst = deProxySoil[,,,1:10], grouper = 'SYS2', maintainPolys = TRUE))
 # # user  system elapsed 
 # # 137.32    0.47  146.47 
 # 146/10
-# system.time(d100 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:100], grouper = 'SYS2', maintainPolys = TRUE))
+# system.time(d100 <- rastPolyJoin(polysf = LachlanANAE, rastst = deProxySoil[,,,1:100], grouper = 'SYS2', maintainPolys = TRUE))
 # # user  system elapsed 
 # # 190.22    0.35  191.45
 # 191/100
@@ -134,27 +134,27 @@ format(object.size(deProxySoil), units = "auto") # Check size
 # # user  system elapsed 
 # # 228.98    0.44  233.91 
 # 233/100
-# system.time(d500 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:500], grouper = 'SYS2', maintainPolys = TRUE))
+# system.time(d500 <- rastPolyJoin(polysf = LachlanANAE, rastst = deProxySoil[,,,1:500], grouper = 'SYS2', maintainPolys = TRUE))
 # # user  system elapsed 
 # # 575.69    3.09  616.82 
 # 616/500
-# system.time(d200 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:200], grouper = 'SYS2', maintainPolys = TRUE))
+# system.time(d200 <- rastPolyJoin(polysf = LachlanANAE, rastst = deProxySoil[,,,1:200], grouper = 'SYS2', maintainPolys = TRUE))
 # # user  system elapsed 
 # # 321.61    0.65  342.98
 # 342/200
-# system.time(d150 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:150], grouper = 'SYS2', maintainPolys = TRUE))
+# system.time(d150 <- rastPolyJoin(polysf = LachlanANAE, rastst = deProxySoil[,,,1:150], grouper = 'SYS2', maintainPolys = TRUE))
 # # user  system elapsed 
 # # 278.66    0.59  288.09 
 # 288/150
 # 
 # # So, the 500 FELT long, but was actually way faster on a seconds/layer measure. Let's keep ratcheting up
-# system.time(d750 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:750], grouper = 'SYS2', maintainPolys = TRUE))
+# system.time(d750 <- rastPolyJoin(polysf = LachlanANAE, rastst = deProxySoil[,,,1:750], grouper = 'SYS2', maintainPolys = TRUE))
 # # user  system elapsed 
 # # 1010.96    5.86 1070.57 
 # 750/1070
 # 
 # # Tried 1000, and barfed,
-# # system.time(d1000 <- rastPolyJoin(polysf = lachAll, rastst = deProxySoil[,,,1:1000], grouper = 'SYS2', maintainPolys = TRUE))
+# # system.time(d1000 <- rastPolyJoin(polysf = LachlanANAE, rastst = deProxySoil[,,,1:1000], grouper = 'SYS2', maintainPolys = TRUE))
 
 # TODO: CHUNK IT UP INTO 750-day chunks, run, and put back together
 # I could do a fancy optimization thing here to get the larges possible number
@@ -174,7 +174,7 @@ from <- 1
 # protect short ends
 firstend <- ifelse(chunksize < days, chunksize, days)
 # Get the first chunk
-system.time(chunk1 <- rastPolyJoin(polysf = lachAll, 
+system.time(chunk1 <- rastPolyJoin(polysf = LachlanANAE, 
                                    rastst = deProxySoil[,,,1:chunksize], 
                                    grouper = 'SYS2', 
                                    maintainPolys = TRUE))
@@ -188,7 +188,7 @@ timechunker <- function(chunk1) {
   for (t in 2:nchunks) {
     from <- (t-1)*(750) + 1
     to <- ifelse(t * 750 < days, t * 750, days)
-    dtemp <- rastPolyJoin(polysf = lachAll, 
+    dtemp <- rastPolyJoin(polysf = LachlanANAE, 
                           rastst = deProxySoil[,,,from:to], 
                           grouper = 'SYS2', 
                           maintainPolys = TRUE)
@@ -220,11 +220,11 @@ system.time(dailySMpolyavg <- timechunker(chunk1 = chunk1))
   # There has GOT to be a way to speed this up...
   # It's the grouped summarize that kills it, NOT the intersection. i think it
   # might be the work sf is doing to put the polygons back together?
-    # TODO: see if it's faster to st_drop_geometry, do the summarize, and then join back to lachAll with SYS2?
+    # TODO: see if it's faster to st_drop_geometry, do the summarize, and then join back to LachlanANAE with SYS2?
 
 
 # Save that NOW. 
-save(lachAll, 
+save(LachlanANAE, 
      dailySMpolyavg, 
      file = file.path(datOut, 'lachMoistPolyAvg.rdata'))
 
@@ -239,7 +239,7 @@ rm(dailySMpolyavg)
 # Why not keep the list and not do the above? I dunno. There was a reason.
 
 # Check ordering
-all(dailyPolyindex$SYS2 == lachAll$SYS2)
+all(dailyPolyindex$SYS2 == LachlanANAE$SYS2)
 
 # Test plot
 # Let's set up a bbox for subsampled plotting without taking 8 million years
@@ -330,7 +330,7 @@ plot(min42polysub[,,100:103])
 # 
 # 
 # # Now, put those time-means into polygons
-# system.time(weeklySMpoly <- rastPolyJoin(polysf = lachAll, rastst = rastTimeSmean_7, grouper = 'SYS2', maintainPolys = TRUE))
+# system.time(weeklySMpoly <- rastPolyJoin(polysf = LachlanANAE, rastst = rastTimeSmean_7, grouper = 'SYS2', maintainPolys = TRUE))
 # 
 # 
 # # unpack the list
@@ -339,7 +339,7 @@ plot(min42polysub[,,100:103])
 # weeklyRastavgSMpoly <- weeklySMpoly[[1]]
 # 
 # # Check ordering
-# all(weeklyPolyindex$SYS2 == lachAll$SYS2)
+# all(weeklyPolyindex$SYS2 == LachlanANAE$SYS2)
 # 
 # # Test plot
 # weekmeanSub <- weeklyRastavgSMpoly[st_as_sfc(bb)]
@@ -352,7 +352,7 @@ plot(min42polysub[,,100:103])
 # # Let's do this with the dailies, because then it would be easy to, for example, get a rolling min or something.
 # 
 # # Test the new function
-# system.time(dailySMpolysplit <- rastPolyJoin(polysf = lachAll, 
+# system.time(dailySMpolysplit <- rastPolyJoin(polysf = LachlanANAE, 
 #                                              rastst = lachSoil, 
 #                                              grouper = 'SYS2', 
 #                                              maintainPolys = FALSE))
@@ -360,7 +360,7 @@ plot(min42polysub[,,100:103])
 # # There has GOT to be a way to speed this up...
 # # It's the grouped summarize that kills it, NOT the intersection. i think it
 # # might be the work sf is doing to put the polygons back together?
-# # TODO: see if it's faster to st_drop_geometry, do the summarize, and then join back to lachAll with SYS2?
+# # TODO: see if it's faster to st_drop_geometry, do the summarize, and then join back to LachlanANAE with SYS2?
 # 
 # # unpack the list
 # dailyPolySplitindex <- dailySMpolysplit[[2]]
@@ -369,7 +369,7 @@ plot(min42polysub[,,100:103])
 # 
 # # Check ordering
 #   # This SHOULD be false
-# all(dailyPolySplitindex$SYS2 == lachAll$SYS2)
+# all(dailyPolySplitindex$SYS2 == LachlanANAE$SYS2)
 # 
 # # Test plot
 # dailyPolySplitSub <- dailyPolySMsplit[st_as_sfc(bb)]
@@ -388,7 +388,7 @@ plot(min42polysub[,,100:103])
 # bb = st_bbox(c(xmin = 144.4, ymin = -33.8, xmax = 144.6, ymax = -33.6), crs = whichcrs)
 # 
 # # ANAE
-# anaeSub <- st_crop(lachAll, st_as_sfc(bb))
+# anaeSub <- st_crop(LachlanANAE, st_as_sfc(bb))
 # plot(anaeSub[,'ANAE_DESC'])
 # 
 # # Soil moisture raster
@@ -416,7 +416,7 @@ plot(min42polysub[,,100:103])
 # plot(dailyPolySplitSub)
 
 # Save a lot of stuff
-save(lachAll, 
+save(LachlanANAE, 
      deProxySoil, 
      dailyPolySMavg, 
      soilMoistMin42, 
@@ -425,11 +425,11 @@ save(lachAll,
 
 # Save just the outputs, separately (for memory management on the strictures side)
 
-save(lachAll, 
+save(LachlanANAE, 
      soilMoistMin42,
      file = file.path(datOut, 'lachSoilmin42.rdata'))
 
-save(lachAll, 
+save(LachlanANAE, 
      soilMoistMin5,
      file = file.path(datOut, 'lachSoilmin5.rdata'))
 

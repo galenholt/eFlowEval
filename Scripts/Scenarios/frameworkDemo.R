@@ -59,24 +59,24 @@ datOut <- "datOut"
 
 # Assume at least at present that everything will need this
 # Read in just the ANAEs
-load(file.path(datOut, 'lachAll.rdata'))
-lachAll <- st_transform(lachAll, 4326) # WHY ISN"T THIS LIKE THIS ALREADY?
+load(file.path(datOut, 'LachlanANAE.rdata'))
+LachlanANAE <- st_transform(LachlanANAE, 4326) # WHY ISN"T THIS LIKE THIS ALREADY?
 
-# Get the catchments in (out of place; move)
-LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'LTIM_Valleys') %>%
-  st_cast("MULTIPOLYGON") # cleans up an issue with multisurfaces
+# # Get the catchments in (out of place; move)
+# LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'LTIM_Valleys') %>%
+#   st_cast("MULTIPOLYGON") # cleans up an issue with multisurfaces
+# 
+# # LTIM areas, useful for plotting
+# ltimNoNorth <- LTIM_Valleys %>%
+#   select(ValleyName) # Three different ways to reference, basically
 
-# LTIM areas, useful for plotting
-ltimCut <- LTIM_Valleys %>%
-  select(ValleyName) # Three different ways to reference, basically
-
-ltimCut <- st_transform(ltimCut, st_crs(lachAll))
+ltimNoNorth <- st_transform(ltimNoNorth, st_crs(LachlanANAE))
 
 # Get just the lachlan for plotting
-lachOnly <- filter(ltimCut, ValleyName == "Lachlan")
+lachOnly <- filter(ltimNoNorth, ValleyName == "Lachlan")
 
 # Need to get the areas for area-weighting 
-lachArea <- st_area(lachAll)
+lachArea <- st_area(LachlanANAE)
 
 
 # Date breaks -------------------------------------------------------------

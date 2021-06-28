@@ -18,7 +18,7 @@ library(lubridate)
 
 
 # Make some examples in the bbox ------------------------------------------
-whichcrs <- st_crs(lachAll)
+whichcrs <- st_crs(LachlanANAE)
 
 # it's a little annoying that st_crop is a hard crop, but the [] cropping lets
 # the polys hang over, and so we get different extents. So doing the polygon
@@ -32,34 +32,34 @@ plot(lachOnly)
 
 # Where is the box?
 ggplot() + 
-  geom_sf(data = ltimCut, aes(fill = ValleyName)) + 
+  geom_sf(data = ltimNoNorth, aes(fill = ValleyName)) + 
   geom_sf(data = st_as_sfc(bb)) +
   # # geom_sf(data = roads) +
   # coord_sf(xlim = c(144, 145),
   #          ylim = c(-35.5, -36)) +
-  # scale_fill_brewer(palette = 'SeltimCutt1') +
+  # scale_fill_brewer(palette = 'SeltimNoNortht1') +
   theme_bw() + theme(legend.position = 'top')
 
 
 ggplot() + 
-  geom_sf(data = filter(ltimCut, ValleyName == 'Lachlan'), aes(fill = ValleyName)) + 
+  geom_sf(data = filter(ltimNoNorth, ValleyName == 'Lachlan'), aes(fill = ValleyName)) + 
   geom_sf(data = st_as_sfc(bb)) +
   # # geom_sf(data = roads) +
   # coord_sf(xlim = c(144, 145),
   #          ylim = c(-35.5, -36)) +
-  # scale_fill_brewer(palette = 'SeltimCutt1') +
+  # scale_fill_brewer(palette = 'SeltimNoNortht1') +
   theme_bw()  + theme(legend.position = 'none')
 
 # Let's try to find a couple that are more relevant
 cumbung <- st_bbox(c(xmin = 143.85, ymin = -34.35, xmax = 144.4, ymax = -34.05), crs = whichcrs)
 
 ggplot() + 
-  geom_sf(data = filter(ltimCut, ValleyName == 'Lachlan'), aes(fill = ValleyName)) + 
+  geom_sf(data = filter(ltimNoNorth, ValleyName == 'Lachlan'), aes(fill = ValleyName)) + 
   geom_sf(data = st_as_sfc(cumbung)) +
   theme_bw()  + theme(legend.position = 'none')
 
 # ANAE
-anaeSubC <- st_crop(lachAll, st_as_sfc(cumbung))
+anaeSubC <- st_crop(LachlanANAE, st_as_sfc(cumbung))
 # plot(anaeSub[,'ANAE_DESC'])
 
 # Are there ANY of the relevant ANAE codes
@@ -75,12 +75,12 @@ ggplot() +
 booligal <- st_bbox(c(xmin = 144.5, ymin = -33.9, xmax = 145.3, ymax = -33.4), crs = whichcrs)
 
 ggplot() + 
-  geom_sf(data = filter(ltimCut, ValleyName == 'Lachlan'), aes(fill = ValleyName)) + 
+  geom_sf(data = filter(ltimNoNorth, ValleyName == 'Lachlan'), aes(fill = ValleyName)) + 
   geom_sf(data = st_as_sfc(booligal)) +
   theme_bw()  + theme(legend.position = 'none')
 
 # ANAE
-anaeSubB <- st_crop(lachAll, st_as_sfc(booligal))
+anaeSubB <- st_crop(LachlanANAE, st_as_sfc(booligal))
 # plot(anaeSub[,'ANAE_DESC'])
 
 # Are there ANY of the relevant ANAE codes
@@ -276,7 +276,7 @@ ggplot() +
 # Make a basin plot for full cycle wo centipeda but cutting to ANAE -------------------------------------------------------
 fullBasin_Centipeda <- catchAggW(strict = centipeda_baseYr$seedGermFruit_Centipeda_yr*centipeda_base$isANAE_Centipeda, 
                                  strictWeights = lachArea, 
-                                 FUN = sum, summaryPoly = ltimCut)
+                                 FUN = sum, summaryPoly = ltimNoNorth)
 names(fullBasin_Centipeda) <- 'areaDaysPassed'
 mdbCent_sf <- st_as_sf(fullBasin_Centipeda, long = TRUE)
 
@@ -300,7 +300,7 @@ ggplot() +
 
 fullBasin_Lippia <- catchAggW(strict = lippia_baseYr$fullCycle_Lippia_yr,
                               strictWeights = lachArea, 
-                                 FUN = sum, summaryPoly = ltimCut)
+                                 FUN = sum, summaryPoly = ltimNoNorth)
 names(fullBasin_Lippia) <- 'areaDaysPassed'
 mdbLip_sf <- st_as_sf(fullBasin_Lippia, long = TRUE)
 
@@ -317,7 +317,7 @@ ggplot() +
 kelp2 <- cal_palette(name = "kelp1", n = 28, type = "continuous")
 
 ggplot() + 
-  geom_sf(data = ltimCut, aes(fill = ValleyName)) + 
+  geom_sf(data = ltimNoNorth, aes(fill = ValleyName)) + 
   # geom_sf(data = st_as_sfc(bb)) +
   # # geom_sf(data = roads) +
   # coord_sf(xlim = c(144, 145),

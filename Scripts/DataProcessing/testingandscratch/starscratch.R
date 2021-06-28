@@ -20,16 +20,16 @@ datOut <- "datOut"
 # polygon data -------------------------------------------------------------
 
 # And get the LTIM_Valleys to use to subset for toy models at scale, but not enormous scale
-LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'LTIM_Valleys') %>%
+LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'LTIM_Valleys') %>%
   st_cast("MULTIPOLYGON") # cleans up an issue with multisurfaces
 
 # and the basin boundary, might be useful, especially for clipping rasters
-basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'MDB_Boundary') %>%
+basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'MDB_Boundary') %>%
   st_cast("MULTIPOLYGON")  %>% # cleans up an issue with multisurfaces
   dplyr::select(LEVEL2NAME) # no need for other info
 
 # LTIM areas
-ltimCut <- LTIM_Valleys %>%
+ltimNoNorth <- LTIM_Valleys %>%
   dplyr::select(ValleyName, ValleyID, ValleyCode) # Three different ways to reference, basically
 
 
@@ -121,11 +121,11 @@ plot(clipslice)
 # Now, can I sort out how to find means over a polygon? And what does that return?
 
 # try with the catchments first
-valleyMatch <- st_transform(ltimCut, st_crs(soilMstars))
+valleyMatch <- st_transform(ltimNoNorth, st_crs(soilMstars))
 moistVal <- aggregate(soilMstarsSub, by = valleyMatch, FUN = mean)
 
 # Things seem to happen differently with the gdal, so try that too
-# valleyMatchG <- st_transform(ltimCut, st_crs(soilMstarsG))
+# valleyMatchG <- st_transform(ltimNoNorth, st_crs(soilMstarsG))
 # moistValG <- aggregate(soilMstarsSubG, by = valleyMatch, FUN = mean, na.rm = TRUE)
 
 # Valleymatch looks as expected, right?

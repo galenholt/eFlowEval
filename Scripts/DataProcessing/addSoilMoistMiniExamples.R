@@ -16,23 +16,23 @@ datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:
 datOut <- "datOut"
 
 # load the processed anae files, cut to lachlan
-load(file.path(datOut, 'lachAll.rdata'))
+load(file.path(datOut, 'LachlanANAE.rdata'))
 # load(file.path(datOut, 'bothANAE.rdata'))
 
-# To allow plotting the ltim zones (otherwise their polygons get lost)
-# And get the LTIM_Valleys to use to subset for toy models at scale, but not enormous scale
-LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'LTIM_Valleys') %>%
-  st_cast("MULTIPOLYGON") # cleans up an issue with multisurfaces
-
-# LTIM areas, useful for plotting
-ltimCut <- LTIM_Valleys %>%
-  select(ValleyName, ValleyID, ValleyCode) # Three different ways to reference, basically
+# # To allow plotting the ltim zones (otherwise their polygons get lost)
+# # And get the LTIM_Valleys to use to subset for toy models at scale, but not enormous scale
+# LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'LTIM_Valleys') %>%
+#   st_cast("MULTIPOLYGON") # cleans up an issue with multisurfaces
+# 
+# # LTIM areas, useful for plotting
+# ltimNoNorth <- LTIM_Valleys %>%
+#   select(ValleyName, ValleyID, ValleyCode) # Three different ways to reference, basically
 
 # Read in the soil data
 soilMstars <- read_ncdf(file.path(datDir, 'soilmoisture/sm_pct_2020_Actual_day.nc'))
 
 # and the basin boundary, for clipping rasters; though likely will start with lachlan
-basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'MDB_Boundary') %>%
+basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'MDB_Boundary') %>%
   st_cast("MULTIPOLYGON")  %>% # cleans up an issue with multisurfaces
   dplyr::select(LEVEL2NAME) # no need for other info
 
@@ -45,13 +45,13 @@ basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'MDB_Boun
 # do it on a different projection (see help and vignettes)
 whichcrs <- st_crs(soilMstars)
 # TODO:: Check this is right on PC, I didn't need to set the CRS there for some reason
-st_crs(lachAll) <- 4283 # This is what's there when I look at st_crs, but it's not registering for some reason. 
-lachAll <- st_transform(lachAll, whichcrs)
-ltimCut <- st_transform(ltimCut, whichcrs)
+st_crs(LachlanANAE) <- 4283 # This is what's there when I look at st_crs, but it's not registering for some reason. 
+LachlanANAE <- st_transform(LachlanANAE, whichcrs)
+ltimNoNorth <- st_transform(ltimNoNorth, whichcrs)
 basin <- st_transform(basin, whichcrs)
 
 # Crop. Have to use as_points = FALSE or it crops to the raster centers, and misses stuff around the edges.
-lachSoil <- st_crop(soilMstars, filter(ltimCut, ValleyName == 'Lachlan'), as_points = FALSE)
+lachSoil <- st_crop(soilMstars, filter(ltimNoNorth, ValleyName == 'Lachlan'), as_points = FALSE)
 # check it worked
 plot(lachSoil[,,,1:4])
 
@@ -60,7 +60,7 @@ plot(lachSoil[,,,1:4])
 bb = st_bbox(c(xmin = 144.4, ymin = -33.8, xmax = 144.6, ymax = -33.6), crs = whichcrs)
 
 # And quick plots of the ANAE and rasters
-anaeSub <- st_crop(lachAll, st_as_sfc(bb))
+anaeSub <- st_crop(LachlanANAE, st_as_sfc(bb))
 plot(anaeSub[,'ANAE_DESC'])
 
 soilSub <- lachSoil[st_as_sfc(bb)]
@@ -69,12 +69,12 @@ plot(soilSub[,,,10:13])
 # 1. Spatial average of raster into the ANAE polys at each timestep ---------------------------
 
 # Test the new function
-system.time(dailySMpolyavg <- rastPolyJoin(polysf = lachAll, rastst = lachSoil, grouper = 'SYS2', maintainPolys = TRUE))
+system.time(dailySMpolyavg <- rastPolyJoin(polysf = LachlanANAE, rastst = lachSoil, grouper = 'SYS2', maintainPolys = TRUE))
 # 290 seconds with 280 timesteps in Lachlan
   # There has GOT to be a way to speed this up...
   # It's the grouped summarize that kills it, NOT the intersection. i think it
   # might be the work sf is doing to put the polygons back together?
-    # TODO: see if it's faster to st_drop_geometry, do the summarize, and then join back to lachAll with SYS2?
+    # TODO: see if it's faster to st_drop_geometry, do the summarize, and then join back to LachlanANAE with SYS2?
 
 # Couple size checks to see how this will go moving forward
 format(object.size(lachSoil), units = "auto") # Check size
@@ -89,7 +89,7 @@ dailyPolyindex <- dailySMpolyavg[[2]]
 dailyPolySMavg <- dailySMpolyavg[[1]]
 
 # Check ordering
-all(dailyPolyindex$SYS2 == lachAll$SYS2)
+all(dailyPolyindex$SYS2 == LachlanANAE$SYS2)
 
 # Test plot
 dailyPolySub <- dailyPolySMavg[st_as_sfc(bb)]
@@ -135,7 +135,7 @@ plot(rastweekSub[,,,10:13])
 
 
 # Now, put those time-means into polygons
-system.time(weeklySMpoly <- rastPolyJoin(polysf = lachAll, rastst = rastTimeSmean_7, grouper = 'SYS2', maintainPolys = TRUE))
+system.time(weeklySMpoly <- rastPolyJoin(polysf = LachlanANAE, rastst = rastTimeSmean_7, grouper = 'SYS2', maintainPolys = TRUE))
 
 
 # unpack the list
@@ -144,7 +144,7 @@ weeklyPolyindex <- weeklySMpoly[[2]]
 weeklyRastavgSMpoly <- weeklySMpoly[[1]]
 
 # Check ordering
-all(weeklyPolyindex$SYS2 == lachAll$SYS2)
+all(weeklyPolyindex$SYS2 == LachlanANAE$SYS2)
 
 # Test plot
 weekmeanSub <- weeklyRastavgSMpoly[st_as_sfc(bb)]
@@ -157,7 +157,7 @@ plot(weekmeanSub[,,10:13])
 # Let's do this with the dailies, because then it would be easy to, for example, get a rolling min or something.
 
 # Test the new function
-system.time(dailySMpolysplit <- rastPolyJoin(polysf = lachAll, 
+system.time(dailySMpolysplit <- rastPolyJoin(polysf = LachlanANAE, 
                                              rastst = lachSoil, 
                                              grouper = 'SYS2', 
                                              maintainPolys = FALSE))
@@ -165,7 +165,7 @@ system.time(dailySMpolysplit <- rastPolyJoin(polysf = lachAll,
 # There has GOT to be a way to speed this up...
 # It's the grouped summarize that kills it, NOT the intersection. i think it
 # might be the work sf is doing to put the polygons back together?
-# TODO: see if it's faster to st_drop_geometry, do the summarize, and then join back to lachAll with SYS2?
+# TODO: see if it's faster to st_drop_geometry, do the summarize, and then join back to LachlanANAE with SYS2?
 
 # unpack the list
 dailyPolySplitindex <- dailySMpolysplit[[2]]
@@ -174,7 +174,7 @@ dailyPolySMsplit <- dailySMpolysplit[[1]]
 
 # Check ordering
   # This SHOULD be false
-all(dailyPolySplitindex$SYS2 == lachAll$SYS2)
+all(dailyPolySplitindex$SYS2 == LachlanANAE$SYS2)
 
 # Test plot
 dailyPolySplitSub <- dailyPolySMsplit[st_as_sfc(bb)]
@@ -193,7 +193,7 @@ plot(dailyPolySplitSub[,,10:13])
 bb = st_bbox(c(xmin = 144.4, ymin = -33.8, xmax = 144.6, ymax = -33.6), crs = whichcrs)
 
 # ANAE
-anaeSub <- st_crop(lachAll, st_as_sfc(bb))
+anaeSub <- st_crop(LachlanANAE, st_as_sfc(bb))
 plot(anaeSub[,'ANAE_DESC'])
 
 # Soil moisture raster
@@ -220,7 +220,7 @@ plot(weekmeanSub)
 dailyPolySplitSub <- st_crop(st_as_sf(dailyPolySMsplit[,,10:13]), st_as_sfc(bb))
 plot(dailyPolySplitSub)
 
-save(lachAll, 
+save(LachlanANAE, 
      lachSoil, 
      dailyPolySMavg, 
      polyTimeSmax_10, 

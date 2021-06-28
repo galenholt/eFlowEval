@@ -13,22 +13,22 @@ datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:
 datOut <- "datOut"
 
 # load the processed anae files, cut to lachlan
-load(file.path(datOut, 'lachAll.rdata'))
+load(file.path(datOut, 'LachlanANAE.rdata'))
 
 # To allow plotting the ltim zones (otherwise their polygons get lost)
 # And get the LTIM_Valleys to use to subset for toy models at scale, but not enormous scale
-LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'LTIM_Valleys') %>%
+LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'LTIM_Valleys') %>%
   st_cast("MULTIPOLYGON") # cleans up an issue with multisurfaces
 
 # LTIM areas, useful for plotting
-ltimCut <- LTIM_Valleys %>%
+ltimNoNorth <- LTIM_Valleys %>%
   select(ValleyName, ValleyID, ValleyCode) # Three different ways to reference, basically
 
 # Read in the soil data
 soilMstars <- read_ncdf(file.path(datDir, 'soilmoisture/sm_pct_2020_Actual_day.nc'))
 
 # and the basin boundary, for clipping rasters; though likely will start with lachlan
-basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'MDB_Boundary') %>%
+basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'MDB_Boundary') %>%
   st_cast("MULTIPOLYGON")  %>% # cleans up an issue with multisurfaces
   dplyr::select(LEVEL2NAME) # no need for other info
 
@@ -46,18 +46,18 @@ basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'MDB_Boun
   # do it on a different projection (see help and vignettes)
 whichcrs <- st_crs(soilMstars)
 # Try to fix on mac
-st_crs(lachAll) <- 4283 # This is what's there when I look at st_crs, but it's not registering for some reason. 
+st_crs(LachlanANAE) <- 4283 # This is what's there when I look at st_crs, but it's not registering for some reason. 
   # TODO:: But check it's right on PC
-lachAll <- st_transform(lachAll, whichcrs) # Why doesnt this work on Mac? AAAAAAAAA!!!!
-ltimCut <- st_transform(ltimCut, whichcrs)
+LachlanANAE <- st_transform(LachlanANAE, whichcrs) # Why doesnt this work on Mac? AAAAAAAAA!!!!
+ltimNoNorth <- st_transform(ltimNoNorth, whichcrs)
 basin <- st_transform(basin, whichcrs)
 
-lachSoil <- st_crop(soilMstars, filter(ltimCut, ValleyName == 'Lachlan'))
+lachSoil <- st_crop(soilMstars, filter(ltimNoNorth, ValleyName == 'Lachlan'))
 # check it worked
 plot(lachSoil[,,,1:4]) 
 
 # Also works
-# lachSoil <- soilMstars[filter(ltimCut, ValleyName == 'Lachlan')]
+# lachSoil <- soilMstars[filter(ltimNoNorth, ValleyName == 'Lachlan')]
 # # check it worked
 # plot(lachSoil[,,,1:4])
 
@@ -76,7 +76,7 @@ plot(lachSoil[,,,1:4])
 # aggregate each timestep into the polygons
 
 # Pull the instantaneous values in averaged over each polygon
-agSoil = aggregate(lachSoil, by = lachAll, FUN = mean, na.rm = TRUE)
+agSoil = aggregate(lachSoil, by = LachlanANAE, FUN = mean, na.rm = TRUE)
   # Yields a LOT of NAs
       # 99387. NOPE, that's from the first 1e5 cells, so there's a LOT more than that.
         # Though there are 36340*208 objects * times, so that's 7558720, and 99387 is actually small in that sense
@@ -86,14 +86,14 @@ plot(agSoil[,1:10,1:10])
 sum(is.na(agSoil[[1]]))
 
 # Does as_points = FALSE fix it by turning them into polygons?
-agSoil2 = aggregate(lachSoil, by = lachAll, as_points = FALSE, FUN = mean, na.rm = TRUE)
+agSoil2 = aggregate(lachSoil, by = LachlanANAE, as_points = FALSE, FUN = mean, na.rm = TRUE)
   # Some of them
   agSoil2
   plot(agSoil2[,1:10, 1:10])
   sum(is.na(agSoil2[[1]]))
   
 # # Does exact == TRUE help? Doesn't seem to work for rasters
-#   agSoil3 = aggregate(lachSoil, by = lachAll, as_points = FALSE, exact = TRUE, FUN = mean, na.rm = TRUE)
+#   agSoil3 = aggregate(lachSoil, by = LachlanANAE, as_points = FALSE, exact = TRUE, FUN = mean, na.rm = TRUE)
 #   # Some of them
 #   agSoil3
 #   plot(agSoil3[,1:10, 1:10])
@@ -105,14 +105,14 @@ agSoil2 = aggregate(lachSoil, by = lachAll, as_points = FALSE, FUN = mean, na.rm
   sum(is.na(a50[[1]]))
   # well, 34610 na out of 36340 is a LOT of NA
  lookforna <- ggplot() + 
-  geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")), 
+  geom_sf(data = filter(ltimNoNorth, ValleyName %in% c("Lachlan")), 
           aes(color = ValleyName), alpha = 0.5) +
   geom_stars(data = a50, aes(fill = sm_pct, color = is.na(sm_pct)))
 lookforna
 
 # That didn't show up well
 lookforna2 <- ggplot() + 
-  # geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")), 
+  # geom_sf(data = filter(ltimNoNorth, ValleyName %in% c("Lachlan")), 
   #         aes(color = ValleyName), alpha = 0.5) +
   geom_stars(data = a50, aes(fill = is.na(sm_pct), color = is.na(sm_pct)))
 lookforna2
@@ -126,7 +126,7 @@ bb = st_bbox(c(xmin = 144.4, ymin = -33.8, xmax = 144.6, ymax = -33.6), crs = wh
 asub <- a50[st_as_sfc(bb)]
 # Replot
 lookforna3 <- ggplot() + 
-  # geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")), 
+  # geom_sf(data = filter(ltimNoNorth, ValleyName %in% c("Lachlan")), 
   #         aes(color = ValleyName), alpha = 0.5) +
   geom_stars(data = asub, aes(fill = is.na(sm_pct)))
 lookforna3
@@ -135,14 +135,14 @@ lookforna3
 soilsub <- lachSoil[st_as_sfc(bb)]
 soilsub <- soilsub[,,,50]
 lookforna4 <- ggplot() + 
-  # geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")), 
+  # geom_sf(data = filter(ltimNoNorth, ValleyName %in% c("Lachlan")), 
   #         aes(color = ValleyName), alpha = 0.5) +
   geom_stars(data = soilsub, aes(x = longitude, y = latitude, fill = is.na(sm_pct)))
 lookforna4
 
 # huh.so the raster has some nas
 lookforna5 <- ggplot() + 
-  # geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")), 
+  # geom_sf(data = filter(ltimNoNorth, ValleyName %in% c("Lachlan")), 
   #         aes(color = ValleyName), alpha = 0.5) +
   geom_stars(data = soilsub, aes(x = longitude, y = latitude, fill = sm_pct)) +
   geom_stars(data = asub, aes(fill = sm_pct))
@@ -153,26 +153,26 @@ lookforna5
 
 # I can do
 lookforna6 <- ggplot() + 
-  # geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")), 
+  # geom_sf(data = filter(ltimNoNorth, ValleyName %in% c("Lachlan")), 
   #         aes(color = ValleyName), alpha = 0.5) +
   geom_stars(data = soilsub, aes(x = longitude, y = latitude, fill = sm_pct)) +
   geom_sf(data = st_as_sf(asub), aes(color = is.na(`2020-02-18 12:00:00`)))
 lookforna6
 
 # Are any of the polgons bad?
-sum(!st_is_valid(lachAll))
+sum(!st_is_valid(LachlanANAE))
 
 
 # Can I zoom way in to try to find out what's happening? ------------------
 bb = st_bbox(c(xmin = 144.4, ymin = -33.8, xmax = 144.6, ymax = -33.6), crs = whichcrs)
 soilCrop <- soilMstars[st_as_sfc(bb)]
-lachCrop <- st_crop(lachAll, st_as_sfc(bb))
+lachCrop <- st_crop(LachlanANAE, st_as_sfc(bb))
 agCrop <- aggregate(soilCrop, by = lachCrop, FUN = mean, na.rm = TRUE)
 ac50 <- agCrop[,,50]
 sc50 <- soilCrop[,,,50]
 
 na7 <- ggplot() + 
-  # geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")), 
+  # geom_sf(data = filter(ltimNoNorth, ValleyName %in% c("Lachlan")), 
   #         aes(color = ValleyName), alpha = 0.5) +
   geom_stars(data = sc50, aes(x = longitude, y = latitude, fill = sm_pct)) +
   geom_sf(data = st_as_sf(ac50), aes(color = is.na(`2020-02-18 12:00:00`)))
@@ -190,13 +190,13 @@ lookforna6 + xlim(c(144.35, 144.65)) + ylim(c(-33.85, -33.55))
 bbP <- st_bbox(c(xmin = 144.4, ymin = -33.8, xmax = 144.6, ymax = -33.6), crs = whichcrs)
 bbR <- st_bbox(c(xmin = 144, ymin = -34.2, xmax = 145, ymax = -33.2), crs = whichcrs)
 soilCropR <- soilMstars[st_as_sfc(bbR)]
-lachCropP <- st_crop(lachAll, st_as_sfc(bbP))
+lachCropP <- st_crop(LachlanANAE, st_as_sfc(bbP))
 agCrop2 <- aggregate(soilCropR, by = lachCropP, FUN = mean, na.rm = TRUE)
 ac502 <- agCrop2[,,50]
 sc502 <- soilCropR[,,,50]
 
 na8 <- ggplot() + 
-  # geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")), 
+  # geom_sf(data = filter(ltimNoNorth, ValleyName %in% c("Lachlan")), 
   #         aes(color = ValleyName), alpha = 0.5) +
   geom_stars(data = sc502, aes(x = longitude, y = latitude, fill = sm_pct)) +
   geom_sf(data = st_as_sf(ac502), aes(color = is.na(`2020-02-18 12:00:00`)))
@@ -208,13 +208,13 @@ na7
 bbP <- st_bbox(c(xmin = 144.4, ymin = -33.8, xmax = 144.6, ymax = -33.6), crs = whichcrs)
 bbR <- st_bbox(c(xmin = 144, ymin = -34.2, xmax = 145, ymax = -33.2), crs = whichcrs)
 soilCropR <- soilMstars[st_as_sfc(bbR)]
-lachCropP <- st_crop(lachAll, st_as_sfc(bbP))
+lachCropP <- st_crop(LachlanANAE, st_as_sfc(bbP))
 agCrop3 <- aggregate(soilCropR, by = lachCropP, as_points = FALSE, FUN = mean, na.rm = TRUE)
 ac503 <- agCrop3[,,50]
 sc503 <- soilCropR[,,,50]
 
 na9 <- ggplot() + 
-  # geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")), 
+  # geom_sf(data = filter(ltimNoNorth, ValleyName %in% c("Lachlan")), 
   #         aes(color = ValleyName), alpha = 0.5) +
   geom_stars(data = sc503, aes(x = longitude, y = latitude, fill = sm_pct)) +
   geom_sf(data = st_as_sf(ac503), aes(color = is.na(`2020-02-18 12:00:00`)))
@@ -232,7 +232,7 @@ ac503_1 <- ac503 %>% st_as_sf() %>% rename(sm_pct = `2020-02-18 12:00:00`)
 # Did that work?
 
 na10 <- ggplot() + 
-  # geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")), 
+  # geom_sf(data = filter(ltimNoNorth, ValleyName %in% c("Lachlan")), 
   #         aes(color = ValleyName), alpha = 0.5) +
   geom_stars(data = sc503, aes(x = longitude, y = latitude, fill = sm_pct)) +
   geom_sf(data = st_as_sf(ac503_1), aes(color = is.na(sm_pct)))
@@ -245,14 +245,14 @@ na10 + xlim(c(144.35, 144.65)) + ylim(c(-33.85, -33.55))
 bbP <- st_bbox(c(xmin = 144.4, ymin = -33.8, xmax = 144.6, ymax = -33.6), crs = whichcrs)
 bbR <- st_bbox(c(xmin = 144, ymin = -34.2, xmax = 145, ymax = -33.2), crs = whichcrs)
 soilCropR <- soilMstars[st_as_sfc(bbR)]
-lachCropP <- st_crop(lachAll, st_as_sfc(bbP))
+lachCropP <- st_crop(LachlanANAE, st_as_sfc(bbP))
 soilC50 <- soilCropR[,,,50] %>% adrop()
 
 agC50 <- aggregate(soilC50, by = lachCropP, as_points = FALSE, FUN = mean, na.rm = TRUE) %>%
   st_as_sf()
 
 na11 <- ggplot() + 
-  # geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")), 
+  # geom_sf(data = filter(ltimNoNorth, ValleyName %in% c("Lachlan")), 
   #         aes(color = ValleyName), alpha = 0.5) +
   geom_stars(data = soilC50, aes(x = longitude, y = latitude, fill = sm_pct)) +
   geom_sf(data =agC50, aes(color = is.na(sm_pct)))
@@ -266,7 +266,7 @@ agC50_2 <- aggregate(soilC50, by = firstna, as_points = FALSE, FUN = mean, na.rm
 
 # plot
 na12 <- ggplot() + 
-  # geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")), 
+  # geom_sf(data = filter(ltimNoNorth, ValleyName %in% c("Lachlan")), 
   #         aes(color = ValleyName), alpha = 0.5) +
   geom_stars(data = soilC50, aes(x = longitude, y = latitude, fill = sm_pct)) +
   geom_sf(data =agC50_2, aes(color = is.na(sm_pct)))
@@ -293,7 +293,7 @@ notna
 agC50
 # plot
 na13 <- ggplot() + 
-  # geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")), 
+  # geom_sf(data = filter(ltimNoNorth, ValleyName %in% c("Lachlan")), 
   #         aes(color = ValleyName), alpha = 0.5) +
   geom_stars(data = soilC50, aes(x = longitude, y = latitude, fill = sm_pct)) +
   geom_sf(data = notna, aes(color = is.na(sm_pct)))
@@ -301,7 +301,7 @@ na13 + xlim(c(144.35, 144.65)) + ylim(c(-33.85, -33.55))
 
 # and the actual data inside them
 na14 <- ggplot() + 
-  # geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")), 
+  # geom_sf(data = filter(ltimNoNorth, ValleyName %in% c("Lachlan")), 
   #         aes(color = ValleyName), alpha = 0.5) +
   geom_stars(data = soilC50, aes(x = longitude, y = latitude, fill = sm_pct)) +
   geom_sf(data = notna, aes(fill = sm_pct))
@@ -309,7 +309,7 @@ na14 + xlim(c(144.35, 144.65)) + ylim(c(-33.85, -33.55))
 
 # adn just the shapes
 na15 <- ggplot() + 
-  # geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")), 
+  # geom_sf(data = filter(ltimNoNorth, ValleyName %in% c("Lachlan")), 
   #         aes(color = ValleyName), alpha = 0.5) +
   # geom_stars(data = soilC50, aes(x = longitude, y = latitude, fill = sm_pct)) +
   geom_sf(data = notna, aes(fill = sm_pct))
@@ -833,24 +833,24 @@ avgTl
 #    # Doesn't really run anymore, since fixed it; commmenting out
 # # Some checking
 # length(avgA_S$SYSID)
-# length(lachAll$SYSID)
+# length(LachlanANAE$SYSID)
 # length(unique(intA_S$SYSID))
-# length(unique(lachAll$SYSID))
+# length(unique(LachlanANAE$SYSID))
 # 
-# all(avgA_S$SYSID == lachAll$SYSID)
+# all(avgA_S$SYSID == LachlanANAE$SYSID)
 # 
-# # and yet, nothing is easy. Why are there length(unique(lachAll$SYSID)) - length(unique(intA_S$SYSID)) *189* sysids in lachall that aren't in avgA_S?
+# # and yet, nothing is easy. Why are there length(unique(LachlanANAE$SYSID)) - length(unique(intA_S$SYSID)) *189* sysids in LachlanANAE that aren't in avgA_S?
 # 
-# str(lachAll)
+# str(LachlanANAE)
 # 
-# notavgIndex <- which(!(lachAll$SYSID %in% avgA_S$SYSID))
-# notavg <- lachAll$SYSID[notavgIndex]
+# notavgIndex <- which(!(LachlanANAE$SYSID %in% avgA_S$SYSID))
+# notavg <- LachlanANAE$SYSID[notavgIndex]
 # notavg
 # # Nothing obvious
 # 
-# lachnot <- filter(lachAll, SYSID %in% notavg)
+# lachnot <- filter(LachlanANAE, SYSID %in% notavg)
 # # That sure looks like an outline...
-# plot(filter(ltimCut, ValleyName == 'Lachlan')[1], reset = FALSE)
+# plot(filter(ltimNoNorth, ValleyName == 'Lachlan')[1], reset = FALSE)
 # plot(lachnot[c('SYSID')], add = TRUE)
 # 
 # # They ARE all outside the raster.
@@ -860,7 +860,7 @@ avgTl
 # 
 # # Why?
 # dev.off()
-# plot(filter(ltimCut, ValleyName == 'Lachlan')[1], reset = FALSE)
+# plot(filter(ltimNoNorth, ValleyName == 'Lachlan')[1], reset = FALSE)
 # plot(lachSoil[,,,1], add = TRUE)
 # # Crop must be based on centers, not total overlap
 # 
@@ -869,18 +869,18 @@ avgTl
 # 
 
 # 
-# # So, now the issue is that lachAll has duplicate SYS2s
+# # So, now the issue is that LachlanANAE has duplicate SYS2s
 # # It comes in that way. WHY?
-# sum(duplicated(lachAll))
+# sum(duplicated(LachlanANAE))
 # # Hmmm. so there are duplicated SYS2s, but NOT fully duplicated records
-# sum(duplicated(lachAll$SYS2))
+# sum(duplicated(LachlanANAE$SYS2))
 # # Which ones?
-# lachdup <- lachAll[duplicated(lachAll$SYS2), ]
+# lachdup <- LachlanANAE[duplicated(LachlanANAE$SYS2), ]
 # # does duplicated() grab all, or just the seconds?
 # sum(duplicated(lachdup$SYS2))
 # # just seconds. let's do this differently then
-# dupsys <- lachAll$SYS2[duplicated(lachAll$SYS2)]
-# lachdup <- filter(lachAll, SYS2 %in% dupsys)
+# dupsys <- LachlanANAE$SYS2[duplicated(LachlanANAE$SYS2)]
+# lachdup <- filter(LachlanANAE, SYS2 %in% dupsys)
 # str(lachdup)
 # arrange(lachdup, SYS2)
 # # huh. that's a mix of mostly different and mostly duplicated, but they really AREN'T mostly duplicated
@@ -892,7 +892,7 @@ avgTl
 # plot(arrDup[3:4,'ANAE_DESC']) # Same
 # plot(arrDup[5:6,'ANAE_DESC']) # Same
 # dev.off()
-# plot(filter(ltimCut, ValleyName == 'Lachlan')[1], reset = FALSE)
+# plot(filter(ltimNoNorth, ValleyName == 'Lachlan')[1], reset = FALSE)
 # plot(arrDup[1:2,'ANAE_DESC'], add = TRUE) # Same
 # # Those are all really similar?? What's up?
 # 
@@ -904,7 +904,7 @@ avgTl
 # plot(arrDup[9,'ANAE_DESC']) # Same
 # plot(arrDup[10,'ANAE_DESC']) # Same
 # 
-# lachAll[grep(lachAll$SYS2, pattern = 'DUP'),]
+# LachlanANAE[grep(LachlanANAE$SYS2, pattern = 'DUP'),]
 # 
 # # SO, some are totally different locations, others are connected. I think the
 # # code has ensured they don't OVERLAP, so the issue is what to do. We clearly
@@ -920,21 +920,21 @@ avgTl
 
 # # Some checking
 # length(avgA_S$SYS2)
-# length(lachAll$SYS2)
+# length(LachlanANAE$SYS2)
 # length(unique(intA_S$SYS2))
-# length(unique(lachAll$SYS2))
+# length(unique(LachlanANAE$SYS2))
 # 
 # 
 # # Need to get to the following, but, checking first, because so far it fails
-# all(avgA_S$SYS2 == lachAll$SYS2)
-# all(avgA_S$SYS2 %in% lachAll$SYS2)
-# all(lachAll$SYS2 %in% avgA_S$SYS2)
+# all(avgA_S$SYS2 == LachlanANAE$SYS2)
+# all(avgA_S$SYS2 %in% LachlanANAE$SYS2)
+# all(LachlanANAE$SYS2 %in% avgA_S$SYS2)
 # # So, they're all there, but have been rearranged. WHY DOES IT DO THAT?
 # 
 # 
-# all(avgA_S$SYS2 == lachAll$SYS2)
-# all(avgA_S$SYS2 %in% lachAll$SYS2)
-# all(lachAll$SYS2 %in% avgA_S$SYS2)
+# all(avgA_S$SYS2 == LachlanANAE$SYS2)
+# all(avgA_S$SYS2 %in% LachlanANAE$SYS2)
+# all(LachlanANAE$SYS2 %in% avgA_S$SYS2)
 
 # Testing the new rast spatial integration
 # # # Swear swear swear
@@ -963,7 +963,7 @@ avgTl
 # # Have to intersect with the ANAE polygons to get average.
 # # Less fiddly (because it's one-to-one), and it ensures the averages area area
 # # weighted (they're not with aggregate; see timePolyRastScratch for testing)
-# intA_S <- st_intersection(lachAll, soilSF)
+# intA_S <- st_intersection(LachlanANAE, soilSF)
 # # intF leads with the ANAE cols, and then has date cols all preceded by 'X'
 # 
 # # Get the averages into each ANAE ID at each time
@@ -992,11 +992,11 @@ avgTl
 # # then, make the stars with linking vector for confirming indexing
 # # Then, on to the different rollers
 # 
-# # It has been re-sorted for some unknown stupid dplyr reason. Make sure it is sorted to match lachAll
+# # It has been re-sorted for some unknown stupid dplyr reason. Make sure it is sorted to match LachlanANAE
 # avgA_S <- avgA_S %>% arrange(SYS2)
-# lachAll <- lachAll %>% arrange(SYS2)
+# LachlanANAE <- LachlanANAE %>% arrange(SYS2)
 # # Check
-# all(avgA_S$SYS2 == lachAll$SYS2)
+# all(avgA_S$SYS2 == LachlanANAE$SYS2)
 # 
 # # And, still, save the indexer column (is it possible to glue this back on as a dimension? Probably not, because it's parallel to shape)
 # avgA_Sindex <- avgA_S$SYS2

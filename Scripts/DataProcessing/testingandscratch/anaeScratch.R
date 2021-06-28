@@ -24,13 +24,13 @@ datOut <- "datOut"
 
 
 # Let's go for it, using the LTIM valleys first, since it's way smaller but has same structure
-LTIM_Valleys <- read_sf(dsn = paste0(datDir, '/ANAE/MDB_ANAE.gdb'), layer = 'LTIM_Valleys')
+LTIM_Valleys <- read_sf(dsn = paste0(datDir, '/ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'LTIM_Valleys')
 
 ggplot(LTIM_Valleys, aes(color= ValleyName, fill = ValleyName)) + geom_sf() + theme_bw() 
   # scale_fill_brewer(type = 'qual') + scale_color_brewer(type = 'qual') # Too many values for brewer
 
 # Try a smaller line file to test before jumping into rivers
-roads <- read_sf(dsn = paste0(datDir, '/ANAE/MDB_ANAE.gdb'), layer = 'MajorRoads')
+roads <- read_sf(dsn = paste0(datDir, '/ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'MajorRoads')
 
 ggplot() + 
   geom_sf(data = LTIM_Valleys, aes(color= ValleyName, fill = ValleyName)) + 
@@ -40,7 +40,7 @@ ggplot() +
 
 # Read in the ANAE classifications ----------------------------------------
   # takes ~1-2 minutes
-wetlands <- read_sf(dsn = paste0(datDir, '/ANAE/MDB_ANAE.gdb'), layer = 'Wetlands_ANAE_20171025')
+wetlands <- read_sf(dsn = paste0(datDir, '/ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'Wetlands_ANAE_20171025')
 
 # Plot check
   # Takes a REALLY long time, so try trimming.
@@ -71,7 +71,7 @@ ggplot() +
 
 # what's the difference with?
   # Unclear. This is a data.frame, the other is a tibble. But that's not really much different...
-wet2 <- st_read(dsn = paste0(datDir, '/ANAE/MDB_ANAE.gdb'), layer = 'Wetlands_ANAE_20171025')
+wet2 <- st_read(dsn = paste0(datDir, '/ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'Wetlands_ANAE_20171025')
 
 # OK, that seems to work. Now, can I work on something to demo intersections, etc
   # Wondering if I should continue with the cut down data at first? Probably to sort things out.
@@ -81,7 +81,7 @@ wet2 <- st_read(dsn = paste0(datDir, '/ANAE/MDB_ANAE.gdb'), layer = 'Wetlands_AN
 trimBar <- st_crop(wetlands, xmin = 144.5, xmax = 146, ymin = -36.5, ymax = -35.6)
 
 # Get the koppen subregion in there
-kopSub <- read_sf(dsn = paste0(datDir, '/ANAE/MDB_ANAE.gdb'), layer = 'BoM_Koppen_subregions')
+kopSub <- read_sf(dsn = paste0(datDir, '/ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'BoM_Koppen_subregions')
 trimKop <- st_crop(kopSub, xmin = 144.5, xmax = 146, ymin = -36.5, ymax = -35.6)
 
 # Quick plot
@@ -143,7 +143,7 @@ ggplot() +
 
 # Need to check that I'm handling adding nsw correctly
 # And the interim NSW data
-wetlandsNSW <- read_sf(dsn = paste0(datDir, '/ANAE/MDB_ANAE.gdb'), layer = 'Interim_Western_NSW_Floodplain_ANAE') %>%
+wetlandsNSW <- read_sf(dsn = paste0(datDir, '/ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'Interim_Western_NSW_Floodplain_ANAE') %>%
   st_cast("MULTIPOLYGON") # cleans up an issue with multisurfaces
 
 # Cut

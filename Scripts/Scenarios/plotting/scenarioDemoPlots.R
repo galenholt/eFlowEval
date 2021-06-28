@@ -4,15 +4,15 @@
 # yearly objects are in memory
 
 # LTIM areas, useful for plotting
-ltimCut <- LTIM_Valleys %>%
+ltimNoNorth <- LTIM_Valleys %>%
   select(ValleyName) %>% # Three different ways to reference, basically
   filter(ValleyName != 'Northern Unregulated') # Deal with the northern unregulated issue
 
-ltimCut <- st_transform(ltimCut, st_crs(lachAll))
+ltimNoNorth <- st_transform(ltimNoNorth, st_crs(LachlanANAE))
 
 
 # Illustrate local stuff in cumbung again
-whichcrs <- st_crs(lachAll)
+whichcrs <- st_crs(LachlanANAE)
 cumbung <- st_bbox(c(xmin = 143.85, ymin = -34.35, xmax = 144.4, ymax = -34.05), crs = whichcrs)
 
 # The component parts (baseline, climate alone) local stuff got moved to
@@ -41,27 +41,27 @@ ggplot() +
 # First, aggregate to the catchment
 fullCatch_Centipeda_base <- catchAggW(strict = centipeda_baseYr$fullCycleLippia_Centipeda_yr, 
                                       strictWeights = lachArea, 
-                                      FUN = sum, summaryPoly = ltimCut)
+                                      FUN = sum, summaryPoly = ltimNoNorth)
 names(fullCatch_Centipeda_base) <- 'areaDaysPassed'
 fullCatch_Centipeda_base[[1]][notlach, ] <- NA
 
 
 fullCatch_Centipeda_clim <- catchAggW(strict = centipeda_climYr$fullCycleLippia_Centipeda_yr, 
                                       strictWeights = lachArea, 
-                                      FUN = sum, summaryPoly = ltimCut)
+                                      FUN = sum, summaryPoly = ltimNoNorth)
 names(fullCatch_Centipeda_clim) <- 'areaDaysPassed'
 fullCatch_Centipeda_clim[[1]][notlach, ] <- NA
 
 fullCatch_Centipeda_top <- catchAggW(strict = centipeda_topYr$fullCycleLippia_Centipeda_yr, 
                                       strictWeights = lachArea, 
-                                      FUN = sum, summaryPoly = ltimCut)
+                                      FUN = sum, summaryPoly = ltimNoNorth)
 names(fullCatch_Centipeda_top) <- 'areaDaysPassed'
 fullCatch_Centipeda_top[[1]][notlach, ] <- NA
 
 
 fullCatch_Centipeda_topclim <- catchAggW(strict = centipeda_topclimYr$fullCycleLippia_Centipeda_yr, 
                                       strictWeights = lachArea, 
-                                      FUN = sum, summaryPoly = ltimCut)
+                                      FUN = sum, summaryPoly = ltimNoNorth)
 names(fullCatch_Centipeda_topclim) <- 'areaDaysPassed'
 fullCatch_Centipeda_topclim[[1]][notlach, ] <- NA
 
@@ -149,7 +149,7 @@ centchangeTB <- centipeda_topclimYr$fullCycleLippia_Centipeda_yr -
   centipeda_baseYr$fullCycleLippia_Centipeda_yr
 fullCatch_Centipeda_topclim_2 <- catchAggW(strict = centchangeTB, 
                                          strictWeights = lachArea, 
-                                         FUN = sum, summaryPoly = ltimCut)
+                                         FUN = sum, summaryPoly = ltimNoNorth)
 names(fullCatch_Centipeda_topclim_2) <- 'areaDaysPassed'
 
 # climate + management
@@ -169,20 +169,20 @@ centTopClimvClimPlot
 
 fullCatch_Lippia_base <- catchAggW(strict = lippia_baseYr$fullCycle_Lippia_yr, 
                                       strictWeights = lachArea, 
-                                      FUN = sum, summaryPoly = ltimCut)
+                                      FUN = sum, summaryPoly = ltimNoNorth)
 names(fullCatch_Lippia_base) <- 'areaDaysPassed'
 
 # I don't actually want it to spill into other basins, since this is only anae
 # units that overlap, NOT real estimates
 fullCatch_Lippia_base 
 
-which(ltimCut$ValleyName == 'Lachlan')
+which(ltimNoNorth$ValleyName == 'Lachlan')
 
 str(fullCatch_Lippia_base[[1]])
 str(fullCatch_Lippia_base[1,12,])
 
 # For now, easiest to just use the [[1]] method, even though it's crude
-notlach <- which(ltimCut$ValleyName != 'Lachlan')
+notlach <- which(ltimNoNorth$ValleyName != 'Lachlan')
 fullCatch_Lippia_base[[1]][notlach, ] <- NA
 
 plot3L <- ggplot() +
@@ -196,7 +196,7 @@ plot3L
 # AHHH. What is the low? Why is this not capturing the range??
 plot(fcb3)
 # It's spilling into the northern basin. I thought I fixed that?
-ltimCut
+ltimNoNorth
 
 # Make matching for the anaes themselves. This is just lachlan, so no need to de-northern it
 # I actually want these to be DAYS, not years
@@ -219,9 +219,9 @@ lip10days <- filter(lippia_base$fullCycle_Lippia, time > lubridate::ymd('2014081
 
 fullCatch_Lippia_10 <- catchAggW(strict = lip10days, 
                                    strictWeights = lachArea, 
-                                   FUN = sum, summaryPoly = ltimCut)
+                                   FUN = sum, summaryPoly = ltimNoNorth)
 names(fullCatch_Lippia_10) <- 'sumprop'
-# notlach <- which(ltimCut$ValleyName != 'Lachlan')
+# notlach <- which(ltimNoNorth$ValleyName != 'Lachlan')
 fullCatch_Lippia_10[[1]][notlach, ] <- NA
 
 plot10 <- ggplot() +
@@ -239,7 +239,7 @@ fullCatch_Centipeda_base[[1]][notlach, ] <- NA
 
 fullCatch_Centipeda_nolip <- catchAggW(strict = centipeda_baseYr$seedGermFruit_Centipeda_yr, 
                                            strictWeights = lachArea, 
-                                           FUN = sum, summaryPoly = ltimCut)
+                                           FUN = sum, summaryPoly = ltimNoNorth)
 names(fullCatch_Centipeda_nolip) <- 'areaDaysPassed'
 
 fullCatch_Centipeda_nolip[[1]][notlach, ] <- NA

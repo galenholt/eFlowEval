@@ -50,7 +50,7 @@ wetlands <- read_sf(dsn = file.path(datDir,
   st_make_valid()
  
 # # And the interim NSW data
-# wetlandsNSW <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE.gdb'), layer = 'Interim_Western_NSW_Floodplain_ANAE') %>%
+# wetlandsNSW <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'Interim_Western_NSW_Floodplain_ANAE') %>%
 #   st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
 #   st_make_valid()
 #   
@@ -107,12 +107,12 @@ ltimCut <- LTIM_Valleys %>%
 # combine the regular ANAE and NSW.  --------------------------------------
 
 # # Some error checking. Something has broken
-# maybeOverlapCheck <- st_intersects(ltimCut)
-# notsure <- st_intersection(ltimCut)
-# notsure <- st_difference(ltimCut)
+# maybeOverlapCheck <- st_intersects(ltimNoNorth)
+# notsure <- st_intersection(ltimNoNorth)
+# notsure <- st_difference(ltimNoNorth)
 
 # Northern unregulated is a compound of others and so causes issues 
-ltimNoNorth <- ltimCut %>% filter(ValleyName != 'Northern Unregulated')
+ltimNoNorth <- ltimNoNorth %>% filter(ValleyName != 'Northern Unregulated')
 
 # # CUT OUT LATER:
 # # ARE DUPLICATE SYSIDS coming in from this join?
@@ -182,7 +182,7 @@ print(paste0('finished polygon split, time is ', Sys.time(), ', run is ', dataWh
 # # 3577 doesn't fix it
 # transcode <- 3577 # 3577 is albers equal area, 3112 is lambert conformal, 3395 is worldwide mercator (no zones, etc. Would be shit but maybe a good test)
 # kopCutT <- st_transform(kopCut, crs = transcode)
-# ltimCutT <- st_transform(ltimCut, crs = transcode)
+# ltimNoNorthT <- st_transform(ltimNoNorth, crs = transcode)
 # 
 # system.time(bothANAE <- bind_rows(wetCut, nswCut) %>%
 #               sf::st_transform(crs = transcode) %>%
@@ -194,7 +194,7 @@ print(paste0('finished polygon split, time is ', Sys.time(), ', run is ', dataWh
 # Save the processed data
 if (!dir.exists(datOut)) {dir.create(datOut)}
 
-save(ANAEbasinclim, ltimCut, file = file.path(datOut, 'ANAEbasinclim.rdata'))
+save(ANAEbasinclim, ltimNoNorth, file = file.path(datOut, 'ANAEbasinclim.rdata'))
 print(paste0('saved the full data, time is ', Sys.time(), ', run is ', dataWhere))
 
 # Let's spit these out for ALL the basins, not just lachlan
@@ -218,23 +218,23 @@ for (b in 1:nrow(ltimNoNorth)) {
 # ggplot(GoulburnANAE, aes(color = ValleyName)) + geom_sf()
 # ggplot(ltimNoNorth, aes(color = ValleyName)) + geom_sf()
 
-# lachAll <- filter(ANAEbasinclim, ValleyName == 'Lachlan')
+# LachlanANAE <- filter(ANAEbasinclim, ValleyName == 'Lachlan')
 
 # Check
 # ggplot() +
-#   geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan")),
+#   geom_sf(data = filter(ltimNoNorth, ValleyName %in% c("Lachlan")),
 #           aes(fill = ValleyName), alpha = 0.5) +
-#   geom_sf(data = lachAll, aes(fill = ANAE_DESC)) +
+#   geom_sf(data = LachlanANAE, aes(fill = ANAE_DESC)) +
 #    # Fill doesn't work without closed shape, as happens with the coord_sf call below
 #   # coord_sf(xlim = c(145.65, 145.71),
 #   #          ylim = c(-35.94, -35.89)) +
 #   theme_bw()
 
 # ggplot() +
-#   geom_sf(data = filter(ltimCut, ValleyName %in% c("Lachlan", "Goulburn")), aes(fill = ValleyName))
+#   geom_sf(data = filter(ltimNoNorth, ValleyName %in% c("Lachlan", "Goulburn")), aes(fill = ValleyName))
 
 # 
-# save(lachAll, ltimCut, file = file.path(datOut, 'lachAll.rdata'))
+# save(LachlanANAE, ltimNoNorth, file = file.path(datOut, 'LachlanANAE.rdata'))
 
 print(paste0('finished processANAE, time is ', Sys.time(), ', run is ', dataWhere))
 

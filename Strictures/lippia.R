@@ -96,7 +96,7 @@ lippiastricts <- function(smFile, tempFile) {
   # ANAE classification -----------------------------------------------------
   
   # True/False. Could also be a which() if we want index numbers
-  isANAE_Lippia <- lachAll$ANAE_CODE %in% lippiaANAE
+  isANAE_Lippia <- LachlanANAE$ANAE_CODE %in% lippiaANAE
   
   
   # -------------------------------------------------------------------------
