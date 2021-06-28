@@ -4,19 +4,16 @@ library(tidyverse)
 library(sf)
 library(stars)
 
+source('directorySet.R')
 # Argh. sort all this directory crap out later
   # Trying to at least separate scripts and functions, looking towards library
 source(here('Functions', 'rastPolyJoin.R'))
 source(here('Functions', 'timeRoll.R'))
 
 
-myhome <- str_remove(path.expand("~"), "/Documents")
-datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
-
-datOut <- "datOut"
 
 # load the processed anae files, cut to lachlan
-load(file.path(datOut, 'LachlanANAE.rdata'))
+load(file.path(datOut, 'ANAEprocessed', 'LachlanANAE.rdata'))
 # load(file.path(datOut, 'bothANAE.rdata'))
 
 # To allow plotting the ltim zones (otherwise their polygons get lost)

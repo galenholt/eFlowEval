@@ -8,7 +8,7 @@ lippiastricts <- function(smFile, tempFile) {
   
   # Read in soil moisture in ANAEs--------------------------------------------------
   
-  load(file.path(datOut, smFile))
+  load(file.path(datOut, 'ANAEprocessed', smFile))
   
   # Read in soil temp in ANAEs --------------------------------------------
   

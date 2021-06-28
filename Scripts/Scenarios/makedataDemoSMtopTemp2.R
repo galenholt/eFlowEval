@@ -37,15 +37,10 @@ library(stars)
 # source(here('Functions', 'timeRoll.R'))
 # source(here('Functions', 'helpers.R'))
 # source(here('Functions', 'unevenTimeMult.R'))
-
-
-myhome <- str_remove(path.expand("~"), "/Documents")
-datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
-
-datOut <- "datOut"
+source('directorySet.R')
 
 # Read in just the ANAEs
-load(file.path(datOut, 'LachlanANAE.rdata'))
+load(file.path(datOut, 'ANAEprocessed', 'LachlanANAE.rdata'))
 LachlanANAE <- st_transform(LachlanANAE, 4326) # WHY ISN"T THIS LIKE THIS ALREADY?
 
 # Read in soil moisture in ANAEs--------------------------------------------------

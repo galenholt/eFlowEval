@@ -13,17 +13,12 @@ library(stars)
 # source(here('Functions', 'timeRoll.R'))
 # source(here('Functions', 'helpers.R'))
 # source(here('Functions', 'unevenTimeMult.R'))
-
-
-myhome <- str_remove(path.expand("~"), "/Documents")
-datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
-
-datOut <- "datOut"
+source('directorySet.R')
 
 
 # Read in soil moisture in ANAEs--------------------------------------------------
 
-load(file.path(datOut, 'lachSoilprocessedAllOut.rdata'))
+load(file.path(datOut, 'ANAEprocessed', 'lachSoilprocessedAllOut.rdata'))
 
 # Read in soil temp in ANAEs --------------------------------------------
 

@@ -36,7 +36,7 @@ library(viridis)
 
 # Argh. sort all this directory crap out later
 # Trying to at least separate scripts and functions, looking towards library
-
+source('directorySet.R')
 # This is almost EXACTLY a library load at this point. Just need to actually wrap it up and split the git
 basicfuns <- list.files(here('Functions'))
 basicfuns <- here('Functions', basicfuns)
@@ -46,12 +46,6 @@ strictfuns <- here('Strictures', strictfuns)
 # read in those functions
 sapply(basicfuns, source)
 sapply(strictfuns, source)
-
-
-myhome <- str_remove(path.expand("~"), "/Documents")
-datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
-
-datOut <- "datOut"
 
 
 
