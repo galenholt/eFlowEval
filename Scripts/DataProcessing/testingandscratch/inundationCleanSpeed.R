@@ -97,6 +97,7 @@ boxwet <- LachlanANAE %>%
 # do it in the benchmark fnction. I suppose for benchmarking might as well do
 # that.
 
+print('past the read-in, about to write functions')
 
 # Serial function ---------------------------------------------------------
 
@@ -189,10 +190,12 @@ timeinunP <- function(ntimes, nanaes, FUN = weighted.mean) {
   return(list(avgPRStars = depthAns, avgPRindex = depthIndex))
 }
 
+print('functions written')
 # Check each function with a first go
 timeinun(10,10)
 timeinunP(10,10)
 
+print('function test works')
 # NEED TO TEST THE DIFFERENT RASTPOLY FUNCTIONS TOO
   # Passing arguments to the functions using ... doesnt work with the parallel
   # structure. Instead, we'll have to build the photic limit as a hardcode into
@@ -217,9 +220,10 @@ benchP_S <- microbenchmark::microbenchmark("t10a10" = { b <- timeinun(ntimes = 1
                           "p_t100a50" = { b <- timeinunP(ntimes = 100, nanaes = 50) },
                           "p_t100a100" = { b <- timeinunP(ntimes = 100, nanaes = 100) },
                           times = 1)
-benchP_S
+# benchP_S
 
 # for HPC, useful to 
+print('comparison of usual for loop and parallel using multisession')
 print(benchP_S)
 
 # Not sure how to change the plan between benches, so 
@@ -234,7 +238,8 @@ benchS_S <- microbenchmark::microbenchmark("t10a10" = { b <- timeinun(ntimes = 1
                                           "p_t100a50" = { b <- timeinunP(ntimes = 100, nanaes = 50) },
                                           "p_t100a100" = { b <- timeinunP(ntimes = 100, nanaes = 100) },
                                           times = 1)
-benchS_S
+# benchS_S
+print('comparison of usual for and sequential with plan()')
 print(benchS_S)
 
 # now, what else to test on HPC?
@@ -290,6 +295,9 @@ rastPolyFunBench <- microbenchmark::microbenchmark("weightedmean" = { b <- timei
 
 rastPolyFunBench
 
+print('tested each rastPoly FUN')
+print(rastPolyFunBench)
+
 # Cool, all work
 
 
@@ -299,12 +307,12 @@ rastPolyFunBench
 # an alternative is to try to pass the plan changes to bench. But i think that
 # will be an issue if some break. Whereas I can wrap plan with try() otherwise? Nah, that doesn't work
 
-plan(sequential)
-plan(multisession)
-plan(multicore) # Seems like this shouldn't work on windows?
-plan(future.batchtools::batchtools_slurm) # Spits out each future into slurm nodes
-# Probably better to do 
-plan(list(future.batchtools::batchtools_slurm, multisession)) # and include an outer layer of futures around catchment or something. 
+# plan(sequential)
+# plan(multisession)
+# plan(multicore) # Seems like this shouldn't work on windows?
+# plan(future.batchtools::batchtools_slurm) # Spits out each future into slurm nodes
+# # Probably better to do 
+# plan(list(future.batchtools::batchtools_slurm, multisession)) # and include an outer layer of futures around catchment or something. 
 # basically, according to 
 # https://future.batchtools.futureverse.org/, it looks like the
 # future.batchtools plans are about evaluating futures on NODES of a cluster,
@@ -320,29 +328,29 @@ plan(list(future.batchtools::batchtools_slurm, multisession)) # and include an o
 plan(sequential)
 sequentialBench <- microbenchmark::microbenchmark("sequential" = { b <- timeinunP(ntimes = 100, nanaes = 10, FUN = weighted.mean)},
                                                    times = 1)
-
-sequentialBench
+print('sequential worked')
+print(sequentialBench)
 
 # Multisession
 plan(multisession)
 multisessionBench <- microbenchmark::microbenchmark("multisession" = { b <- timeinunP(ntimes = 100, nanaes = 10, FUN = weighted.mean)},
                                                   times = 1)
-
-multisessionBench
+print('multisession worked')
+print(multisessionBench)
 
 # multicore # Pretty sure this just fails silently on Windows
 plan(multicore)
 multicoreBench <- microbenchmark::microbenchmark("multicore" = { b <- timeinunP(ntimes = 100, nanaes = 10, FUN = weighted.mean)},
                                                     times = 1)
-
-multicoreBench
+print('multicore worked')
+print(multicoreBench)
 
 # batchtools_slurm
 plan(future.batchtools::batchtools_slurm)
 batchtools_slurmBench <- microbenchmark::microbenchmark("batchtools_slurm" = { b <- timeinunP(ntimes = 100, nanaes = 10, FUN = weighted.mean)},
                                                  times = 1)
-
-batchtools_slurmBench
+print('batchtools_slurm worked')
+print(batchtools_slurmBench)
 
 # two levels: batchtools_slurm, multisession
 # I think this is potentially super powerful, but likely a whole project to
@@ -351,5 +359,5 @@ batchtools_slurmBench
 plan(list(future.batchtools::batchtools_slurm, multisession))
 batchtools_slurmMultiBench <- microbenchmark::microbenchmark("batchtools_slurmMulti" = { b <- timeinunP(ntimes = 100, nanaes = 10, FUN = weighted.mean)},
                                                         times = 1)
-
-batchtools_slurmMultiBench
+print('slurm+multisession worked')
+print(batchtools_slurmMultiBench)
