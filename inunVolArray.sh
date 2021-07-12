@@ -6,7 +6,7 @@
 # # See OneNote 'Basic HPC workflow to build on' from 9 Feb 2021 for more detail about connection and file transfer
 
 
-#SBATCH --time=2:00:00 # request time (walltime, not compute time)
+#SBATCH --time=12:00:00 # request time (walltime, not compute time)
 #SBATCH --mem=128GB # request memory
 #SBATCH --nodes=1 # number of nodes
 #SBATCH --ntasks-per-node=10 # This is the cores per node # If I want 20 cpus on 2 nodes, for ex, use --nodes=2 --ntasks-per-node=10
@@ -37,7 +37,7 @@ echo Time taken for code: $elapsed
 # Leaving the notes below from EWKR, since we will likely do somethign withthe slurm array task ID stuff
 
 # To run on the cluster, call this file with <sbatch --array=*RANGE* clustRunner_SuperFASI.sh> RANGE determines which runs, although there are some internal checks as well:
-# All is sbatch --array=1-25 inunArray.sh
+# All is sbatch --array=1-25 inunArray.sh ### REMEMBER THIS IS A DASH (-) *NOT* a colon
 # Most common sbatch --array=1-8 clustRunner_OvensFA.sh
 
 # For some reason I get a bunch of errors about not being able to run conda activate Bio from this shell, but then everything works, so I'll just ignore it I guess

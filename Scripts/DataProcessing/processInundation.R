@@ -151,8 +151,8 @@ tifTimes <- inunTifs %>% # filenames
 # Since we want to combine the two list bits differently, just return the list
 # and let foreach make a list of lists for now
 # TESTING
-dpList <- foreach(s = 1:10) %dopar% {
-# dpList <- foreach(s = 1:nrow(anaePolys)) %dopar% {
+# dpList <- foreach(s = 1:10) %dopar% {
+dpList <- foreach(s = 1:nrow(anaePolys)) %dopar% {
   thiscrop <- st_crop(tifTimes, anaePolys[s,], as_points = FALSE)
   thisdepth <- rastPolyJoin(polysf = anaePolys[s,], rastst = thiscrop, FUN = chosenSummary,
                             grouper = 'UID', maintainPolys = TRUE,
