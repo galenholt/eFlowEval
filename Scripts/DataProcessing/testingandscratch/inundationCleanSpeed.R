@@ -345,19 +345,20 @@ multicoreBench <- microbenchmark::microbenchmark("multicore" = { b <- timeinunP(
 print('multicore worked')
 print(multicoreBench)
 
-# batchtools_slurm
-plan(future.batchtools::batchtools_slurm)
-batchtools_slurmBench <- microbenchmark::microbenchmark("batchtools_slurm" = { b <- timeinunP(ntimes = 100, nanaes = 10, FUN = weighted.mean)},
-                                                 times = 1)
-print('batchtools_slurm worked')
-print(batchtools_slurmBench)
-
-# two levels: batchtools_slurm, multisession
-# I think this is potentially super powerful, but likely a whole project to
-# change the workflow. So skip for now, maybe work on sorting it out as a
-# longer-term thing
-plan(list(future.batchtools::batchtools_slurm, multisession))
-batchtools_slurmMultiBench <- microbenchmark::microbenchmark("batchtools_slurmMulti" = { b <- timeinunP(ntimes = 100, nanaes = 10, FUN = weighted.mean)},
-                                                        times = 1)
-print('slurm+multisession worked')
-print(batchtools_slurmMultiBench)
+# These don't work here or on the cluster
+# # batchtools_slurm
+# plan(future.batchtools::batchtools_slurm)
+# batchtools_slurmBench <- microbenchmark::microbenchmark("batchtools_slurm" = { b <- timeinunP(ntimes = 100, nanaes = 10, FUN = weighted.mean)},
+#                                                  times = 1)
+# print('batchtools_slurm worked')
+# print(batchtools_slurmBench)
+# 
+# # two levels: batchtools_slurm, multisession
+# # I think this is potentially super powerful, but likely a whole project to
+# # change the workflow. So skip for now, maybe work on sorting it out as a
+# # longer-term thing
+# plan(list(future.batchtools::batchtools_slurm, multisession))
+# batchtools_slurmMultiBench <- microbenchmark::microbenchmark("batchtools_slurmMulti" = { b <- timeinunP(ntimes = 100, nanaes = 10, FUN = weighted.mean)},
+#                                                         times = 1)
+# print('slurm+multisession worked')
+# print(batchtools_slurmMultiBench)
