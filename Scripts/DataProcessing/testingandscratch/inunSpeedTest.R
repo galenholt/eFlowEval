@@ -18,7 +18,7 @@ library(sf)
 library(stars)
 library(foreach)
 library(doFuture)
-
+registerDoFuture()
 source('Functions/rastPolyJoin.R')
 
 
