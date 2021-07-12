@@ -837,6 +837,9 @@ timeinun <- function(ntimes, nanaes) {
   return(list(avgPRStars = depthAns, avgPRindex = depthIndex))
 }
 
+library(microbenchmark)
+source('Functions/rastPolyJoin.R')
+
 benchInSmall <- microbenchmark("t2a2" = { b <- timeinun(ntimes = 2, nanaes = 2) },
                           "t5a5" = {b <- timeinun(ntimes = 5, nanaes = 5)},
                           "t10a10" = { b <- timeinun(ntimes = 10, nanaes = 10)},
@@ -1375,6 +1378,7 @@ timeinunP <- function(ntimes, nanaes) {
     st_set_dimensions(names = c("x", "y", "time"))
   
   # For looping at first, use a subset. Come back to test time looping
+  cutwet <- boxwet[1:nanaes, ]
   
   # Since we want to combine the two list bits differently, just return the list and let foreach make a list of lists for now
   dpList <- foreach(s = 1:nrow(cutwet)) %dopar% {
@@ -1387,13 +1391,13 @@ timeinunP <- function(ntimes, nanaes) {
   # Then, unpack the lists
   depthAns <- foreach(l = 1:length(dpList),
                        .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
-                       .multicombine=TRUE) %do% {
+                       .multicombine=TRUE) %dopar% {
                          dpList[[l]][[1]]
                        }
   
   depthIndex <- foreach(l = 1:length(dpList),
                          .combine=bind_rows,
-                         .multicombine=TRUE) %do% {
+                         .multicombine=TRUE) %dopar% {
                            dpList[[l]][[2]]
                          }  
   
