@@ -1,6 +1,6 @@
 # Function to intersect raster and polygons and get spatial average and return stars
 
-rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean, ...,  
+rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,  
                          maintainPolys = TRUE, na.replace = NA, whichcrs = 3577) {
   # polysf is a spatial polygon simple feactures object
   # rastst is a raster brick in stars format
@@ -54,7 +54,7 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean, .
       mutate(area = as.numeric(st_area(.))) %>%
       st_drop_geometry() %>%
       group_by(across(all_of(grouper))) %>%
-      summarize(across(starts_with("X"), ~FUN(., area, ...))) %>% # averages across the cols with x in their name and gets weighted mean
+      summarize(across(starts_with("X"), ~FUN(., area))) %>% # averages across the cols with x in their name and gets weighted mean
       # TODO:: is it faster to pre-allocate these cols? IE just cut to
       # only those cols and then summarize everything?
       # Tried it and it crashed, but maybe moving out of dplyr syntax

@@ -183,7 +183,7 @@ thisdepthavgInunDepth <- rastPolyJoin(polysf = cutwet[1,], rastst = thiscrop,
                              na.replace = 0, whichcrs = 3577)
 thisdepthavgInunDepth[[1]]
 
-# Fraction inundate
+# Fraction inundated
 thisdepthFracInun <- rastPolyJoin(polysf = cutwet[1,], rastst = thiscrop, 
                                   grouper = 'UID', FUN = fracInun,
                                   maintainPolys = TRUE,
