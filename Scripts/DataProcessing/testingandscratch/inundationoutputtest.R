@@ -111,11 +111,11 @@ allANAES
 
 # Which ones died after 12 hours?
 # or, better yet, put in the times to do a better job estimating
-voltimes <- c(15896, NA, 16128, 1132, 801, 4438, 16650, NA, 7930, 5165,
-              11474, 658, NA, 2446, NA, 22597, NA, 1522, NA, 9306, 2795, 
+voltimes <- c(15896, 99401, 16128, 1132, 801, 4438, 16650, NA, 7930, 5165,
+              11474, 658, NA, 2446, NA, 22597, 108996, 1522, 45782, 9306, 2795, 
               NA, 1605, 8572, 5520)
-areatimes <- c(15943, NA, 16125, 1263, 873, 4708, 18887, NA, 8871, 5184, 
-               11474, 645, NA, 2455, NA, NA, NA, 1872, NA, 9218, 
+areatimes <- c(15943, 96624, 16125, 1263, 873, 4708, 18887, NA, 8871, 5184, 
+               11474, 645, NA, 2455, NA, 22771, 108926, 1872, 45929, 9218, 
                2771, NA, 1590, 8843, 5865)
 
 anaeTimings <- bind_cols(valley = str_remove(allANAES, pattern = 'ANAE.rdata'), volTimes = voltimes, areaTimes = areatimes)
@@ -171,3 +171,35 @@ which(is.na(voltimes))
 which(is.na(areatimes))
 
 # How long to put walltime? 36 hours? 40? 
+
+# How many ANAES are in each of those?
+# and what are their names?
+allANAES[which(is.na(voltimes))]
+
+sum(ANAEbasinclim$ValleyName == 'Condamine Balonne')
+sum(ANAEbasinclim$ValleyName == 'Lachlan')
+sum(ANAEbasinclim$ValleyName == 'Lower Darling')
+sum(ANAEbasinclim$ValleyName == 'Paroo')
+
+table(ANAEbasinclim$ValleyName)
+
+# Check that those DO match what's missing The Lower Darling is particularly weird
+ # border (3) and warrego () ALSO missing. WHY
+# border: 
+#   Error in { : 
+#       task 12564 failed - "Evaluation error: TopologyException: Input geom 0 is invalid: Self-intersection at or near point 1800748.0933135152 -3212834.9287674334 at 1800748.0933135152 -3212834.9287674334."
+#     Calls: source ... withVisible -> eval -> eval -> %dopar% -> <Anonymous>
+#       In addition: There were 50 or more warnings (use warnings() to see the first 50)
+#     Execution halted
+    
+# Warrego:
+#   Error: Failed to retrieve the result of MulticoreFuture (doFuture-8) from the forked worker (on localhost; PID 18475). Post-mortem diagnostic: No process exists with this PID, i.e. the forked localhost worker is no longer alive.
+# In addition: There were 50 or more warnings (use warnings() to see the first 50)
+# Execution halted
+# and for the other one
+# Error: Unexpected result (of class â€˜NULLâ€™ != â€˜FutureResultâ€™) retrieved
+# for MulticoreFuture future (label = â€˜doFuture-2â€™, expression = â€˜{;
+# doFuture::registerDoFuture(); lapply(seq_along(...future.x_ii), FUN =
+# function(jj) {; ...future.x_jj <- ...future.x_ii[[jj]]; s <- NULL;
+# ...future.env <- environment(); ...; }, error = identity); }); }â€™):
+  

@@ -91,6 +91,9 @@ load(file.path(datOut, 'ANAEprocessed', thisANAE))
 anaePolys <- get(thisAName)
 rm(list = thisAName)
 
+# Somehow some are invalid, despite the st_make_valid in processANAE
+anaePolys <- st_make_valid(anaePolys)
+
 # Transform so on stars crs
 anaePolys <- st_transform(anaePolys, starCRS)
 
