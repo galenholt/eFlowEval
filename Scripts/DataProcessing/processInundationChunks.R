@@ -25,7 +25,12 @@ source('Functions/rastPolyJoin.R')
 
 # Set up parallel backend
 registerDoFuture()
-plan(multicore) # Likely multicore on HPC?
+plan(multicore) # multicore on HPC
+
+# # For local testing
+# plan(multisession)
+# summaryFun <- 'areaInun'
+# args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '8', 'CondamineBalonne')
 
 # Choose a size for the chunks. This is likely better elsewhere, but
 nchunks <- 10
@@ -110,7 +115,7 @@ prevtop <- chunksize*(arraynum-1)
 bottom <- prevtop+1
 
 if (arraynum == nchunks) {
-  top <- nrow(ANAEbasinclim) # make sure we finish
+  top <- nrow(anaePolys) # make sure we finish
 } else {
   top <- prevtop + chunksize
 }
