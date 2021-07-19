@@ -34,7 +34,8 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
   # Transform to correct crs.
   # Doing this here, because if rastst is a proxy, we won't be able to transform until it's read in as st_as_sf
   if (st_crs(rastSF)$epsg != whichcrs) {
-    rastSF <- st_transform(rastSF, whichcrs)
+    rastSF <- st_transform(rastSF, whichcrs) %>%
+      st_make_valid()
   }
   # ensure the polygons match
   if (st_crs(polysf)$epsg != whichcrs) {
