@@ -39,7 +39,8 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
   }
   # ensure the polygons match
   if (st_crs(polysf)$epsg != whichcrs) {
-    polysf <- st_transform(polysf, whichcrs)
+    polysf <- st_transform(polysf, whichcrs) %>%
+      st_make_valid()
   }
   
   # Have to intersect with the polygons to get average.
