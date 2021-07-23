@@ -25,10 +25,10 @@ source('Functions/rastPolyJoin.R')
 
 # Set up parallel backend
 registerDoFuture()
-plan(multicore) # multicore on HPC
+# plan(multicore) # multicore on HPC
 
 # # For local testing
-# plan(multisession)
+plan(multisession)
 # summaryFun <- 'areaInun'
 # args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '8', 'CondamineBalonne')
 
