@@ -28,7 +28,7 @@ registerDoFuture()
 # plan(multicore) # multicore on HPC
 
 # # For local testing
-plan(multisession)
+plan(multicore)
 # summaryFun <- 'areaInun'
 # args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '8', 'CondamineBalonne')
 
@@ -80,7 +80,7 @@ inunDir <- file.path(datDir, 'Inundation', 'WaterDepth_TwoMonthly', 'geotiff')
 
 # Get the file names
 alltifs <- list.files(inunDir, pattern = '.tif$')
-inunTifsALL <- file.path(inunDir, alltifs)
+inunTifs <- file.path(inunDir, alltifs)
 
 # get the crs from the first one (will read them all in later, but first need
 # to deal with the corrupt file)
@@ -127,28 +127,29 @@ anaePolys <- anaePolys[bottom:top, ]
 anaePolys <- st_transform(anaePolys, starCRS)
 
 # handle corrupt tif ------------------------------------------------------
-
+  # Not needed (was a corrupt download)
+  # Keeping but commented out for a bit longer in case I'm wrong
 # Need to do this after the ANAE because I have to read it in
 # There's a corrupt tif, so cut it out
 # Have to try to read in, but can't read in the whole thing. So do a little
 # crop and call it good
-passer <- vector(mode = 'logical', length(inunTifsALL))
-for (tif in 1:length(inunTifsALL)) {
-  checkTif <- read_stars(inunTifsALL[tif])
-  cropTif <- st_crop(checkTif, anaePolys[1,], as_points = FALSE)
-  testsf <- NA
-  try(testsf <- st_as_sf(cropTif, as_points = FALSE, merge = FALSE, na.rm = FALSE),
-      silent = TRUE)
-  if (class(testsf) == 'logical') {
-    passer[tif] <- FALSE
-  } else if ('sf' %in% class(testsf)) {
-    passer[tif] <- TRUE
-  }
-  rm(testsf)
-}
+# passer <- vector(mode = 'logical', length(inunTifsALL))
+# for (tif in 1:length(inunTifsALL)) {
+#   checkTif <- read_stars(inunTifsALL[tif])
+#   cropTif <- st_crop(checkTif, anaePolys[1,], as_points = FALSE)
+#   testsf <- NA
+#   try(testsf <- st_as_sf(cropTif, as_points = FALSE, merge = FALSE, na.rm = FALSE),
+#       silent = TRUE)
+#   if (class(testsf) == 'logical') {
+#     passer[tif] <- FALSE
+#   } else if ('sf' %in% class(testsf)) {
+#     passer[tif] <- TRUE
+#   }
+#   rm(testsf)
+# }
 
-# and now the list of functional tifs is
-inunTifs <- inunTifsALL[passer]
+# # and now the list of functional tifs is
+# inunTifs <- inunTifsALL[passer]
 
 
 

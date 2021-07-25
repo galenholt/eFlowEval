@@ -30,7 +30,7 @@ inunDir <- file.path(datDir, 'Inundation', 'WaterDepth_TwoMonthly', 'geotiff')
 
 # Get the file names
 alltifs <- list.files(inunDir, pattern = '.tif$')
-inunTifsALL <- file.path(inunDir, alltifs)
+inunTifs <- file.path(inunDir, alltifs)
 
 # get the crs from the first one (will read them all in later, but first need
 # to deal with the corrupt file)
@@ -47,26 +47,26 @@ LachlanANAE <- st_transform(LachlanANAE, starCRS)
 
 ## Do some minor data wrangling to get set up for testing
 
-# There's a corrupt tif, so cut it out
-# Have to try to read in, but can't read in the whole thing. So do a little
-# crop and call it good
-passer <- vector(mode = 'logical', length(inunTifsALL))
-for (tif in 1:length(inunTifsALL)) {
-  checkTif <- read_stars(inunTifsALL[tif])
-  cropTif <- st_crop(checkTif, LachlanANAE[1,], as_points = FALSE)
-  testsf <- NA
-  try(testsf <- st_as_sf(cropTif, as_points = FALSE, merge = FALSE, na.rm = FALSE),
-      silent = TRUE)
-  if (class(testsf) == 'logical') {
-    passer[tif] <- FALSE
-  } else if ('sf' %in% class(testsf)) {
-    passer[tif] <- TRUE
-  }
-  rm(testsf)
-}
+# # There's a corrupt tif, so cut it out
+# # Have to try to read in, but can't read in the whole thing. So do a little
+# # crop and call it good
+# passer <- vector(mode = 'logical', length(inunTifsALL))
+# for (tif in 1:length(inunTifsALL)) {
+#   checkTif <- read_stars(inunTifsALL[tif])
+#   cropTif <- st_crop(checkTif, LachlanANAE[1,], as_points = FALSE)
+#   testsf <- NA
+#   try(testsf <- st_as_sf(cropTif, as_points = FALSE, merge = FALSE, na.rm = FALSE),
+#       silent = TRUE)
+#   if (class(testsf) == 'logical') {
+#     passer[tif] <- FALSE
+#   } else if ('sf' %in% class(testsf)) {
+#     passer[tif] <- TRUE
+#   }
+#   rm(testsf)
+# }
 
 # and now the list of functional tifs is
-inunTifs <- inunTifsALL[passer]
+# inunTifs <- inunTifsALL[passer]
 
 # Get the dates from the tif names so we can set dimensions
 tifdates <- inunTifs %>% # Set of filenames
