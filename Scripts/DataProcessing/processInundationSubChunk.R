@@ -146,7 +146,7 @@ if (arraynum == nchunks) {
 # cut to this chunk of polygons
 anaePolys <- anaePolys[bottom:top, ]
 
-print('number of polygons processing is ', nrow(anaePolys))
+print(paste0('number of polygons processing is ', nrow(anaePolys)))
 
 
 # Transform to stars crs
