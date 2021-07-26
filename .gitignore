@@ -5,3 +5,4 @@ Testing/
 *.tif
 TestScratch/TestGeoData/
 datOut/
+*.err

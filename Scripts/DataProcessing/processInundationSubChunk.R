@@ -26,10 +26,10 @@ source('Functions/rastPolyJoin.R')
 
 # Set up parallel backend
 registerDoFuture()
-plan(multicore) # multicore on HPC
+# plan(multicore) # multicore on HPC
 
 # # For local testing
-# plan(multisession)
+plan(multisession)
 # summaryFun <- 'areaInun'
 # args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '6', 'Warrego', '8')
 
@@ -146,6 +146,7 @@ if (arraynum == nchunks) {
 # cut to this chunk of polygons
 anaePolys <- anaePolys[bottom:top, ]
 
+print('number of polygons processing is ', nrow(anaePolys))
 
 
 # Transform to stars crs
@@ -209,7 +210,7 @@ tifTimes <- inunTifs %>% # filenames
 # Since we want to combine the two list bits differently, just return the list
 # and let foreach make a list of lists for now
 # TESTING
-# dpList <- foreach(s = 1:10) %dopar% {
+# dpList <- foreach(s = 8:12) %dopar% {
 dpList <- foreach(s = 1:nrow(anaePolys)) %dopar% {
   thiscrop <- st_crop(tifTimes, anaePolys[s,], as_points = FALSE)
   thisdepth <- rastPolyJoin(polysf = anaePolys[s,], rastst = thiscrop, FUN = chosenSummary,
