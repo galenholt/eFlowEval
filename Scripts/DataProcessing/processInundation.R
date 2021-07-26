@@ -75,7 +75,7 @@ inunTifs <- file.path(inunDir, alltifs)
 # to deal with the corrupt file)
 # As long as they're proxies, we can't change their crs, so have to shift
 # everything else to them
-starCRS <- st_crs(read_stars(inunTifsALL[1]))
+starCRS <- st_crs(read_stars(inunTifs[1]))
 
 # Read in a set of ANAE from a catchment ----------------------------------
 # The whole-basin version is ANAEbasinclim.rdata, so exclude it- will be more parallel to loop over catchments
@@ -121,7 +121,7 @@ anaePolys <- st_transform(anaePolys, starCRS)
 # }
 
 # and now the list of functional tifs is
-inunTifs <- inunTifsALL[passer]
+# inunTifs <- inunTifsALL[passer]
 
 
 
