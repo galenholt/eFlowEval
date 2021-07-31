@@ -7,10 +7,6 @@
 # wrap the script to run locally. Sort out a cleaner way to do this
 source('directorySet.R')
 
-# Make a sub-directory for the subchunk
-scriptOut <- paste0(datOut, '/Inundationprocessed/', summaryFun, '/chunked/', args[9], '/sub', 
-                    str_flatten(args[10:length(args)], collapse = '/sub_'))
-
 # Let's get libraries here, then sort out git then sort out making this a library so we don't have to deal with all the library crap
 # library(sp)
 # library(rgeos)
@@ -24,6 +20,10 @@ library(foreach)
 library(doFuture)
 
 source('Functions/rastPolyJoin.R')
+
+# Make a sub-directory for the subchunk
+scriptOut <- paste0(datOut, '/Inundationprocessed/', summaryFun, '/chunked/', args[9], '/sub', 
+                    str_flatten(args[10:length(args)], collapse = '/sub_'))
 
 # Set up parallel backend
 registerDoFuture()
