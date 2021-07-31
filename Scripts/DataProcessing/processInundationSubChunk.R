@@ -8,7 +8,8 @@
 source('directorySet.R')
 
 # Make a sub-directory for the subchunk
-scriptOut <- paste0(datOut, '/Inundationprocessed/', summaryFun, '/chunked/', args[9], '/sub', args[10])
+scriptOut <- paste0(datOut, '/Inundationprocessed/', summaryFun, '/chunked/', args[9], '/sub', 
+                    str_flatten(args[10:length(args)], collapse = '/sub_'))
 
 # Let's get libraries here, then sort out git then sort out making this a library so we don't have to deal with all the library crap
 # library(sp)
@@ -26,19 +27,21 @@ source('Functions/rastPolyJoin.R')
 
 # Set up parallel backend
 registerDoFuture()
-# plan(multicore) # multicore on HPC
+plan(multicore) # multicore on HPC
 
 # # For local testing
 plan(multisession)
 # summaryFun <- 'areaInun'
-# args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '6', 'Warrego', '8')
+# args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '5', 'Warrego', '8', '6')
+
+# ## The outerchunks need to start outer and go in, ie '8', '6' is the 6th subchunk of the 8th main chunk
 
 # Choose a size for the chunks. This is likely better elsewhere, but
 nchunks <- 10
 arraynum <- as.numeric(args[8])
 chunkName <- args[8]
 
-outerchunk <- as.integer(args[10])
+outerchunks <- as.integer(args[10:length(args)])
 # chunksize <- 6000
 
 # Which function ----------------------------------------------------------
@@ -117,21 +120,28 @@ anaePolys <- st_make_valid(anaePolys)
     # as long as we weren't also chaning nchunks. Although that wouldn't be too
     # bad either, really, just would need more args
 # Get the row indices from the array number 
-outersize <- ceiling(nrow(anaePolys)/nchunks)
-# arraynum <- 3
-prevoutertop <- outersize*(outerchunk-1)
-outerbottom <- prevoutertop+1
 
-if (outerchunk == nchunks) {
-  outertop <- nrow(anaePolys) # make sure we finish
-} else {
-  outertop <- prevoutertop + outersize
+# For loop lets us drill down by feeding additional arguments to the shell script
+for (chun in 1:length(outerchunks)) {
+  outersize <- ceiling(nrow(anaePolys)/nchunks)
+  # arraynum <- 3
+  prevoutertop <- outersize*(outerchunks[chun]-1)
+  outerbottom <- prevoutertop+1
+  
+  if (outerchunks[chun] == nchunks) {
+    outertop <- nrow(anaePolys) # make sure we finish
+  } else {
+    outertop <- prevoutertop + outersize
+  }
+  
+  # cut to this chunk of polygons
+  anaePolys <- anaePolys[outerbottom:outertop, ]
 }
 
-# cut to this chunk of polygons
-anaePolys <- anaePolys[outerbottom:outertop, ]
 
-# THEN, break up into the sub-chunk
+# THEN, break up into the sub-chunk-
+# This is exactly the same, but uses arraynum to define the chunk instead of a
+# predefined argument. Could easily put in the loop but not going to for clarity
 chunksize <- ceiling(nrow(anaePolys)/nchunks)
 # arraynum <- 3
 prevtop <- chunksize*(arraynum-1)
@@ -240,8 +250,12 @@ depthIndex <- foreach(l = 1:length(dpList),
 if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
 
 thisInunName <- str_remove_all(thisAName, 'ANAE')
-thisDepth <- paste0(thisInunName, '_', summaryFun, '_', outerchunk, '_', chunkName)
-thisIndex <- paste0(thisInunName, '_', summaryFun, '_index', '_', outerchunk, '_', chunkName)
+thisDepth <- paste0(thisInunName, '_', summaryFun, '_', 
+                    str_flatten(args[10:length(args)], collapse = '_'),
+                    '_', chunkName)
+thisIndex <- paste0(thisInunName, '_', summaryFun, '_index', '_',
+                    str_flatten(args[10:length(args)], collapse = '_'),
+                    '_', chunkName)
 assign(thisDepth, depthAns)
 assign(thisIndex, depthIndex)
 
