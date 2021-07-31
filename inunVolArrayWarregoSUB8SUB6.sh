@@ -23,7 +23,7 @@ begin=`date +%s`
 module load R/4.0.2
 
 # Arguments are: Script, summary function, slurm array, Catchment, chunk to drill into
-Rscript hpc_wrap.R "Scripts/DataProcessing/processInundationSubChunk.R" "volInun" ${SLURM_ARRAY_TASK_ID} "Warrego" "8"
+Rscript hpc_wrap.R "Scripts/DataProcessing/processInundationSubChunk.R" "volInun" ${SLURM_ARRAY_TASK_ID} "Warrego" "8" "6"
 
 # Copy to ruby datastore. copying to the {lw-mer} on bowen is at /datasets/work/lw-mer/work/galen_holt, but need to sort this out a bit better
 # cp -rp testout.rdata /datastore/hol436/HPC_testing
