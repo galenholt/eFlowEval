@@ -30,11 +30,14 @@ registerDoFuture()
 plan(multicore) # multicore on HPC
 
 # # For local testing
-plan(multisession)
+# plan(multisession)
 # summaryFun <- 'areaInun'
-# args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '5', 'Warrego', '8', '6')
+# args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '9', 'Warrego', '8', '6')
+
+# args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '9', 'Warrego', '8', '6', '10')
 
 # ## The outerchunks need to start outer and go in, ie '8', '6' is the 6th subchunk of the 8th main chunk
+  # Need to handle the edge case wehre there aren't enough polys to do the array we're asking for
 
 # Choose a size for the chunks. This is likely better elsewhere, but
 nchunks <- 10
@@ -123,38 +126,69 @@ anaePolys <- st_make_valid(anaePolys)
 
 # For loop lets us drill down by feeding additional arguments to the shell script
 for (chun in 1:length(outerchunks)) {
-  outersize <- ceiling(nrow(anaePolys)/nchunks)
-  # arraynum <- 3
-  prevoutertop <- outersize*(outerchunks[chun]-1)
-  outerbottom <- prevoutertop+1
   
-  if (outerchunks[chun] == nchunks) {
-    outertop <- nrow(anaePolys) # make sure we finish
-  } else {
-    outertop <- prevoutertop + outersize
+  # Handle the case where we've drilled down to where there are fewer rows than chunks
+    # If nchunks > nrow(), it will break it up fine. Catch the case where that's not true
+  if (nchunks >= nrow(anaePolys)) {
+    # If we're trying to grab a chunk that is in the available rows, just pass out the row
+      # Otherwise, we don't want to pass out anything.
+    if (outerchunks[chun] <= nrow(anaePolys)) {
+      anaePolys <- anaePolys[outerchunks[chun], ]
+    } else {
+      stop('indexing beyond end of anaePolys')
+    }
+  } else { 
+    # The usual case, define the edges of the chunk of anaePolys
+    outersize <- ceiling(nrow(anaePolys)/nchunks)
+    # arraynum <- 3
+    prevoutertop <- outersize*(outerchunks[chun]-1)
+    outerbottom <- prevoutertop+1
+    
+    if (outerchunks[chun] == nchunks) {
+      outertop <- nrow(anaePolys) # make sure we finish
+    } else {
+      outertop <- prevoutertop + outersize
+    }
+    
+    # cut to this chunk of polygons
+    anaePolys <- anaePolys[outerbottom:outertop, ]
   }
   
-  # cut to this chunk of polygons
-  anaePolys <- anaePolys[outerbottom:outertop, ]
+  
 }
 
 
 # THEN, break up into the sub-chunk-
 # This is exactly the same, but uses arraynum to define the chunk instead of a
 # predefined argument. Could easily put in the loop but not going to for clarity
-chunksize <- ceiling(nrow(anaePolys)/nchunks)
-# arraynum <- 3
-prevtop <- chunksize*(arraynum-1)
-bottom <- prevtop+1
 
-if (arraynum == nchunks) {
-  top <- nrow(anaePolys) # make sure we finish
+# As above, pass a single anaePoly if we're indexing in too far, skip entirely
+# if we're past the end, otherwise define the chunk
+if (nchunks >= nrow(anaePolys)) {
+  # If we're trying to grab a chunk that is in the available rows, just pass out the row
+  # Otherwise, we don't want to pass out anything.
+  if (arraynum <= nrow(anaePolys)) {
+    anaePolys <- anaePolys[arraynum, ]
+  } else {
+    stop('indexing beyond end of anaePolys')
+  }
 } else {
-  top <- prevtop + chunksize
+  chunksize <- ceiling(nrow(anaePolys)/nchunks)
+  # arraynum <- 3
+  prevtop <- chunksize*(arraynum-1)
+  bottom <- prevtop+1
+  
+  if (arraynum == nchunks) {
+    top <- nrow(anaePolys) # make sure we finish
+  } else {
+    top <- prevtop + chunksize
+  }
+  
+  # cut to this chunk of polygons
+  anaePolys <- anaePolys[bottom:top, ]
 }
+  
 
-# cut to this chunk of polygons
-anaePolys <- anaePolys[bottom:top, ]
 
 print(paste0('number of polygons processing is ', nrow(anaePolys)))
 
