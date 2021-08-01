@@ -21,10 +21,6 @@ library(doFuture)
 
 source('Functions/rastPolyJoin.R')
 
-# Make a sub-directory for the subchunk
-scriptOut <- paste0(datOut, '/Inundationprocessed/', summaryFun, '/chunked/', args[9], '/sub', 
-                    str_flatten(args[10:length(args)], collapse = '/sub_'))
-
 # Set up parallel backend
 registerDoFuture()
 plan(multicore) # multicore on HPC
@@ -32,12 +28,17 @@ plan(multicore) # multicore on HPC
 # # For local testing
 # plan(multisession)
 # summaryFun <- 'areaInun'
-# args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '9', 'Warrego', '8', '6')
-
+# args <- c('blah', 'b', 'c', 'g', '3', 't', 'a', '3', 'Warrego', '8', '6', '8')
 # args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '9', 'Warrego', '8', '6', '10')
-
 # ## The outerchunks need to start outer and go in, ie '8', '6' is the 6th subchunk of the 8th main chunk
   # Need to handle the edge case wehre there aren't enough polys to do the array we're asking for
+
+# Make a sub-directory for the subchunk
+scriptOut <- paste0(datOut, '/Inundationprocessed/', summaryFun, '/chunked/', args[9], '/sub', 
+                    str_flatten(args[10:length(args)], collapse = '/sub_'))
+
+# Set the projected CRS we want to use (australian Albers, typically)
+commonCRS <- 3577
 
 # Choose a size for the chunks. This is likely better elsewhere, but
 nchunks <- 10
@@ -46,6 +47,11 @@ chunkName <- args[8]
 
 outerchunks <- as.integer(args[10:length(args)])
 # chunksize <- 6000
+
+# and the maximum-ish (there's a ceiling() involved, so this is approximate)
+# number of pixels to read in for any one ANAE
+maxPix <- 100000 # Seems likely to be a good balance based on local testing, but we'll see
+
 
 # Which function ----------------------------------------------------------
 
@@ -250,16 +256,31 @@ tifTimes <- inunTifs %>% # filenames
   st_set_dimensions(3, values = tifdates) %>% 
   st_set_dimensions(names = c("x", "y", "time"))
 
+# Get pixel area (for reference, but also to pass to rastPolyJoin as a check if the read-in is too large)
+# Read in 100 pixels of the first sheet
+rasterio = list(nXOff = 1, nYOff = 1, nXSize = 10, nYSize = 10)
+pixarea <- inunTifs[1] %>% # filenames
+  read_stars(RasterIO = rasterio) %>% # cut
+  st_as_sf(as_points = FALSE, merge = FALSE, na.rm = FALSE) %>% # Read in as sf polygons
+  # transform not necessary - tested in warrego8_6_3.R
+  mutate(area = as.numeric(st_area(.))) %>%
+  st_drop_geometry() %>% 
+  summarize(area = mean(area, na.rm = TRUE)) %>% 
+  pull()
+
 
 # Since we want to combine the two list bits differently, just return the list
 # and let foreach make a list of lists for now
-# TESTING
+
+
 # dpList <- foreach(s = 8:12) %dopar% {
 dpList <- foreach(s = 1:nrow(anaePolys)) %dopar% {
   thiscrop <- st_crop(tifTimes, anaePolys[s,], as_points = FALSE)
   thisdepth <- rastPolyJoin(polysf = anaePolys[s,], rastst = thiscrop, FUN = chosenSummary,
                             grouper = 'UID', maintainPolys = TRUE,
-                            na.replace = 0, whichcrs = 3577)
+                            na.replace = 0, whichcrs = commonCRS, 
+                            maxPixels = maxPix,
+                            pixelsize = pixarea)
 } # end foreach
 
 # Then, unpack the lists also using foreach
