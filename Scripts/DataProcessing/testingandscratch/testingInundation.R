@@ -1712,3 +1712,49 @@ ggplot(anaePolys, aes(x = log(area))) + geom_histogram() + facet_grid(chunknum~.
 #
 ##
 
+
+# Testing some benchmarking while error-finding in subChunk ---------------------------------------------------
+# Running processInundationSubChunk in local mode wiht 
+args <- c('blah', 'b', 'c', 'g', '3', 't', 'a', '5', 'Warrego', '8', '6', '8')
+
+# Then, around the foreach loop, run soe benchmarks to see if merging the raster speeds it up, or if downsampling helps
+# GIST IS: MERGING DOESN"T DO ANYTHING
+# DOWNSAMPLING THROWS OUT DATA- it's not a weighted downscaling, it just skips
+# pixels. That's what the website said
+# https://r-spatial.github.io/stars/reference/st_as_stars.html, but I didn't
+# believe it until I looked
+# TESTING
+mergebench <- microbenchmark::microbenchmark("mergedT" = { b <- st_as_sf(thiscrop, 
+                                                                         as_points = FALSE, 
+                                                                         merge = TRUE, 
+                                                                         na.rm = FALSE)},
+                                             "mergeF" = { b <- st_as_sf(thiscrop, 
+                                                                        as_points = FALSE, 
+                                                                        merge = FALSE, 
+                                                                        na.rm = FALSE) },
+                                             times = 5)
+
+downbench <- microbenchmark::microbenchmark("down0" = { b0 <- st_as_sf(thiscrop, 
+                                                                       as_points = FALSE, 
+                                                                       merge = FALSE, 
+                                                                       na.rm = FALSE)},
+                                            "down1" = { b1 <- st_as_sf(thiscrop, 
+                                                                       as_points = FALSE, 
+                                                                       merge = FALSE, 
+                                                                       na.rm = FALSE,
+                                                                       downsample = 1) },
+                                            "down10" = { b10 <- st_as_sf(thiscrop, 
+                                                                         as_points = FALSE, 
+                                                                         merge = FALSE, 
+                                                                         na.rm = FALSE,
+                                                                         downsample = 10) },
+                                            times = 1)
+
+
+plot(anaePolys["UID"], reset = FALSE)
+plot(b0[,9], add = TRUE)
+
+plot(anaePolys["UID"], reset = FALSE)
+plot(b1[,9], add = TRUE)
+
+
