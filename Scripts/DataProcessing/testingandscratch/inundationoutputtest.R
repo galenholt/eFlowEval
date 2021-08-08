@@ -1,0 +1,253 @@
+# scritp to check the inundation runs worked
+
+
+# script to process inundation into ANAE polygons
+
+# one of several statistics
+
+# Very similar to inundationCleanSpeed, but focused just on speed testing the plans, not on also checking assorted things work
+# The hpc_wrapper tends to source this too, but if I do it here I don't have to
+# wrap the script to run locally. Sort out a cleaner way to do this
+source('directorySet.R')
+
+# Let's get libraries here, then sort out git then sort out making this a library so we don't have to deal with all the library crap
+# library(sp)
+# library(rgeos)
+library(here)
+library(tidyverse)
+library(sf)
+# library(RNetCDF) # Probably not, raster can handle geographic netCDF
+# library(raster) # maybe?
+library(stars)
+library(foreach)
+library(doFuture)
+
+source('Functions/rastPolyJoin.R')
+
+
+
+
+load(file.path(datOut, 'Inundationprocessed/areaInun', 'Avoca_areaInun.rdata'))
+
+load(file.path(datOut, 'Inundationprocessed/areaInun', 'Lachlan_areaInun.rdata'))
+
+load(file.path(datOut, 'Inundationprocessed/volInun', 'Avoca_volInun.rdata'))
+
+load(file.path(datOut, 'Inundationprocessed/volInun', 'Lachlan_volInun.rdata'))
+
+plot(Avoca_areaInun)
+plot(Avoca_volInun)
+plot(Lachlan_areaInun)
+plot(Lachlan_volInun)
+
+# does re-transforming work? This is entirely an aside
+plot(st_transform(Lachlan_volInun, 4326))
+
+
+# Checking which catchments didn't finish ---------------------------------
+
+# Very similar to inundationCleanSpeed, but focused just on speed testing the plans, not on also checking assorted things work
+# The hpc_wrapper tends to source this too, but if I do it here I don't have to
+# wrap the script to run locally. Sort out a cleaner way to do this
+source('directorySet.R')
+
+scriptOut <- paste0(datOut, '/Inundationprocessed')
+
+# Let's get libraries here, then sort out git then sort out making this a library so we don't have to deal with all the library crap
+# library(sp)
+# library(rgeos)
+library(here)
+library(tidyverse)
+library(sf)
+# library(RNetCDF) # Probably not, raster can handle geographic netCDF
+# library(raster) # maybe?
+library(stars)
+library(foreach)
+library(doFuture)
+registerDoFuture()
+source('Functions/rastPolyJoin.R')
+
+
+# Read in all the data ----------------------------------------------------
+
+## Inundation
+# data location
+inunDir <- file.path(datDir, 'Inundation', 'WaterDepth_TwoMonthly', 'geotiff')
+
+# Get the file names
+alltifs <- list.files(inunDir, pattern = '.tif$')
+inunTifsALL <- file.path(inunDir, alltifs)
+
+# get the crs from the first one (will read them all in later, but first need
+# to deal with the corrupt file)
+# As long as they're proxies, we can't change their crs, so have to shift
+# everything else to them
+starCRS <- st_crs(read_stars(inunTifsALL[1]))
+
+## Read in all the anae polygons to see how many there are in each
+load(file.path(datOut, 'ANAEprocessed', 'ANAEbasinclim.rdata'))
+
+# how many in each?
+  # drop geometry, we just want to add them up
+  # area calc takes forever, split it off
+numans1 <- ANAEbasinclim %>%
+  st_transform(crs = 3577) %>%
+  mutate(area = as.numeric(st_area(.))) 
+
+numans <- numans1 %>%
+  st_drop_geometry() %>%
+  group_by(ValleyName) %>%
+  summarise(numanaes = n(),
+            totalArea = sum(area)) %>%
+  mutate(predictedHours = (167/200)*numanaes/60/60) %>%
+  mutate(valley = str_remove_all(ValleyName, pattern = ' '))
+numans
+View(numans)
+
+# What are their IDs?
+# The whole-basin version is ANAEbasinclim.rdata, so exclude it- will be more parallel to loop over catchments
+allANAES <- list.files(file.path(datOut, 'ANAEprocessed'), pattern = 'ANAE.rdata$')
+allANAES
+
+# Which ones died after 12 hours?
+# or, better yet, put in the times to do a better job estimating
+voltimes <- c(15896, 99401, 16128, 1132, 801, 4438, 16650, NA, 7930, 5165,
+              11474, 658, NA, 2446, NA, 22597, 108996, 1522, 45782, 9306, 2795, 
+              NA, 1605, 8572, 5520)
+areatimes <- c(15943, 96624, 16125, 1263, 873, 4708, 18887, NA, 8871, 5184, 
+               11474, 645, NA, 2455, NA, 22771, 108926, 1872, 45929, 9218, 
+               2771, NA, 1590, 8843, 5865)
+
+anaeTimings <- bind_cols(valley = str_remove(allANAES, pattern = 'ANAE.rdata'), volTimes = voltimes, areaTimes = areatimes)
+timeAnalysis <- left_join(anaeTimings, numans, by = 'valley') %>%
+  mutate(secondsPerVol = volTimes/numanaes,
+         secondsPerArea = areaTimes/numanaes,
+         newPredict = ((mean(secondsPerVol, na.rm = TRUE) + 
+                          mean(secondsPerArea, na.rm = TRUE))/2) * numanaes,
+         newPredictHours = newPredict/60/60,
+         secondsPerANAEarea = mean(volTimes/totalArea, na.rm = TRUE),
+         newPredictArea = secondsPerANAEarea*totalArea)
+timeAnalysis
+View(timeAnalysis)
+
+# what is 12 hours in seconds?
+12*60*60
+# none of those are even close, are they?
+
+ggplot(timeAnalysis, aes(x = numanaes)) + 
+  geom_line(aes(y = secondsPerVol), color = 'dodgerblue') +
+  geom_point(aes(y = secondsPerVol), color = 'dodgerblue') +
+  geom_line(aes(y = secondsPerArea), color = 'firebrick') +
+  geom_point(aes(y = secondsPerArea), color = 'firebrick')
+
+# Except for that one weird one, they're all around 1 second
+  # it looks like it didn't do the multicore?
+
+# How about actual time
+ggplot(timeAnalysis, aes(x = numanaes)) + 
+  geom_line(aes(y = volTimes), color = 'dodgerblue') +
+  geom_point(aes(y = volTimes), color = 'dodgerblue') +
+  geom_line(aes(y = areaTimes), color = 'firebrick') +
+  geom_point(aes(y = areaTimes), color = 'firebrick') +
+  geom_line(aes(y = newPredict), color = 'firebrick') +
+  geom_point(aes(y = newPredict), color = 'firebrick') +
+  geom_hline(yintercept = 12*60*60)
+
+# and vs area
+ggplot(timeAnalysis, aes(x = totalArea)) + 
+  geom_line(aes(y = volTimes), color = 'dodgerblue') +
+  geom_point(aes(y = volTimes), color = 'dodgerblue') +
+  geom_line(aes(y = newPredictArea), color = 'firebrick') +
+  geom_point(aes(y = newPredictArea), color = 'firebrick') +
+  geom_hline(yintercept = 12*60*60)
+
+
+# OK, so, I should re-write the way I do this to chunk over evenly-sized chunks,
+# and then post-combine. BUT, since a lot of them are already done, let's just
+# get some started, and test the chunking in the background
+
+# Which ones need to be run for which analysis?
+which(is.na(voltimes))
+which(is.na(areatimes))
+
+# How long to put walltime? 36 hours? 40? 
+
+# How many ANAES are in each of those?
+# and what are their names?
+allANAES[which(is.na(voltimes))]
+
+sum(ANAEbasinclim$ValleyName == 'Condamine Balonne')
+sum(ANAEbasinclim$ValleyName == 'Lachlan')
+sum(ANAEbasinclim$ValleyName == 'Lower Darling')
+sum(ANAEbasinclim$ValleyName == 'Paroo')
+
+table(ANAEbasinclim$ValleyName)
+
+# Check that those DO match what's missing The Lower Darling is particularly weird
+ # border (3) and warrego () ALSO missing. WHY
+# border: 
+#   Error in { : 
+#       task 12564 failed - "Evaluation error: TopologyException: Input geom 0 is invalid: Self-intersection at or near point 1800748.0933135152 -3212834.9287674334 at 1800748.0933135152 -3212834.9287674334."
+#     Calls: source ... withVisible -> eval -> eval -> %dopar% -> <Anonymous>
+#       In addition: There were 50 or more warnings (use warnings() to see the first 50)
+#     Execution halted
+    
+# Warrego:
+#   Error: Failed to retrieve the result of MulticoreFuture (doFuture-8) from the forked worker (on localhost; PID 18475). Post-mortem diagnostic: No process exists with this PID, i.e. the forked localhost worker is no longer alive.
+# In addition: There were 50 or more warnings (use warnings() to see the first 50)
+# Execution halted
+# and for the other one
+# Error: Unexpected result (of class â€˜NULLâ€™ != â€˜FutureResultâ€™) retrieved
+# for MulticoreFuture future (label = â€˜doFuture-2â€™, expression = â€˜{;
+# doFuture::registerDoFuture(); lapply(seq_along(...future.x_ii), FUN =
+# function(jj) {; ...future.x_jj <- ...future.x_ii[[jj]]; s <- NULL;
+# ...future.env <- environment(); ...; }, error = identity); }); }â€™):
+  
+
+# DEBUGGING THE TIMEOUTS EVEN IN THE CHUNKED VERSION ----------------------
+# # For local testing
+plan(multisession)
+summaryFun <- 'areaInun'
+args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '8', 'CondamineBalonne')
+# For a set catchment in the args{{} vectpor, read in through line 107. Now want to break it up and see what's up
+
+# First, get the areas
+anaePolys <- anaePolys %>%
+  mutate(area = as.numeric(st_area(.))) 
+
+chunksize <- ceiling(nrow(anaePolys)/nchunks)
+
+# Now, make each topbottom (well, really, want to categorize)
+chunknum <- rep(1:10, each = chunksize) 
+chunknum <- chunknum[1:nrow(anaePolys)] # Because there might be a few less in the last one
+anaePolys$chunknum <- chunknum
+
+chunkareas <- anaePolys %>% 
+  st_drop_geometry() %>% # makes the summary way faster, and I don't think we need it?
+  group_by(chunknum) %>%
+  summarise(totalarea = sum(area),
+            maxarea = max(area)) %>%
+  mutate(succeed = c('p', 'p', 'p', 't', 't', 'p', 't', 'topology', 'p', 'end'))
+
+# Succeed codes:
+# Condamine succeed = c('p', 'p', 'p', 't', 't', 'p', 't', 'topology', 'p', 'p')
+# Lachlan succeed = c('p', 'p', 'p', 't', 'p', 't', 'p', 'p', 'p', 'end')
+# LowerD succeed = c('p', 'p', 't', 'p', 'p', 'p', 'p', 'p', 'p', 'end')
+# Warrego succeed = c('p', 'p', 'p', 'p', 't', 'p', 'p', 't', 't', 'end')
+
+chunkareas
+
+totalplot <- ggplot(chunkareas, aes(x = chunknum, y = totalarea, color = succeed, fill = succeed)) + geom_bar(stat = 'identity')
+
+maxplot <- ggplot(chunkareas, aes(x = chunknum, y = maxarea, color = succeed, fill = succeed)) + geom_bar(stat = 'identity')
+
+ggpubr::ggarrange(totalplot, maxplot, common.legend = TRUE)
+
+
+# how many are super huge?
+
+sum(anaePolys$area > 1e8)
+
+ggplot(anaePolys, aes(x = log(area))) + geom_histogram() + facet_grid(chunknum~.)
+#########
+#

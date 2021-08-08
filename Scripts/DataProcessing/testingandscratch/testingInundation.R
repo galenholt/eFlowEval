@@ -1658,3 +1658,103 @@ for (b in 1:nrow(ltimNoNorth)) {
 
 print(paste0('finished processANAE, time is ', Sys.time(), ', run is ', dataWhere))
 
+
+
+# DEBUGGING THE TIMEOUTS EVEN IN THE CHUNKED VERSION ----------------------
+# # For local testing
+plan(multisession)
+summaryFun <- 'areaInun'
+args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '8', 'CondamineBalonne')
+# For a set catchment in the args{{} vectpor, read in through line 107. Now want to break it up and see what's up
+
+# First, get the areas
+anaePolys <- anaePolys %>%
+  mutate(area = as.numeric(st_area(.))) 
+
+chunksize <- ceiling(nrow(anaePolys)/nchunks)
+
+# Now, make each topbottom (well, really, want to categorize)
+chunknum <- rep(1:10, each = chunksize) 
+chunknum <- chunknum[1:nrow(anaePolys)] # Because there might be a few less in the last one
+anaePolys$chunknum <- chunknum
+
+chunkareas <- anaePolys %>% 
+  st_drop_geometry() %>% # makes the summary way faster, and I don't think we need it?
+  group_by(chunknum) %>%
+  summarise(totalarea = sum(area),
+            maxarea = max(area)) %>%
+  mutate(succeed = c('p', 'p', 'p', 't', 't', 'p', 't', 'topology', 'p', 'end'))
+
+# Succeed codes:
+# Condamine succeed = c('p', 'p', 'p', 't', 't', 'p', 't', 'topology', 'p', 'end')
+# Lachlan succeed = c('p', 'p', 'p', 't', 'p', 't', 'p', 'p', 'p', 'end')
+# LowerD succeed = c('p', 'p', 't', 'p', 'p', 'p', 'p', 'p', 'p', 'end')
+# Warrego succeed = c('p', 'p', 'p', 'p', 't', 'p', 'p', 't', 't', 'end')
+
+chunkareas
+
+totalplot <- ggplot(chunkareas, aes(x = chunknum, y = totalarea, color = succeed, fill = succeed)) + geom_bar(stat = 'identity')
+
+maxplot <- ggplot(chunkareas, aes(x = chunknum, y = maxarea, color = succeed, fill = succeed)) + geom_bar(stat = 'identity')
+
+ggpubr::ggarrange(totalplot, maxplot, common.legend = TRUE)
+
+
+# how many are super huge?
+
+sum(anaePolys$area > 1e8)
+
+ggplot(anaePolys, aes(x = log(area))) + geom_histogram() + facet_grid(chunknum~.)
+#########
+#
+#
+#
+#
+##
+
+
+# Testing some benchmarking while error-finding in subChunk ---------------------------------------------------
+# Running processInundationSubChunk in local mode wiht 
+args <- c('blah', 'b', 'c', 'g', '3', 't', 'a', '5', 'Warrego', '8', '6', '8')
+
+# Then, around the foreach loop, run soe benchmarks to see if merging the raster speeds it up, or if downsampling helps
+# GIST IS: MERGING DOESN"T DO ANYTHING
+# DOWNSAMPLING THROWS OUT DATA- it's not a weighted downscaling, it just skips
+# pixels. That's what the website said
+# https://r-spatial.github.io/stars/reference/st_as_stars.html, but I didn't
+# believe it until I looked
+# TESTING
+mergebench <- microbenchmark::microbenchmark("mergedT" = { b <- st_as_sf(thiscrop, 
+                                                                         as_points = FALSE, 
+                                                                         merge = TRUE, 
+                                                                         na.rm = FALSE)},
+                                             "mergeF" = { b <- st_as_sf(thiscrop, 
+                                                                        as_points = FALSE, 
+                                                                        merge = FALSE, 
+                                                                        na.rm = FALSE) },
+                                             times = 5)
+
+downbench <- microbenchmark::microbenchmark("down0" = { b0 <- st_as_sf(thiscrop, 
+                                                                       as_points = FALSE, 
+                                                                       merge = FALSE, 
+                                                                       na.rm = FALSE)},
+                                            "down1" = { b1 <- st_as_sf(thiscrop, 
+                                                                       as_points = FALSE, 
+                                                                       merge = FALSE, 
+                                                                       na.rm = FALSE,
+                                                                       downsample = 1) },
+                                            "down10" = { b10 <- st_as_sf(thiscrop, 
+                                                                         as_points = FALSE, 
+                                                                         merge = FALSE, 
+                                                                         na.rm = FALSE,
+                                                                         downsample = 10) },
+                                            times = 1)
+
+
+plot(anaePolys["UID"], reset = FALSE)
+plot(b0[,9], add = TRUE)
+
+plot(anaePolys["UID"], reset = FALSE)
+plot(b1[,9], add = TRUE)
+
+
