@@ -314,5 +314,8 @@ thisIndex <- paste0(thisInunName, '_', summaryFun, '_index', '_',
 assign(thisDepth, depthAns)
 assign(thisIndex, depthIndex)
 
-# Could just use thisInunName for the rdata, since there's a folder structure, but this is more explicit
+# Could just use thisInunName for the rdata, since there's a folder structure,
+# but this is more explicit
+  # This does not actually save a list; to save with character vectors need to
+  # use the list of characters
 save(list = c(thisDepth, thisIndex), file = file.path(scriptOut, paste0(thisDepth, '.rdata')))
