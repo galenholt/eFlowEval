@@ -947,10 +947,10 @@
     },
     "sf": {
       "Package": "sf",
-      "Version": "1.0-2",
+      "Version": "1.0-0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "464dca3e4f0bb13cf202630bfed2753a"
+      "Hash": "800804f284ba87cb28cf24fc47fc4e02"
     },
     "sp": {
       "Package": "sp",
