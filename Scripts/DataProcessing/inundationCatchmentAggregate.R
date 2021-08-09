@@ -9,9 +9,6 @@ library(here)
 library(tidyverse)
 library(sf)
 library(stars)
-library(transformr)
-library(gganimate)
-library(viridis)
 library(foreach)
 library(doFuture)
 
@@ -126,43 +123,4 @@ save(inunBasin,
 
 
 
-# SPLIT THIS INTO SEPARATE SCRIPT -----------------------------------------
-# The above is still data processing
-
-# and plot
-plotInunBasin <- catchAggPlot(inunBasin, title = 'Total Area Inundated')
-plotInunBasin
-
-# Ugh. scales are wonky- handbuild
-catchPlot <- ggplot() +
-  geom_stars(data = log(inunBasin)) +
-  coord_sf() +
-  facet_wrap(~as.character(time)) +
-  theme_void()  +
-  # scale_fill_gradient(low = 'firebrick', high = 'forestgreen' ) +
-  scale_fill_viridis(option = 'mako')
-catchPlot
-
-# Can i use gganimate with geom_stars()
-# library(gganimate)
-# library(transformr)
-catchAnim <- ggplot() +
-  geom_stars(data = log(inunBasin)) +
-  coord_sf() +
-  # facet_wrap(~as.character(time)) +
-  theme_void()  +
-  # scale_fill_gradient(low = 'firebrick', high = 'forestgreen' ) +
-  scale_fill_viridis(option = 'mako') +
-  # gganimate bits
-  # only the times that exist, but less smooth
-  # gganimate bits
-  # transition_states(time) +
-  # labs(title = 'Time: {closest_state}', fill = 'log(Area inundated)') +
-  # # Smooth time, but has lots of extra 'times' that aren't in the data
-  transition_time(time) +
-  labs(title = 'Time: {as.Date(frame_time)}', fill = 'log(Area inundated)') +
-  ease_aes('linear')
-catchAnim
-
-anim_save(filename = file.path(scriptFigOut, 'inundationTime.gif'), animation = catchAnim)
 
