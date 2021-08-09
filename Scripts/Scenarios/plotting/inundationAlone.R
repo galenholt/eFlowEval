@@ -126,8 +126,8 @@ save(inunBasin,
 
 
 
-SPLIT THIS INTO SEPARATE SCRIPT -----------------------------------------
-The above is still data processing
+# SPLIT THIS INTO SEPARATE SCRIPT -----------------------------------------
+# The above is still data processing
 
 # and plot
 plotInunBasin <- catchAggPlot(inunBasin, title = 'Total Area Inundated')
