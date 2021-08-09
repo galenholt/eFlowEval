@@ -9,7 +9,22 @@ library(here)
 library(tidyverse)
 library(sf)
 library(stars)
+library(transformr)
+library(gganimate)
 library(viridis)
+library(foreach)
+library(doFuture)
+
+# Set up parallel backend
+registerDoFuture()
+# plan(multisession)
+plan(sequential) # dopar doesn't work, so no sense setting up a multisession
+
+# This is almost EXACTLY a library load at this point. Just need to actually wrap it up and split the git
+basicfuns <- list.files(here('Functions'))
+basicfuns <- file.path('Functions', basicfuns)
+# read in those functions
+sapply(basicfuns, source)
 
 # Set the crs
 whichcrs <- 3577
@@ -19,54 +34,135 @@ summaryFun <- 'areaInun'
 inunIn <- paste0(datOut, '/Inundationprocessed/', summaryFun)
 anaeIn <- file.path(datOut, 'ANAEprocessed')
 
+scriptFigOut <- file.path('strictOut', 'inundation')
+scriptDatOut <- file.path(inunIn, 'basinConcat')
+# Make the out directory, in case it doesn't exist
+if (!dir.exists(scriptFigOut)) {dir.create(scriptFigOut, recursive = TRUE)}
+if (!dir.exists(scriptDatOut)) {dir.create(scriptDatOut, recursive = TRUE)}
+
 # List the catchments
 catchfiles <- list.files(inunIn, pattern = '*.rdata')
 catchNames <-str_remove(catchfiles, pattern = paste0('_', summaryFun, '.rdata'))
 
-# Load some data
-thisCatch <- catchNames[13] #13 is lachlan, to keep consistent with previous checking
-thisInunfile <- catchfiles[13]
-# Get the right valley- same as in processANAE
+# Loop over each catchment, since that's how the files are structured for memory purposes
+# for (i in 1:length(catchNames)) {
+# for (i in 1:2) {
+loopstart <- proc.time()
+inunBasin <- foreach(i = 1:length(catchNames), # length(catchNames)
+        .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
+        .multicombine=TRUE,
+        .inorder = TRUE) %do% { # dopar will take some work; the dplyr verbs don't carry into it very well
+ 
+          # oneloopstart <- proc.time()
+           # Set up loop iterations
+  thisCatch <- catchNames[i] #13 is lachlan, to keep consistent with previous checking
+  thisInunfile <- catchfiles[i]
+  
+  
+  # Read in the data
+  anfile <- file.path(anaeIn, paste0(thisCatch, 'ANAE.rdata'))
+  inunfile <- file.path(inunIn, thisInunfile)
+  
+  load(anfile)
+  load(inunfile)
+  
+  # get just this valley- would be nice to do this earlier, but unable
+  # Get the right valley- same as in processANAE
   # Do it this way, NOT with the same index as above, because these are in a
   # different order for some reason
-valleys <-ltimNoNorth$ValleyName
-valleys <- str_remove_all(valleys, ' ')
-thisvalley <- which(valleys == thisCatch)
-# Cut to just the valley we want
-thisPoly <- ltimNoNorth %>% slice(thisvalley)
-
-anfile <- file.path(anaeIn, paste0(thisCatch, 'ANAE.rdata'))
-inunfile <- file.path(inunIn, thisInunfile)
-
-load(anfile)
-load(inunfile)
-
-# make a smaller version of the inundation for testing
+  valleys <-ltimNoNorth$ValleyName
+  valleys <- str_remove_all(valleys, ' ')
+  # Cut to just the valley we want
+  thisvalley <- which(valleys == thisCatch)
+  thisPoly <- ltimNoNorth %>% slice(thisvalley)
+  
+  # give standard names
+  theseANAEs <- get(paste0(thisCatch, 'ANAE'))
+  theseInuns <- get(paste0(thisCatch, '_', summaryFun))
+  theseIndices <- get(paste0(thisCatch, '_', summaryFun, '_index'))
+  rm(list = c(paste0(thisCatch, 'ANAE'), 
+              paste0(thisCatch, '_', summaryFun),
+              paste0(thisCatch, '_', summaryFun, '_index'))) 
+  
+  # make a smaller version of the inundation for testing
   # Smaller in the time dimension, NOT space, since we need all the anaes
-lachtest_areaInun <- Lachlan_areaInun %>% slice("time", 1:10)
-
-# Set up to plot ----------------------------------------------------------
+    # TODO: make this settable with a timespan- I've done it somewhere else
+  # theseInuns <- theseInuns[,,1:10] # %>% slice("time", 1:10) # Slice doesn't work with dopar
+  
+  # Set crs
+  theseANAEs <- st_transform(theseANAEs, whichcrs)
+  thisPoly <- st_transform(thisPoly, whichcrs)
+  
+  # Set up to plot ----------------------------------------------------------
   # Need to make this name-agnostic
-
-# Set crs
-LachlanANAE <- st_transform(LachlanANAE, whichcrs)
-ltimNoNorth <- st_transform(ltimNoNorth, whichcrs)
-
-
-# There's some spillover if we use ltimNoNorth, so we need to cut it to the correct valley
+  # There's some spillover if we use ltimNoNorth, so we need to cut it to the correct valley
   # Not sure if I want to drop_geometry or not? Not much reason to keep it, really
-areas <- Lachlan_areaInun_index %>% mutate(area = as.numeric(st_area(.))) %>%
-  st_drop_geometry() %>%
-  select(area) %>%
-  pull()
-
-# Let's just try my catchment aggregator
+  areas <- theseIndices %>% mutate(area = as.numeric(st_area(.))) %>%
+    st_drop_geometry() %>%
+    select(area) %>%
+    pull()
+  
+  # Let's just try my catchment aggregator
   # use sum for total area of ANAEs inundated
-inunLach <- catchAggW(strict = lachtest_areaInun, strictWeights = areas,
-                      FUN = sum, summaryPoly = thisPoly)
-names(inunLach) <- 'totalareainundated'
+  inunAgg <- catchAggW(strict = theseInuns, strictWeights = areas,
+                        FUN = sum, summaryPoly = thisPoly)
+  names(inunAgg) <- 'totalareainundated'
+  
+  # oneloopend <- proc.time()
+  # onelooptime <- oneloopend - oneloopstart
+  # print(paste0('finished loop ', i, '(', thisCatch, ')', 'time = ', onelooptime))
+  
+  inunAgg
+}
+loopend <- proc.time()
+looptime <- loopend-loopstart
+looptime
+
+
+# Let's save that so we don't have to re-do the loop calcs
+  # Should we save this to the inundation folder?
+save(inunBasin, 
+     file = file.path(scriptDatOut, paste0('inunCatchConcat_', summaryFun, '.rdata')))
+
+
+
+SPLIT THIS INTO SEPARATE SCRIPT -----------------------------------------
+The above is still data processing
 
 # and plot
-plotInunLach <- catchAggPlot(inunLach, title = 'Total Area Inundated')
-plotInunLach
+plotInunBasin <- catchAggPlot(inunBasin, title = 'Total Area Inundated')
+plotInunBasin
+
+# Ugh. scales are wonky- handbuild
+catchPlot <- ggplot() +
+  geom_stars(data = log(inunBasin)) +
+  coord_sf() +
+  facet_wrap(~as.character(time)) +
+  theme_void()  +
+  # scale_fill_gradient(low = 'firebrick', high = 'forestgreen' ) +
+  scale_fill_viridis(option = 'mako')
+catchPlot
+
+# Can i use gganimate with geom_stars()
+# library(gganimate)
+# library(transformr)
+catchAnim <- ggplot() +
+  geom_stars(data = log(inunBasin)) +
+  coord_sf() +
+  # facet_wrap(~as.character(time)) +
+  theme_void()  +
+  # scale_fill_gradient(low = 'firebrick', high = 'forestgreen' ) +
+  scale_fill_viridis(option = 'mako') +
+  # gganimate bits
+  # only the times that exist, but less smooth
+  # gganimate bits
+  # transition_states(time) +
+  # labs(title = 'Time: {closest_state}', fill = 'log(Area inundated)') +
+  # # Smooth time, but has lots of extra 'times' that aren't in the data
+  transition_time(time) +
+  labs(title = 'Time: {as.Date(frame_time)}', fill = 'log(Area inundated)') +
+  ease_aes('linear')
+catchAnim
+
+anim_save(filename = file.path(scriptFigOut, 'inundationTime.gif'), animation = catchAnim)
 
