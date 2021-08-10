@@ -14,13 +14,13 @@ catchAggW <- function(strict, strictWeights, FUN, summaryPoly) {
   # strictWeights is a vector of the weights to give each stricture (typically area of relevant polygons)
   # summaryPoly is an sf with one or more polygons that get aggregated into
   
-  sArea <- strict
+  # sArea <- strict
   
   # get area-proportion of success (same as area-days, but divided by days in year)
-  sArea[[1]] <- t(t(sArea[[1]])*strictWeights)
+  strict[[1]] <- t(t(strict[[1]])*strictWeights)
   
   # Now aggregate over space
-  sCatch <- aggregate(sArea, by = summaryPoly, FUN = FUN, na.rm = TRUE)
+  sCatch <- aggregate(strict, by = summaryPoly, FUN = FUN, na.rm = TRUE)
   
   return(sCatch)
   
