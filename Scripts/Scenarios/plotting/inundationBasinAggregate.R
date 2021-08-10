@@ -13,13 +13,13 @@ library(stars)
 library(transformr)
 library(gganimate)
 library(viridis)
-library(foreach)
-library(doFuture)
-
-# Set up parallel backend
-registerDoFuture()
-# plan(multisession)
-plan(sequential) # dopar doesn't work, so no sense setting up a multisession
+# library(foreach)
+# library(doFuture)
+# 
+# # Set up parallel backend
+# registerDoFuture()
+# # plan(multisession)
+# plan(sequential) # dopar doesn't work, so no sense setting up a multisession
 
 # This is almost EXACTLY a library load at this point. Just need to actually wrap it up and split the git
 basicfuns <- list.files(here('Functions'))
@@ -30,7 +30,12 @@ sapply(basicfuns, source)
 # Set the crs
 whichcrs <- 3577
 # directory
-summaryFun <- 'areaInun'
+summaryFuns <- c('areaInun', 'volInun')
+
+# Really could be a function
+for(sfun in 1:length(summaryFuns)) {
+  summaryFun <- summaryFuns[sfun]
+  
 # There are some that were NOT chunked- leave them alone, and just look in the chunked folder
 inunIn <- paste0(datOut, '/Inundationprocessed/', summaryFun)
 anaeIn <- file.path(datOut, 'ANAEprocessed')
@@ -55,6 +60,7 @@ plotInunBasin <- catchAggPlot(inunBasin, title = 'Total Area Inundated')
 #   scale_fill_viridis(option = 'mako')
 # catchPlot
 
+statname <- str_remove(summaryFun, pattern = 'Inun')
 # Can i use gganimate with geom_stars()
 # library(gganimate)
 # library(transformr)
@@ -72,11 +78,13 @@ catchAnim <- ggplot() +
   # labs(title = 'Time: {closest_state}', fill = 'log(Area inundated)') +
   # # Smooth time, but has lots of extra 'times' that aren't in the data
   transition_time(time) +
-  labs(title = 'Time: {as.Date(frame_time)}', fill = 'log(Area inundated)') +
+  labs(title = 'Time: {as.Date(frame_time)}', 
+       fill = paste0('log(', statname, 'inundated)')) +
   ease_aes('linear')
 # catchAnim
 
 # animate(catchAnim, duration = 197*0.5)
 
-anim_save(filename = file.path(scriptFigOut, 'inundationTime.gif'), 
+anim_save(filename = file.path(scriptFigOut, paste0('inundationTime_', summaryFun, '.gif')), 
           animation = animate(catchAnim, duration = 197*0.25))
+}
