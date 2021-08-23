@@ -236,6 +236,9 @@ print(parallelly::makeClusterPSOCK(workers = availableWorkers(), dryrun = TRUE))
 
 
 print('now try the plan inside withCalling')
+write.to.log <- function(x) {
+  print(x) # Let's try this- it should just print directly?
+}
 withCallingHandlers(plan(cluster), error = function(e) { write.to.log(sys.calls()) })
 
 # This and the above both fail
