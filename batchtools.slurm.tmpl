@@ -35,7 +35,7 @@ if (!is.null(resources$pp.size))
 #SBATCH --job-name=<%= job.name %>
 #SBATCH --output=<%= log.file %>
 #SBATCH --error=<%= log.file %>
-#SBATCH --0:15:00 ###time=<%= ceiling(walltime / 60L) %>
+#SBATCH --time=0:15:00 ###time=<%= ceiling(walltime / 60L) %>
 #SBATCH --partition=<%= queue %>
 #SBATCH --cpus-per-task=<%= ncpus %>
 #SBATCH --mem-per-cpu=<%= memory %>
