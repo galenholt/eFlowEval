@@ -135,12 +135,22 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
   # at the least, it'll allow me to see if things have gotten jumbled between shape and sys2
   
   # Turn back into a stars
-  avgPRStars <- avgPR %>% 
+  avgPRStarstemp <- avgPR %>% 
     select(-all_of(grouper)) %>%
-    st_as_stars() %>%
-    merge()
-  # avgA_Stars
+    st_as_stars() # %>%
+    # merge() # this is where it fails with more than ~800 days
   
+  nbreaks <- ceiling(length(names(avgPRStarstemp))/800) + 1
+  breaks <- round(seq(from = 0, to = length(names(avgPRStarstemp)), length.out = nbreaks))
+  avgPRStars <- foreach(l = 1:(length(breaks)-1),
+                      .combine=function(...) c(..., along = 2), # Pass dimension argument to c.stars
+                      .multicombine=TRUE) %do% {
+                        bottom <- breaks[l]+1
+                        top <- breaks[l+1]
+                        avgPRStarstemp[bottom:top, ] %>%
+                          merge()
+                      }
+
   # change the time dimension
   st_dimensions(avgPRStars)[2] <- st_dimensions(rastst)[3]
   # st_dimensions(avgPRtars)[2] # yup, though it's still called X1?
