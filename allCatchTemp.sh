@@ -1,100 +1,130 @@
-# #!/bin/bash
+#!/bin/bash
+
+# This starts each of the catchments as a slurm array
+# Would be reasonably easy to loop instead, but do that later
+# and this sets us up to more easily handle uneven missings
+
 # echo 'start Avoca'
-# sbatch --array=1-100 AvocaTemp.sh
+# echo 'start' $thiscatch
+# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 # sleep 2
 
-# echo 'start BarwonDarling'
-# sbatch --array=1-100 BarwonDarlingTemp.sh
+# thiscatch='BarwonDarling'
+# echo 'start' $thiscatch
+# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 # sleep 2
 
-# echo 'start BorderRivers'
-# sbatch --array=1-100 BorderRiversTemp.sh
+# thiscatch='BorderRivers'
+# echo 'start' $thiscatch
+# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 # sleep 2
 
-# echo 'start Broken'
-# sbatch --array=1-100 BrokenTemp.sh
+# thiscatch='Broken'
+# echo 'start' $thiscatch
+# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 # sleep 2
 
-# echo 'start Campaspe'
-# sbatch --array=1-100 CampaspeTemp.sh
+# thiscatch='Campaspe'
+# echo 'start' $thiscatch
+# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 # sleep 2
 
-# echo 'start Castlereagh'
-# sbatch --array=1-100 CastlereaghTemp.sh
+# thiscatch='Castlereagh'
+# echo 'start' $thiscatch
+# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 # sleep 2
 
-# echo 'start CentralMurray'
-# sbatch --array=1-100 CentralMurrayTemp.sh
+# thiscatch='CentralMurray'
+# echo 'start' $thiscatch
+# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 # sleep 2
 
-# echo 'start CondamineBalonne'
-# sbatch --array=1-100 CondamineBalonneTemp.sh
+# thiscatch='CondamineBalonne'
+# echo 'start' $thiscatch
+# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 # sleep 2
 
-# echo 'start EdwardWakool'
-# sbatch --array=1-100 EdwardWakoolTemp.sh
+# thiscatch='EdwardWakool'
+# echo 'start' $thiscatch
+# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 # sleep 2
 
-# echo 'start Goulburn'
-# sbatch --array=1-100 GoulburnTemp.sh
+# thiscatch='Goulburn'
+# echo 'start' $thiscatch
+# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 # sleep 2
 
-# echo 'start Gwydir'
-# sbatch --array=1-100 GwydirTemp.sh
+# thiscatch='Gwydir'
+# echo 'start' $thiscatch
+# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 # sleep 2
 
-# echo 'start Kiewa'
-# sbatch --array=1-100 KiewaTemp.sh
+# thiscatch='Kiewa'
+# echo 'start' $thiscatch
+# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 # sleep 2
 
-# echo 'start Lachlan'
-# sbatch --array=1-100 LachlanTemp.sh
+# thiscatch='Lachlan'
+# echo 'start' $thiscatch
+# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 # sleep 2
 
-# echo 'start Loddon'
-# sbatch --array=1-100 LoddonTemp.sh
+# thiscatch='Loddon'
+# echo 'start' $thiscatch
+# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 # sleep 2
 
-# echo 'start LowerDarling'
-# sbatch --array=1-100 LowerDarlingTemp.sh
+# thiscatch='LowerDarling'
+# echo 'start' $thiscatch
+# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 # sleep 2
 
-# echo 'start LowerMurray'
-# sbatch --array=1-100 LowerMurrayTemp.sh
+# thiscatch='LowerMurray'
+# echo 'start' $thiscatch
+# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 # sleep 2
 
-echo 'start Macquarie'
-sbatch --array=1-100 MacquarieTemp.sh
+thiscatch='Macquarie'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 sleep 2
 
-echo 'start MittaMitta'
-sbatch --array=1-100 MittaMittaTemp.sh
+thiscatch='MittaMitta'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 sleep 2
 
-echo 'start Murrumbidgee'
-sbatch --array=1-100 MurrumbidgeeTemp.sh
+thiscatch='Murrumbidgee'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 sleep 2
 
-echo 'start Namoi'
-sbatch --array=1-100 NamoiTemp.sh
+thiscatch='Namoi'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 sleep 2
 
-echo 'start Ovens'
-sbatch --array=1-100 OvensTemp.sh
+thiscatch='Ovens'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 sleep 2
 
-echo 'start Paroo'
-sbatch --array=1-100 ParooTemp.sh
+thiscatch='Paroo'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 sleep 2
 
-echo 'start UpperMurray'
-sbatch --array=1-100 UpperMurrayTemp.sh
+thiscatch='UpperMurray'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 sleep 2
 
-echo 'start Warrego'
-sbatch --array=1-100 WarregoTemp.sh
+thiscatch='Warrego'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 sleep 2
 
-echo 'start Wimmera'
-sbatch --array=1-100 WimmeraTemp.sh
+thiscatch='Wimmera'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
 sleep 2
