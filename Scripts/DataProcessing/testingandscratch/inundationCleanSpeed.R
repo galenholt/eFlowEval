@@ -192,10 +192,10 @@ timeinunP <- function(ntimes, nanaes, FUN = weighted.mean) {
 
 print('functions written')
 # Check each function with a first go
-timeinun(10,10)
-timeinunP(10,10)
+# timeinun(10,10)
+# timeinunP(10,10)
 
-print('function test works')
+# print('function test works')
 # NEED TO TEST THE DIFFERENT RASTPOLY FUNCTIONS TOO
   # Passing arguments to the functions using ... doesnt work with the parallel
   # structure. Instead, we'll have to build the photic limit as a hardcode into
@@ -226,6 +226,11 @@ benchP_S <- microbenchmark::microbenchmark("t10a10" = { b <- timeinun(ntimes = 1
 print('comparison of usual for loop and parallel using multisession')
 print(benchP_S)
 
+# a quick check with all times and a small set of anaes
+benchalltime <- microbenchmark::microbenchmark("talla5" = { b <- timeinun(ntimes = length(inunTifs), nanaes = 5)},
+                                               times = 1)
+benchalltime
+  
 # Not sure how to change the plan between benches, so 
 registerDoFuture()
 plan(sequential) # ie does it in serial
