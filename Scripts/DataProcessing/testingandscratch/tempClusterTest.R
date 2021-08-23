@@ -221,6 +221,8 @@ timeinun <- function(nanaes, FUN = weighted.mean) {
 # print(benchmulticore)
 # 
 # Cluster
+print(sessionInfo())
+
 registerDoFuture()
 print('available workers: ')
 print(availableWorkers())
@@ -228,8 +230,11 @@ print(availableWorkers())
 print('makeNodePSOCK.setup.strategy is ')
 print(parallelly:::getOption2("parallelly.makeNodePSOCK.setup_strategy", "parallel"))
 
-print('trying to set up the cluster')
+print('trying to set up the cluster dry run')
 print(parallelly::makeClusterPSOCK(workers = availableWorkers(), dryrun = TRUE))
+
+print('try to set up the cluster for real without setting plan()')
+print(parallelly::makeClusterPSOCK(workers = availableWorkers()))
 
 print('now try the plan')
 plan(cluster) # On windows
