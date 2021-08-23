@@ -250,7 +250,7 @@ registerDoFuture()
 # https://github.com/mllg/batchtools/issues/201
 
 resources = list(ncpus =  1L,
-                 walltime = 200L, # Probably too long for most, but some will fail at this, I think
+                 walltime = "00:10:00", # was 200L Probably too long for most, but some will fail at this, I think
                  memory = 10000L) # seems excessive, but this is 120GB/10cpus, where the node has 128GB. Then convert to Mb
 
 plan(future.batchtools::batchtools_slurm, resources = resources)
