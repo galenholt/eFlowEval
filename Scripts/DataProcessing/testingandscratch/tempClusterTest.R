@@ -223,7 +223,7 @@ timeinun <- function(nanaes, FUN = weighted.mean) {
 # Cluster
 registerDoFuture()
 print('available workers: ')
-availableWorkers()
+print(availableWorkers())
 plan(cluster) # On windows
 benchcluster <- microbenchmark::microbenchmark("t2557a10" = { b <- timeinun(nanaes = 10)},
                                                  "t2557a100" = { b <- timeinun(nanaes = 100)},
