@@ -224,6 +224,14 @@ timeinun <- function(nanaes, FUN = weighted.mean) {
 registerDoFuture()
 print('available workers: ')
 print(availableWorkers())
+
+print('makeNodePSOCK.setup.strategy is ')
+print(parallelly:::getOption2("parallelly.makeNodePSOCK.setup_strategy", "parallel"))
+
+print('trying to set up the cluster')
+print(makeClusterPSOCK(workers = availableWorkers()))
+
+print('now try the plan')
 plan(cluster) # On windows
 benchcluster <- microbenchmark::microbenchmark("t2557a10" = { b <- timeinun(nanaes = 10)},
                                                  "t2557a100" = { b <- timeinun(nanaes = 100)},
