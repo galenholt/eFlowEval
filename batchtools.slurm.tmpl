@@ -17,7 +17,7 @@
 <%
 
 # queue
-walltime = asInt(resources$walltime, lower = 60L, upper = 31L * 24L * 60L * 60L)
+walltime = asInt(resources$walltime, lower = 60L, upper = 48L * 60L * 60L) # upper = 31L * 24L * 60L * 60L)
 memory = asInt(resources$memory, lower = 100L, upper = 1024L * 1024L)
 walltimes = c(2L, 8L, 48L, 672L) * 3600L
 queue = c("short", "med", "long", "ultralong")[wf(walltime <= walltimes)]

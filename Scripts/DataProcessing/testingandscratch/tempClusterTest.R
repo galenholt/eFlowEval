@@ -229,7 +229,7 @@ print('makeNodePSOCK.setup.strategy is ')
 print(parallelly:::getOption2("parallelly.makeNodePSOCK.setup_strategy", "parallel"))
 
 print('trying to set up the cluster')
-print(makeClusterPSOCK(workers = availableWorkers(), dryrun = TRUE))
+print(parallelly::makeClusterPSOCK(workers = availableWorkers(), dryrun = TRUE))
 
 print('now try the plan')
 plan(cluster) # On windows
