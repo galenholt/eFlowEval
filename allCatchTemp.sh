@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# start this with: bash allCatchTemp.sh
+# could chmod it, but not necessary if we just use bash to call it
+
 # This starts each of the catchments as a slurm array
 # Would be reasonably easy to loop instead, but do that later
 # and this sets us up to more easily handle uneven missings
