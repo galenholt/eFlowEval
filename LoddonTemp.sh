@@ -22,7 +22,7 @@ begin=`date +%s`
 
 module load R/4.0.2
 
-Rscript hpc_wrap.R "Scripts/DataProcessing/processTempSubChunk.R" "weightedMean" ${SLURM_ARRAY_TASK_ID} "Campaspe"
+Rscript hpc_wrap.R "Scripts/DataProcessing/processTempSubChunk.R" "weightedMean" ${SLURM_ARRAY_TASK_ID} "Loddon"
 
 # Copy to ruby datastore. copying to the {lw-mer} on bowen is at /datasets/work/lw-mer/work/galen_holt, but need to sort this out a bit better
 # cp -rp testout.rdata /datastore/hol436/HPC_testing

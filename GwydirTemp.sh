@@ -6,7 +6,7 @@
 # # See OneNote 'Basic HPC workflow to build on' from 9 Feb 2021 for more detail about connection and file transfer
 
 
-#SBATCH --time=0:10:00 # request time (walltime, not compute time)
+#SBATCH --time=0:30:00 # request time (walltime, not compute time)
 #SBATCH --mem=128GB # request memory
 #SBATCH --nodes=1 # number of nodes
 #SBATCH --ntasks-per-node=10 # This is the cores per node # If I want 20 cpus on 2 nodes, for ex, use --nodes=2 --ntasks-per-node=10
@@ -22,7 +22,7 @@ begin=`date +%s`
 
 module load R/4.0.2
 
-Rscript hpc_wrap.R "Scripts/DataProcessing/processTempSubChunk.R" "weightedMean" ${SLURM_ARRAY_TASK_ID} "BarwonDarling"
+Rscript hpc_wrap.R "Scripts/DataProcessing/processTempSubChunk.R" "weightedMean" ${SLURM_ARRAY_TASK_ID} "Gwydir"
 
 # Copy to ruby datastore. copying to the {lw-mer} on bowen is at /datasets/work/lw-mer/work/galen_holt, but need to sort this out a bit better
 # cp -rp testout.rdata /datastore/hol436/HPC_testing
