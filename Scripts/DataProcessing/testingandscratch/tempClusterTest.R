@@ -5,7 +5,7 @@
 # The hpc_wrapper tends to source this too, but if I do it here I don't have to
 # wrap the script to run locally. Sort out a cleaner way to do this
 source('directorySet.R')
-
+options(error = traceback)
 scriptOut <- paste0(datOut, '/Inundationprocessed')
 
 # Let's get libraries here, then sort out git then sort out making this a library so we don't have to deal with all the library crap
@@ -233,6 +233,8 @@ print(parallelly::makeClusterPSOCK(workers = availableWorkers(), dryrun = TRUE))
 
 print('now try the plan')
 plan(cluster) # On windows
+
+
 benchcluster <- microbenchmark::microbenchmark("t2557a10" = { b <- timeinun(nanaes = 10)},
                                                  "t2557a100" = { b <- timeinun(nanaes = 100)},
                                                  # "t2557a1000" = { b <- timeinun(nanaes = 1000)},
