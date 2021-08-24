@@ -15,6 +15,12 @@
 # Not quite, but wrapping does
 # Rscript hpc_wrap.R 'Scripts/DataProcessing/failedChunks.R'
 
+
+# ARE WE LENGTHENING OR SUB-CHUNKING? -------------------------------------
+
+lengthOrChunk <- 'length' # other option is 'chunk'
+
+
 # Header from the temperature file to retain all the directories,  --------
 
 
@@ -40,11 +46,11 @@ plan(sequential) # no need to parallelize, I don't think
 
 # # For local testing
 # plan(multisession)
-summaryFun <- 'weightedMean'
+# summaryFun <- 'weightedMean'
 # args <- c('blah', 'b', 'c', 'g', '3', 't', 'a', '3', 'Warrego', '8', '6', '8')
 # args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '9', 'Warrego', '8', '6', '10')
 # Does it break with one level of chunking?
-args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '9', 'Warrego')
+# args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '9', 'Warrego')
 
 # ## The outerchunks need to start outer and go in, ie '8', '6' is the 6th subchunk of the 8th main chunk
 # Need to handle the edge case wehre there aren't enough polys to do the array we're asking for
@@ -119,26 +125,49 @@ su <- 1 # Testing- so can loop over summary functions
   headline <- "#!/bin/bash"
   head2 <- "\n"
   
-  # For each catchment, I need to set up the chunk in a list
-  lineslist <- foreach(cn = 1:length(missnames), .inorder = TRUE, .combine = c) %do% {
-    l1 <- stringr::str_c("thiscatch='", missnames[cn],"'")
-    l2 <- stringr::str_c("echo 'start' $thiscatch")
-    misschars <- str_flatten(misslist[[cn]], collapse = ",")
-    l3 <- stringr::str_c("sbatch -J $thiscatch --array=", misschars, " allTempSLURMLong.sh $thiscatch")
-    l4 <- "sleep 2"
-    l5 <- "\n"
-    thislist <- list(l1, l2, l3, l4, l5)
+  if (lengthOrChunk == 'length') {
+    # For each catchment, I need to set up the chunk in a list
+    lineslist <- foreach(cn = 1:length(missnames), .inorder = TRUE, .combine = c) %do% {
+      l1 <- stringr::str_c("thiscatch='", missnames[cn],"'")
+      l2 <- stringr::str_c("echo 'start' $thiscatch")
+      misschars <- str_flatten(misslist[[cn]], collapse = ",")
+      l3 <- stringr::str_c("sbatch -J $thiscatch --array=", misschars, " allTempSLURMLong.sh $thiscatch")
+      l4 <- "sleep 2"
+      l5 <- "\n"
+      thislist <- list(l1, l2, l3, l4, l5)
+    }
+    
+    filechars <- c(headline, head2, unlist(lineslist))
+    
+    # Hpc says file isn't an option
+    # readr::write_lines(filechars, file = 'missingTemps.sh')
+    
+    writeLines(filechars, con = 'missingTemps.sh')
+  } else if (lengthOrChunk == 'chunk') {
+    # This generates an absurd number of runs. I think usually run the above first, and then only do this if necessary.
+    # For each catchment, I need to set up the chunk in a list, but ALSO need to loop over the missings to sub-chunk
+    lineslistSUB <- foreach(cn = 1:length(missnames)) %:%
+      foreach(sc = 1:length(misslist[[cn]]), .inorder = TRUE, .combine = c) %do% {
+        l1 <- stringr::str_c("thiscatch='", missnames[cn],"'")
+        l1.5 <- stringr::str_c("thiscchunk='", misslist[[cn]][sc],"'")
+        l2 <- stringr::str_c("echo 'start' $thiscatch $thischunk")
+        
+        l3 <- stringr::str_c("sbatch -J $thiscatch --array=1-100", " allTempSLURMchunk.sh $thiscatch $thischunk")
+        l4 <- "sleep 2"
+        l5 <- "\n"
+        thislist <- list(l1, l1.5, l2, l3, l4, l5)
+      }
+    
+    filecharsSUB <- c(headline, head2, unlist(lineslistSUB))  
+    writeLines(filecharsSUB, con = 'missingTempsChunk.sh')
+    
+    # I *should* be able to recurse this relatively easily, but hopefully won't need to.
   }
   
-  filechars <- c(headline, head2, unlist(lineslist))
-  
-  # Hpc says file isn't an option
-  # readr::write_lines(filechars, file = 'missingTemps.sh')
-  
-  writeLines(filechars, con = 'missingTemps.sh')
   
   # Do I want to have R actually run this too?
   # IE I could do 
   # system2(command = 'bash', args = 'missingTemps.sh')
   # That should work, but I'm going to hold off for now so I can check on things
+  
   
