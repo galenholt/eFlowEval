@@ -40,3 +40,10 @@ if (grepl('^pearcey', Sys.info()["nodename"]) | grepl('^c', Sys.info()["nodename
 # Make the out directory, in case it doesn't exist
 if (!dir.exists(datOut)) {dir.create(datOut, recursive = TRUE)}
 # The in directory has to exist, or there won't be anything to use
+
+# source everything in the functions folder. This really is turning into a package
+funfiles <- list.files('Functions', pattern = '.R$')
+# funfiles
+for (s in 1:length(funfiles)) {
+  source(file.path('Functions', funfiles[s])) 
+}
