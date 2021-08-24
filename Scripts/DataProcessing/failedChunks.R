@@ -111,6 +111,7 @@ su <- 1 # Testing- so can loop over summary functions
   print(" ")
   cat(paste('These catchments will run again:', 
             stringr::str_flatten(names(misslist), collapse = '\n'), sep = '\n'))
+  print(" ")
   
   
   # NOW, do I just run this, or is there a way to create the shell script?
@@ -131,7 +132,10 @@ su <- 1 # Testing- so can loop over summary functions
   
   filechars <- c(headline, head2, unlist(lineslist))
   
-  readr::write_lines(filechars, file = 'missingTemps.sh')
+  # Hpc says file isn't an option
+  # readr::write_lines(filechars, file = 'missingTemps.sh')
+  
+  writeLines(filechars, con = 'missingTemps.sh')
   
   # Do I want to have R actually run this too?
   # IE I could do 
