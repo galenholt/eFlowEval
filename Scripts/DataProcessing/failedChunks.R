@@ -12,6 +12,9 @@
 # Or do I need to slurm it at all? Can I just Rscript it?
 
 # Rscript failedChunks.R should work, shouldn't it?'
+# Not quite, but wrapping does
+# Rscript hpc_wrap.R 'Scripts/DataProcessing/failedChunks.R'
+
 # Header from the temperature file to retain all the directories,  --------
 
 
@@ -103,9 +106,11 @@ su <- 1 # Testing- so can loop over summary functions
   misslist <- purrr::compact(misslist)
   
   finishers <- catchNames[!(catchNames %in% names(misslist))]
-  cat(paste('These catchments finished:', finishers, sep = '\n'))
+  cat(paste('These catchments finished:', 
+            stringr::str_flatten(finishers, collapse = '\n'), sep = '\n'))
+  print(" ")
   cat(paste('These catchments will run again:', 
-            stringr::str_flatten(names(misslist), collapse = ' '), sep = '\n'))
+            stringr::str_flatten(names(misslist), collapse = '\n'), sep = '\n'))
   
   
   # NOW, do I just run this, or is there a way to create the shell script?
@@ -126,7 +131,7 @@ su <- 1 # Testing- so can loop over summary functions
   
   filechars <- c(headline, head2, unlist(lineslist))
   
-  write_lines(filechars, file = 'missingTemps.sh')
+  readr::write_lines(filechars, file = 'missingTemps.sh')
   
   # Do I want to have R actually run this too?
   # IE I could do 
