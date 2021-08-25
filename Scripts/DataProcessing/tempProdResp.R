@@ -145,4 +145,127 @@ testextract
 plot(testextract)
 # Not actually sure if that worked or not. I think not.
   # Need to do some cutting of the metdatasf so I can see what I'm working with
-metcut <- st_crop(metdatasf, bbpoints)
+# metcut <- st_crop(metdatasf, bbpoints) # Fails. But WHY?
+
+# Can I st_crop the raster to a single point?
+onecrop <- st_crop(cutsoil, metdatasf[1, ])
+cropin <- st_as_stars(onecrop)
+testextract <- st_extract(cropin, at = metdatasf[1, ])
+testextract
+# OK, so that grabbed a single raster, across all raster layers. I was sure
+# hoping this would be automatic, but it's hanging on something
+
+# can I use the time_column? Or do I need to do that piecemeal too?
+  # Ideally, sites would be constant lat/long, and so I could do each SITE
+  # individually, and split them up by time
+
+# BUT, for now, let's just see if the time_column can find the right thing
+# what time is 
+metdatasf[1,]
+# And what dates are in the cutraster
+cropin
+
+# OK, that won't overlap. maybe since it's just one point, I can do it with soilTstars directly
+onecrop <- st_crop(soilTstars, metdatasf[1, ])
+cropin <- st_as_stars(onecrop)
+testextract <- st_extract(cropin, at = metdatasf[1, ])
+testextract
+# this seems redundant at this point. can I just
+# testextract <- st_extract(soilTstars, at = metdatasf[1, ])
+# testextract
+# NOPE, extracting over the whole thing is a killer for some reason
+
+# Can I get that to work with the times automatically?
+testtimes <- st_extract(cropin, at = metdatasf[1, ], time_column = 'sampledate')
+testtimes
+# well, that's an NA, but it might actually BE an NA- there are lots of NAs in the temp data I think
+# I could try to read in buffers around the points and average, but that's
+# probably a pain. Let's see if there's enough data just going for it before
+# overthinking/doing it
+
+# SO, that'll work, but I'd have to loop 30k times
+# Are the sites all at the same lat/long?
+metdatasf # lat/long are gone
+metdata
+length(unique(metdata$samplepoint))
+length(unique(metdata$latitude))
+length(unique(metdata$longitude))
+table(metdata$samplepoint, metdata$latitude)
+
+# does this work?
+length(unique(metdatasf$geometry))
+# duh
+# So, 37 total different places. If I can do the extract at that scale and then deal with time, that'll be easy
+
+# Can I subset
+# Filter is killing me. But I *think* straight up logical seems to be fast
+metdatasf[1:10, ]$geometry == metdatasf$geometry[5]
+
+# singlegeoms <- unique(st_geometry(metdatasf)) # But this is a list and not geometries anymore
+## Rgh. 
+# metdatasf %>% group_by(geometry) %>% summarise_all(first)
+
+# Takes forever, but does give distinct geoms
+singlegeoms <- metdatasf %>% select(samplepoint) %>% distinct()
+
+
+# Try to filter- the dplyr is usually really slow, so might need to do something else- indexing?
+  # takes ~ 30 seconds. SO not insignificant
+system.time(onesite <- filter(metdatasf, geometry == singlegeoms$geometry[1]))
+
+# Not appreciably faster to do it with indexing, and then we'd need to do the
+# cutting, so stick with filter()
+# system.time(singleindex <- which(metdatasf$geometry == singlegeoms$geometry[1]))
+# that seems really short, but it's correct;
+table(metdatasf$samplepoint[which(metdatasf$samplepoint == metdatasf$samplepoint[1])])
+
+# NOW, back up to the extraction
+onecrop <- st_crop(soilTstars, onesite)
+cropin <- st_as_stars(onecrop)
+# testextract <- st_extract(cropin, at = metdatasf[1, ])
+# testextract
+# this seems redundant at this point. can I just
+# testextract <- st_extract(soilTstars, at = metdatasf[1, ])
+# testextract
+# NOPE, extracting over the whole thing is a killer for some reason
+
+# Can I get that to work with the times automatically?
+testtimes <- st_extract(cropin, at = onesite, time_column = 'sampledate')
+testtimes
+# So, that worked, but now we've lost the rest of onesite
+# onewithtemp <- st_join(onesite, testtimes, join = st_equals)
+# uhhhhh. that is nrow*nrow because of the date issue
+onesite
+testtimes
+
+# maybe
+testflat <- st_drop_geometry(testtimes) %>% select(-time)
+testflat
+onewithtemp <- left_join(onesite, testflat, by = 'sampledate')
+
+# ok, package that up into a loop.
+
+# Try to write the actual loop --------------------------------------------
+
+# Takes forever, but does give distinct geoms
+singlegeoms <- metdatasf %>% select(samplepoint) %>% distinct()
+
+# make sure that didn't get some with the same geom and differen names
+sum(duplicated(unlist(singlegeoms$geometry)))
+
+# FOR LOOP STARTS HERE
+
+# Filter to a single site- takes a while
+system.time(onesite <- filter(metdatasf, geometry == singlegeoms$geometry[1]))
+# Crop raster to that site and de-proxy (I thought this is what st_extract DID,
+# but it doesn't work directly)
+onecrop <- st_crop(soilTstars, onesite)
+cropin <- st_as_stars(onecrop)
+
+# NOW, extract the values for each time and strip off the geometry so the joining works
+testtimes <- st_extract(cropin, at = onesite, time_column = 'sampledate') %>%
+  st_drop_geometry(testtimes) %>%
+  select(-time)
+# Join back to the original sf
+onewithtemp <- left_join(onesite, testflat, by = 'sampledate')
+onewithtemp
