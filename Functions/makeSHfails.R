@@ -52,10 +52,25 @@ makeSHfails <- function(outerDir, varName, summaryFuns,
     finishers <- catchNames[!(catchNames %in% names(misslist))]
     cat(paste('These catchments finished:', 
               stringr::str_flatten(finishers, collapse = '\n'), sep = '\n'))
-    print(" ")
-    cat(paste('These catchments will run again:', 
-              stringr::str_flatten(names(misslist), collapse = '\n'), sep = '\n'))
-    print(" ")
+    cat("\n")
+    
+    # If we're done, just wrap up here
+    if (length(misslist) == 0) {
+      print("Finished all catchments")
+      if ('length' %in% lengthOrChunk) {
+        writeLines(c("All Catchments Finished", "\n"), con = paste0('missing', varName, '.sh'))
+      }
+      if ('chunk' %in% lengthOrChunk) {
+        writeLines(c("All Catchments Finished", "\n"), con = paste0('missing', varName, 'Chunk.sh'))
+      }
+      
+      return()
+      
+    } else {
+      cat(paste('These catchments will run again:', 
+                stringr::str_flatten(names(misslist), collapse = '\n'), sep = '\n'))
+    }
+    cat("\n")
     
     
     # NOW, do I just run this, or is there a way to create the shell script?
@@ -119,6 +134,7 @@ makeSHfails <- function(outerDir, varName, summaryFuns,
       
     }
   }
+  return()
 }
 
   
