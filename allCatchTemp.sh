@@ -7,85 +7,85 @@
 # Would be reasonably easy to loop instead, but do that later
 # and this sets us up to more easily handle uneven missings
 
-# echo 'start Avoca'
-# echo 'start' $thiscatch
-# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
-# sleep 2
+echo 'start Avoca'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
+sleep 2
 
-# thiscatch='BarwonDarling'
-# echo 'start' $thiscatch
-# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
-# sleep 2
+thiscatch='BarwonDarling'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
+sleep 2
 
-# thiscatch='BorderRivers'
-# echo 'start' $thiscatch
-# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
-# sleep 2
+thiscatch='BorderRivers'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
+sleep 2
 
-# thiscatch='Broken'
-# echo 'start' $thiscatch
-# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
-# sleep 2
+thiscatch='Broken'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
+sleep 2
 
-# thiscatch='Campaspe'
-# echo 'start' $thiscatch
-# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
-# sleep 2
+thiscatch='Campaspe'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
+sleep 2
 
-# thiscatch='Castlereagh'
-# echo 'start' $thiscatch
-# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
-# sleep 2
+thiscatch='Castlereagh'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
+sleep 2
 
-# thiscatch='CentralMurray'
-# echo 'start' $thiscatch
-# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
-# sleep 2
+thiscatch='CentralMurray'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
+sleep 2
 
-# thiscatch='CondamineBalonne'
-# echo 'start' $thiscatch
-# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
-# sleep 2
+thiscatch='CondamineBalonne'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
+sleep 2
 
-# thiscatch='EdwardWakool'
-# echo 'start' $thiscatch
-# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
-# sleep 2
+thiscatch='EdwardWakool'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
+sleep 2
 
-# thiscatch='Goulburn'
-# echo 'start' $thiscatch
-# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
-# sleep 2
+thiscatch='Goulburn'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
+sleep 2
 
-# thiscatch='Gwydir'
-# echo 'start' $thiscatch
-# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
-# sleep 2
+thiscatch='Gwydir'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
+sleep 2
 
-# thiscatch='Kiewa'
-# echo 'start' $thiscatch
-# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
-# sleep 2
+thiscatch='Kiewa'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
+sleep 2
 
-# thiscatch='Lachlan'
-# echo 'start' $thiscatch
-# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
-# sleep 2
+thiscatch='Lachlan'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
+sleep 2
 
-# thiscatch='Loddon'
-# echo 'start' $thiscatch
-# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
-# sleep 2
+thiscatch='Loddon'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
+sleep 2
 
-# thiscatch='LowerDarling'
-# echo 'start' $thiscatch
-# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
-# sleep 2
+thiscatch='LowerDarling'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
+sleep 2
 
-# thiscatch='LowerMurray'
-# echo 'start' $thiscatch
-# sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
-# sleep 2
+thiscatch='LowerMurray'
+echo 'start' $thiscatch
+sbatch -J $thiscatch --array=1-100 allTempSLURM.sh $thiscatch
+sleep 2
 
 thiscatch='Macquarie'
 echo 'start' $thiscatch
