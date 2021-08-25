@@ -19,6 +19,7 @@ plan(multisession)
 # Set up directory --------------------------------------------------------
 
 scriptOut <- file.path(datOut, 'TempAndProduction')
+if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
 
 # Read in all the data ----------------------------------------------------
 
@@ -111,5 +112,7 @@ joinedTempProd <- foreach(i = 1:nrow(singlegeoms),
 loopend <- proc.time()
 looptime <- loopend-loopstart
 looptime #570 seconds locally with multisession- almost worth HPC
+
+# loses 10 lines because they have NA lat/long (see tempProdResp)
 
 save(joinedTempProd, file = file.path(scriptOut, 'joinedTempProd.rdata'))
