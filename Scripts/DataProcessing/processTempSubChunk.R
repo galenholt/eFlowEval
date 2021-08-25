@@ -19,15 +19,17 @@ library(doFuture)
 
 # Set up parallel backend
 registerDoFuture()
-# plan(multicore) # multicore on HPC
+plan(multicore) # multicore on HPC
 
 # # For local testing
-plan(multisession)
-summaryFun <- 'weightedMean'
+# plan(multisession)
+# summaryFun <- 'weightedMean'
 # args <- c('blah', 'b', 'c', 'g', '3', 't', 'a', '3', 'Warrego', '8', '6', '8')
 # args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '9', 'Warrego', '8', '6', '10')
 # Does it break with one level of chunking?
-args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '100', 'Avoca')
+# args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '100', 'Avoca')
+
+# args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '96', 'Broken')
 
 # ## The outerchunks need to start outer and go in, ie '8', '6' is the 6th subchunk of the 8th main chunk
 # Need to handle the edge case wehre there aren't enough polys to do the array we're asking for
