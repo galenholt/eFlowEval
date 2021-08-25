@@ -12,7 +12,29 @@
 # Need to handle the edge case wehre there aren't enough polys to do the array we're asking for
 
 makeSHfails <- function(outerDir, varName, summaryFuns, 
-                        nchunks = 100, lengthOrChunk, runImmediate = FALSE) {
+                        nchunks = 100, lengthOrChunk, runImmediate = FALSE,
+                        forceAllCatchments = FALSE) {
+  # Outerdir is the outer directory, containing all summaryFun directories and chunking
+  # varName is just a unique name to avoid overwriting other variables
+  # lengthOrChunk can be one of 'short', 'long', or 'chunk'
+  # runImmediate creates the file and fires off the bash call
+  # forceALLCatchments just puts in a list of catchments, even if they haven't been run.
+    # If TRUE, it uses all catchments in MDB. 
+      # particularly useful to auto-generate the bash script for the first run.
+    # If FALSE, it uses catchments that have been run previously
+    # If a character vector, will force that set of catchments
+    
+  
+  if (is.logical(forceAllCatchments)) {
+    allcatch <- c("Avoca", "BarwonDarling", "BorderRivers", "Broken", "Campaspe", 
+                  "Castlereagh", "CentralMurray", "CondamineBalonne", 
+                  "EdwardWakool", "Goulburn", "Gwydir", "Kiewa", "Lachlan", 
+                  "Loddon", "LowerDarling", "LowerMurray", "Macquarie", "MittaMitta", 
+                  "Murrumbidgee", "Namoi", "Ovens", "Paroo", "UpperMurray", "Warrego", "Wimmera")
+  } else {
+    allcatch <- forceAllCatchments
+  }
+
   
   # Make a sub-directory for the subchunk
   # Come back to this for iteration- we actually want one less level to check the missings
@@ -22,7 +44,20 @@ makeSHfails <- function(outerDir, varName, summaryFuns,
   # Loop over summary functions
   for (su in 1:length(summaryFuns)) {
     summaryFun <- summaryFuns[su]
+    
     scriptOut <- file.path(outerDir, summaryFun, 'chunked')
+    
+    # If we want to ensure all catchments, create those directories
+    if (forceAllCatchments) {
+      scriptOut <- file.path(outerDir, summaryFun, 'chunked')
+     
+      for (d in 1:length(allcatch)){
+        if (!dir.exists(file.path(scriptOut, allcatch[d]))) {
+          dir.create(file.path(scriptOut, allcatch[d]), recursive = TRUE)
+          }
+      }
+      
+    }
     
     # get the names of the catchments
     # Could pull this out of the filenames, but this is easier
@@ -78,8 +113,36 @@ makeSHfails <- function(outerDir, varName, summaryFuns,
     headline <- "#!/bin/bash"
     head2 <- "\n"
     
+    
+    # Short runs
+    if ('short' %in% lengthOrChunk) {
+      # For each catchment, I need to set up the chunk in a list
+      lineslist <- foreach(cn = 1:length(missnames), .inorder = TRUE, .combine = c) %do% {
+        l1 <- stringr::str_c("thiscatch='", missnames[cn],"'")
+        l2 <- stringr::str_c("echo 'start' $thiscatch")
+        misschars <- str_flatten(misslist[[cn]], collapse = ",")
+        l3 <- stringr::str_c("sbatch -J $thiscatch --array=", misschars, " all", varName, "SLURM.sh $thiscatch")
+        l4 <- "sleep 2"
+        l5 <- "\n"
+        thislist <- list(l1, l2, l3, l4, l5)
+      }
+      
+      filechars <- c(headline, head2, unlist(lineslist))
+      
+      # Hpc says file isn't an option
+      # readr::write_lines(filechars, file = 'missingTemps.sh')
+      
+      writeLines(filechars, con = paste0('missing', varName, '.sh'))
+      
+      # Do I want to have R actually run this too?
+      if (runImmediate) {
+        system2(command = 'bash', args = paste0('missing', varName, '.sh'))
+      }
+      
+    } 
+    
     # Just run longer
-    if ('length' %in% lengthOrChunk) {
+    if ('long' %in% lengthOrChunk) {
       # For each catchment, I need to set up the chunk in a list
       lineslist <- foreach(cn = 1:length(missnames), .inorder = TRUE, .combine = c) %do% {
         l1 <- stringr::str_c("thiscatch='", missnames[cn],"'")
@@ -96,11 +159,11 @@ makeSHfails <- function(outerDir, varName, summaryFuns,
       # Hpc says file isn't an option
       # readr::write_lines(filechars, file = 'missingTemps.sh')
       
-      writeLines(filechars, con = paste0('missing', varName, '.sh'))
+      writeLines(filechars, con = paste0('missing', varName, 'long.sh'))
       
       # Do I want to have R actually run this too?
       if (runImmediate) {
-        system2(command = 'bash', args = paste0('missing', varName, '.sh'))
+        system2(command = 'bash', args = paste0('missing', varName, 'long.sh'))
       }
       
     } 

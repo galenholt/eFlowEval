@@ -25,8 +25,9 @@ plan(sequential) # no need to parallelize, I don't think
 # Find failures and make new sh script -------------------------------------------------------------
 
 makeSHfails(outerDir = file.path(datOut, 'Tempprocessed'),
-                        summaryFuns = 'weightedMean',
-                        varName = 'Temp',
-                        nchunks = 100,
-                        lengthOrChunk = c('length', 'chunk'),
-                        runImmediate = FALSE)
+            summaryFuns = 'weightedMean',
+            varName = 'Temp',
+            nchunks = 100,
+            lengthOrChunk = c('short', 'long', 'chunk'),
+            runImmediate = FALSE,
+            forceAllCatchments = TRUE)
