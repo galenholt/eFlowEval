@@ -50,6 +50,23 @@ concatANAEchunks <- function(outerDir, summaryFuns) {
         outl <- list(starpart, indexpart)
       } # end foreach
       
+      # Check for NULL entries- typically as the result of feeding beyond the
+      # end of the anaepolys and expected. Just cut those out, but still warn.
+        # Logical indexing into unnamed lists is a pain. I guess loop it
+      nullindices <- foreach(l = 1:length(dpList), .combine = c) %do% {
+        if (is.null(dpList[[l]][[1]]) & is.null(dpList[[l]][[2]])) {
+          l
+        } else {
+          NULL
+        }
+      }
+      
+      if (!is.null(nullindices)) {
+        dpList[[nullindices]] <- NULL
+      }
+      
+      
+      
       # Then, unpack the lists also using foreach
       depthAns <- foreach(l = 1:length(dpList),
                           .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars

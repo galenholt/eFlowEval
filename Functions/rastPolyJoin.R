@@ -21,6 +21,16 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
   # that are calculated internal to this function, so this assumption is a
   # workaround
   # maxPixels and pixelsize are used to bring the raster in in chunks if it's too big
+
+  # test <- 1
+    # Handle the case where we feed it a null dataframe (or, more generally, where
+  # the grouper doesn't exist)
+    # The [1] index is because it returns FALSE for the geometry, and we only
+    # want to check grouper
+  if (is.na(polysf[ ,grouper])[1] | nrow(polysf) == 0) {
+    warning("NA or NULL polygon df, returning NULL joined list")
+    return(list(avgPRStars = NULL, avgPRindex = NULL))
+  }
   
   # turn raster into polygon sf object, time as columns
     # This can take a really long time

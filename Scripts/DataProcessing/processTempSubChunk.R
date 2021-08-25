@@ -19,15 +19,15 @@ library(doFuture)
 
 # Set up parallel backend
 registerDoFuture()
-plan(multicore) # multicore on HPC
+# plan(multicore) # multicore on HPC
 
 # # For local testing
-# plan(multisession)
-# summaryFun <- 'weightedMean'
+plan(multisession)
+summaryFun <- 'weightedMean'
 # args <- c('blah', 'b', 'c', 'g', '3', 't', 'a', '3', 'Warrego', '8', '6', '8')
 # args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '9', 'Warrego', '8', '6', '10')
 # Does it break with one level of chunking?
-# args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '9', 'Warrego')
+args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '100', 'Avoca')
 
 # ## The outerchunks need to start outer and go in, ie '8', '6' is the 6th subchunk of the 8th main chunk
 # Need to handle the edge case wehre there aren't enough polys to do the array we're asking for
@@ -162,6 +162,11 @@ if (!onelayer) { # handle the case where we're not subchunking
         outertop <- nrow(anaePolys) # make sure we finish
       } else {
         outertop <- prevoutertop + outersize
+        # Can be too high even for chunks before the last one in weird edge
+        # cases, so handle that
+        if (outertop > nrow(anaePolys)) {
+          outertop <- nrow(anaePolys) 
+        }
       }
       
       # cut to this chunk of polygons
@@ -196,6 +201,30 @@ if (nchunks >= nrow(anaePolys)) {
     top <- nrow(anaePolys) # make sure we finish
   } else {
     top <- prevtop + chunksize
+    # Can be too high even for chunks before the last one in weird edge cases,
+    # so handle that
+    if (top > nrow(anaePolys)) {
+      top <- nrow(anaePolys) 
+    }
+  }
+  
+  # When running many chunks, the ceiling() call can make the chunks large
+  # enough to finish in chunks before the end, and then grab NAs and the
+  # endpoint. Need to bypass that, but I still want the script that checks what
+  # has finished to work, as well as the script to concatenate, so need to
+  # output a dummy- check those scripts,so get the file type and naming
+  # convention right- ie if I export a text does it get picked up error checking
+  # but not concat? Or can I spit out an sf with no rows?
+  # They both expect a .rdata. So, can I return an empty one? the catch is
+  # they expect an index version too, and will try to concat. So I actually
+  # need to build a dummy dpList
+  # Well, I could also put a flag in their name to keep them out of
+  # catchfiles in concat. Not sure what is safest
+  # Probably the dpList with no-row entries, but let's see what that does
+  # Does not work to just cut to 0 row dataframe- rastpolyjoin fails
+  if (bottom > nrow(anaePolys)) {
+    bottom <- 0
+    top <- 0
   }
   
   # cut to this chunk of polygons
@@ -212,7 +241,9 @@ anaePolys <- st_transform(anaePolys, starCRS)
 
 # Do the aggregation ------------------------------------------------------
 
-
+# the below gets weird if I run with nrow(anaePolys) == 0. tried to fix in
+# rastPolyJoin, and did, but the list unpacking is still a pain. so, use a
+# workaround
 # dpList <- foreach(s = 8:12) %dopar% {
 dpList <- foreach(s = 1:nrow(anaePolys)) %dopar% {
   thiscrop <- st_crop(soilTstars, anaePolys[s,], as_points = FALSE)
@@ -223,18 +254,28 @@ dpList <- foreach(s = 1:nrow(anaePolys)) %dopar% {
                             pixelsize = pixarea)
 } # end foreach
 
-# Then, unpack the lists also using foreach
-tempAns <- foreach(l = 1:length(dpList),
-                    .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
-                    .multicombine=TRUE) %dopar% {
-                      dpList[[l]][[1]]
-                    }
+# the below gets weird if I run with nrow(anaePolys) == 0. tried to fix in
+# rastPolyJoin, and did, but the list unpacking is still annoying (the combine
+# functions turn NULLs into things). so, use a workaround
 
-tempIndex <- foreach(l = 1:length(dpList),
-                      .combine=bind_rows,
-                      .multicombine=TRUE) %dopar% {
-                        dpList[[l]][[2]]
-                      }
+if (nrow(anaePolys) == 0) {
+  tempAns <- NULL
+  tempIndex <- NULL
+} else {
+  # Then, unpack the lists also using foreach
+  tempAns <- foreach(l = 1:length(dpList),
+                     .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
+                     .multicombine=TRUE) %dopar% {
+                       dpList[[l]][[1]]
+                     }
+  
+  tempIndex <- foreach(l = 1:length(dpList),
+                       .combine=bind_rows,
+                       .multicombine=TRUE) %dopar% {
+                         dpList[[l]][[2]]
+                       }
+}
+
 
 # If we did this over all of ANAEbasinclim it'd be cleaner, but all the catchments would be mixed up
 # I could do something like matching UIDS to ValleyName, and then splitting the output up into separate folders
