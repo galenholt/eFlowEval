@@ -4,6 +4,7 @@
 
 # The hpc_wrapper tends to source this too, but if I do it here I don't have to
 # wrap the script to run locally. Sort out a cleaner way to do this
+preset <- proc.time()
 source('directorySet.R')
 options(error = traceback)
 scriptOut <- paste0(datOut, '/Inundationprocessed')
@@ -260,6 +261,10 @@ print('function written')
 # plan(cluster) 
 # print('plan started')
 print('about to bench')
+prebench <- proc.time()
+headertime <- prebench-preset
+print("Time taken to pre-bench:")
+print(headertime)
 benchcluster <- microbenchmark::microbenchmark("t2557a10" = { b <- timeinun(nanaes = 10)},
                                                  "t2557a100" = { b <- timeinun(nanaes = 100)},
                                                  # "t2557a1000" = { b <- timeinun(nanaes = 1000)},
