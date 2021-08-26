@@ -23,6 +23,9 @@ if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
 
 # Read in all the data ----------------------------------------------------
 
+# Catchments
+load(file.path(datOut, 'ANAEprocessed', 'ltimNoNorth.rdata'))
+
 ## Temp data
 # data location
 # Set up where the soil temp data is
@@ -81,14 +84,21 @@ metdatasf <- metdata %>%
 
 
 # Takes forever, but does give distinct geoms
-singlegeoms <- metdatasf %>% select(samplepoint) %>% distinct()
+singlegeoms <- metdatasf %>% select(samplepoint, program) %>% distinct() %>%
+  st_join(st_transform(ltimNoNorth, st_crs(metdatasf)))
+
+# As of now (hoping to correct the data), the GPS point for 1km upstream Wynburn Escape is off.
+# DO NOT TRUST OR USE THE MATCHED TEMPS FOR THIS SITE
+  # Leaving them IN here though, so if the data is updated we don't have to dig around in this code
 
 # FOR LOOP STARTS HERE
 loopstart <- proc.time()
 joinedTempProd <- foreach(i = 1:nrow(singlegeoms), 
                           .combine = bind_rows) %dopar% {
   # Filter to a single site- takes a while
-  onesite <- filter(metdatasf, geometry == singlegeoms$geometry[i])
+  onesite <- filter(metdatasf, geometry == singlegeoms$geometry[i]) %>% 
+    mutate(ValleyName = singlegeoms$ValleyName[i]) # add the valleyname
+  
   # Crop raster to that site and de-proxy (I thought this is what st_extract DID,
   # but it doesn't work directly)
   onecrop <- st_crop(soilTstars, onesite)
