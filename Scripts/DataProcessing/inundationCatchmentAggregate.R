@@ -42,7 +42,7 @@ for(sfun in 1:length(summaryFuns)) {
   
   # List the catchments
   catchfiles <- list.files(inunIn, pattern = '*.rdata')
-  catchNames <-str_remove(catchfiles, pattern = paste0('_', summaryFun, '.rdata'))
+  catchNames <- str_remove(catchfiles, pattern = paste0('_', summaryFun, '.rdata'))
   
   # Loop over each catchment, since that's how the files are structured for memory purposes
   # for (i in 1:length(catchNames)) {

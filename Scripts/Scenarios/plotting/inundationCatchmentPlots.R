@@ -43,6 +43,7 @@ anaeIn <- file.path(datOut, 'ANAEprocessed')
 scriptFigOut <- file.path('strictOut', 'inundation')
 scriptDatOut <- file.path(inunIn, 'basinConcat')
 
+# Created in inundationCatchmentAggregate
 load(file.path(scriptDatOut, paste0('inunCatchConcat_', summaryFun, '.rdata')))
 
 
