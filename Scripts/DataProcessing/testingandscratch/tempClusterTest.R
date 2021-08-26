@@ -228,28 +228,30 @@ registerDoFuture()
 print('available workers: ')
 print(availableWorkers())
 
-print('makeNodePSOCK.setup.strategy is ')
-print(parallelly:::getOption2("parallelly.makeNodePSOCK.setup_strategy", "parallel"))
+# Commenting out to try to just get the plan started
+# print('makeNodePSOCK.setup.strategy is ')
+# print(parallelly:::getOption2("parallelly.makeNodePSOCK.setup_strategy", "parallel"))
 
-print('trying to set up the cluster dry run')
-print(parallelly::makeClusterPSOCK(workers = availableWorkers(), dryrun = TRUE))
-
-
-print('now try the plan inside withCalling')
-write.to.log <- function(x) {
-  print(x) # Let's try this- it should just print directly?
-}
-withCallingHandlers(plan(cluster), error = function(e) { write.to.log(sys.calls()) })
-
-# This and the above both fail
-print('try to set up the cluster for real without setting plan()')
-print(parallelly::makeClusterPSOCK(workers = availableWorkers()))
+# print('trying to set up the cluster dry run')
+# print(parallelly::makeClusterPSOCK(workers = availableWorkers(), dryrun = TRUE))
 
 
+# print('now try the plan inside withCalling')
+# write.to.log <- function(x) {
+#   print(x) # Let's try this- it should just print directly?
+# }
+# withCallingHandlers(plan(cluster), error = function(e) { write.to.log(sys.calls()) })
 
-# print('now try the plan alone')
-# plan(cluster) # On windows
+# # This and the above both fail
 
+# print('try to set up the cluster for real without setting plan()')
+# print(parallelly::makeClusterPSOCK(workers = availableWorkers()))
+
+
+
+print('now try the plan alone')
+plan(cluster) 
+print('plan started')
 
 benchcluster <- microbenchmark::microbenchmark("t2557a10" = { b <- timeinun(nanaes = 10)},
                                                  "t2557a100" = { b <- timeinun(nanaes = 100)},
