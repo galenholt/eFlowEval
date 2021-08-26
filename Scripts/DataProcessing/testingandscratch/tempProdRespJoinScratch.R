@@ -269,3 +269,65 @@ testtimes <- st_extract(cropin, at = onesite, time_column = 'sampledate') %>%
 # Join back to the original sf
 onewithtemp <- left_join(onesite, testflat, by = 'sampledate')
 onewithtemp
+
+
+
+# Joining the basins ------------------------------------------------------
+
+# Start here, but read in header stuff
+# Read in data (generated in joinTempProduction) ----------------------------------------------------
+load(file.path(scriptOut, 'joinedTempProd.rdata'))
+
+
+# Add catchment names as covariates ---------------------------------------
+
+# Move this to joinTempProduction once sorted
+load(file.path(datOut, 'ANAEprocessed', 'ltimNoNorth.rdata'))
+
+# Now, need to stick the basin names on 
+ltimNoNorthT <- st_transform(ltimNoNorth, st_crs(joinedTempProd))
+joinTest <- joinedTempProd[1:10, ] %>% st_join(ltimNoNorthT)
+
+library(tmap)
+# Not sure how tmap works tho
+qtm(ltimNoNorth)
+qtm(joinTest)
+
+tmap_mode("view")
+tm_shape(ltimNoNorth) + tm_fill('ValleyName') +
+  tm_shape(joinTest) + tm_symbols('gpp')
+
+tmap_mode("plot")
+tm_shape(ltimNoNorth) + tm_fill('ValleyName') +
+  tm_shape(joinTest) + tm_symbols('gpp')
+
+tmap_mode("view")
+tm_shape(filter(ltimNoNorth, ValleyName %in% c('Loddon', 'Murrumbidgee'))) + tm_fill('ValleyName') +
+  tm_shape(joinTest) + tm_symbols('gpp')
+# That's NOWHERE NEAR Wynburn
+# https://www.google.com.au/maps/place/Wynburn+Regulators/@-34.9036856,143.8509931,8.25z/data=!4m5!3m4!1s0x6addea62d86bb085:0xbfc27c11c4fa24ad!8m2!3d-34.3780896!4d143.7829563
+
+# If I make metdata abov, I can get lat/long
+metdata$longitude[1]
+metdata$latitude[1]
+# THESE ARE THE COORDINATES OF SOME RANDOM STREET IN TRESCO, VIC
+# https://www.google.com.au/maps/place/35%C2%B030'17.3%22S+143%C2%B040'48.1%22E/@-35.5079698,143.6774893,15.25z/data=!4m5!3m4!1s0x0:0x0!8m2!3d-35.504799!4d143.680015
+# TWO HOURS BY CAR from Wynburn regulator
+# https://www.google.com.au/maps/dir/Wynburn+Regulators,+Balranald+NSW/-35.504799,143.680015/@-34.9083899,143.0572605,9z/data=!3m1!4b1!4m9!4m8!1m5!1m1!1s0x6addea62d86bb085:0xbfc27c11c4fa24ad!2m2!1d143.7829563!2d-34.3780896!1m0!3e0
+joinedTempProd[1,]
+joinedTempProd$samplepoint[1]
+
+
+# I guess let's check them all that they at least are in the right catchment. Ugh
+
+# Takes forever, but does give distinct geoms
+singlegeomBig <- metdatasf %>% select(samplepoint, description, program) %>% distinct()
+joinSites <- singlegeomBig %>% st_join(ltimNoNorthT)
+joinSites
+crossref <- joinSites %>% select(program, ValleyName)
+View(crossref)
+
+# So, it's just that one RRRGHHHG
+  # I can't trust the values for temps, so going to have to throw that out.
+# swapping the 35 for 34 in the latitude puts it right on the bidgee, but ~20km
+# DOWNSTREAM of Wynburn Regulator (straight line distance)
