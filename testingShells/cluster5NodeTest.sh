@@ -24,7 +24,7 @@ module load R/4.0.2
 
 # Rscript hpc_wrap.R "Scripts/DataProcessing/testingandscratch/tempClusterTest.R"
 
-Rscript hpc_wrap.R "Scripts/testingShells/minimalTest.R"
+Rscript hpc_wrap.R "testingShells/minimalTest.R"
 
 # Copy to ruby datastore. copying to the {lw-mer} on bowen is at /datasets/work/lw-mer/work/galen_holt, but need to sort this out a bit better
 # cp -rp testout.rdata /datastore/hol436/HPC_testing
