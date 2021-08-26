@@ -19,7 +19,10 @@ library(sf)
 library(stars)
 library(foreach)
 library(doFuture)
-
+registerDoFuture
+print('plan at the top')
+plan(cluster) 
+print('plan started')
 source('Functions/rastPolyJoin.R')
 
 # Read in all the data ----------------------------------------------------
@@ -147,7 +150,7 @@ pixarea <- temppath %>% # filenames
 # Not too terrible, really. # For reference, was 21 seconds for inundation (but different set of anaes)
 
 # Benchmark with more anaes on the cluster --------------------------------
-
+print('write function')
 # Make a simpler function- don't bother with times
 timeinun <- function(nanaes, FUN = weighted.mean) {
   # Fun allows passing function for simultaneously testing that
@@ -197,6 +200,7 @@ timeinun <- function(nanaes, FUN = weighted.mean) {
   return(list(avgPRStars = depthAns, avgPRindex = depthIndex))
 }
 
+print('function written')
 # I think split these up into separate runs
 # multisession
 # registerDoFuture()
@@ -224,12 +228,12 @@ timeinun <- function(nanaes, FUN = weighted.mean) {
 # print(benchmulticore)
 # 
 # Cluster
-print('sessionInfo')
-print(sessionInfo())
-
-registerDoFuture()
-print('available workers: ')
-print(availableWorkers())
+# print('sessionInfo')
+# print(sessionInfo())
+# 
+# registerDoFuture()
+# print('available workers: ')
+# print(availableWorkers())
 
 # Commenting out to try to just get the plan started
 # print('makeNodePSOCK.setup.strategy is ')
@@ -252,10 +256,10 @@ print(availableWorkers())
 
 
 
-print('now try the plan alone')
-plan(cluster) 
-print('plan started')
-
+# print('now try the plan alone')
+# plan(cluster) 
+# print('plan started')
+print('about to bench')
 benchcluster <- microbenchmark::microbenchmark("t2557a10" = { b <- timeinun(nanaes = 10)},
                                                  "t2557a100" = { b <- timeinun(nanaes = 100)},
                                                  # "t2557a1000" = { b <- timeinun(nanaes = 1000)},
