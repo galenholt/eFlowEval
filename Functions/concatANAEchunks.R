@@ -62,7 +62,11 @@ concatANAEchunks <- function(outerDir, summaryFuns) {
       }
       
       if (!is.null(nullindices)) {
-        dpList[[nullindices]] <- NULL
+        # For some reason this fails when vectorized (ie no loop, just dpList[[nullindices]] <- NULL. Need to go from the end to
+        # the beginning or the indexed numbers shift
+        for (nu in length(nullindices):1) {
+          dpList[[nullindices[nu]]] <- NULL
+        }
       }
       
       
