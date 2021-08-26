@@ -170,7 +170,8 @@ timeinun <- function(nanaes, FUN = weighted.mean) {
   
   
   # Since we want to combine the two list bits differently, just return the list and let foreach make a list of lists for now
-  dpList <- foreach(s = 1:nrow(cutwet)) %dopar% {
+  dpList <- foreach(s = 1:nrow(cutwet), 
+                    .packages = c("doFuture", "sf", "stars", "tidyverse")) %dopar% {
     thiscrop <- st_crop(soilTstars, cutwet[s,], as_points = FALSE)
     thisdepth <- rastPolyJoin(polysf = cutwet[s,], rastst = thiscrop,
                               grouper = 'UID', maintainPolys = TRUE,
@@ -180,12 +181,14 @@ timeinun <- function(nanaes, FUN = weighted.mean) {
   
   # Then, unpack the lists
   depthAns <- foreach(l = 1:length(dpList),
+                      .packages = c("doFuture", "tidyverse"),
                       .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
                       .multicombine=TRUE) %dopar% {
                         dpList[[l]][[1]]
                       }
   
   depthIndex <- foreach(l = 1:length(dpList),
+                        .packages = c("doFuture", "tidyverse"),
                         .combine=bind_rows,
                         .multicombine=TRUE) %dopar% {
                           dpList[[l]][[2]]
