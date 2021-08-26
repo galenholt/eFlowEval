@@ -196,6 +196,10 @@ print(paste0('finished polygon split, time is ', Sys.time(), ', run is ', dataWh
 if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
 
 save(ANAEbasinclim, ltimNoNorth, file = file.path(scriptOut, 'ANAEbasinclim.rdata'))
+save(ltimNoNorth, file = file.path(scriptOut, 'ltimNoNorth.rdata'))
+# Save the ltimNoNorth data alone, since we need it lots of places and might not always want to pull in the ANAEs
+
+
 print(paste0('saved the full data, time is ', Sys.time(), ', run is ', dataWhere))
 
 # Let's spit these out for ALL the basins, not just lachlan
