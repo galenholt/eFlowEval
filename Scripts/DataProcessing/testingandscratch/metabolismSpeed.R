@@ -8,6 +8,7 @@ source('directorySet.R')
 # library so we don't have to deal with all the library crap
 library(here)
 library(tidyverse)
+library(lubridate)
 library(sf)
 library(stars)
 library(foreach)
@@ -112,3 +113,9 @@ benchChunk$mean
 #                         top <- breaks[l+1]
 #                         chunkpred(bottom, top) # NEED TO MODIFY CHUNKPRED
 #                       }
+
+#this is going to then need to be looped over catchments. I'd like to
+#auto-generate the shell scripts per catchment, I think. Unless I can just print
+#the output directly and run them all together?
+
+# If it's reasonably fast, I COULD do that.
