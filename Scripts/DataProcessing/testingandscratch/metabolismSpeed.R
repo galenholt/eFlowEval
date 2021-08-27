@@ -94,11 +94,21 @@ benchChunk <- microbenchmark::microbenchmark("a2" = { b <- chunkpred(bottom = 1,
                                              "a10" = { b <- chunkpred(bottom = 1, top = 10)},
                                              "a100" = { b <- chunkpred(bottom = 1, top = 100)},
                                              "a200" = { b <- chunkpred(bottom = 1, top = 200)},
-                                           times = 1)
+                                             "a1000" = { b <- chunkpred(bottom = 1, top = 1000)},
+                                           times = 1, unit = 's')
 # benchS_S
 print('chunk speeds')
 print(benchChunk)
-benchChunk$mean
+# benchChunk$mean
+
+# on HPC, 2 was
+245/2
+# 10 
+1526/10
+# 100
+15273/100
+# 200
+29206/200
 
 # # step 2: modify the function to allow a bottom and top, then with the optimal
 # # chunksize, run and c() together as in the subchunk scripts
