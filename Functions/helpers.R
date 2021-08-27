@@ -110,3 +110,102 @@ tempaggregate <- function(starObj, by_t, FUN, na.rm = TRUE) {
   return(aggObj)
   
 }
+
+
+# Time parsing functions --------------------------------------------------
+# these are fairly specific, but I use them for regressions and predictions, so
+# put them here so if anything changes they cascade
+
+# Function to get the water year that a date is in
+getWaterYear <- function(input.date) {
+  wateryear <- ifelse((month(input.date) >= 7), year(input.date),
+                      year(input.date-dyears()))
+  return(wateryear)
+}
+
+# Assign 'seasons'- I dont like this one very much, but I guess look at it
+# From https://stackoverflow.com/questions/36502140/determine-season-from-date-using-lubridate-in-r
+# Modified for southern hemisphere
+getSeason <- function(input.date){
+  numeric.date <- 100*month(input.date)+day(input.date)
+  ## input Seasons upper limits in the form MMDD in the "break =" option:
+  cuts <- base::cut(numeric.date, breaks = c(0,319,0620,0921,1220,1231)) 
+  # rename the resulting groups (could've been done within cut(...levels=) if "Winter" wasn't double
+  levels(cuts) <- c("Summer","Autumn","Winter","Spring","Summer")
+  return(cuts)
+}
+
+# Get the bimonthly group (this is specific to the inundation layer)
+getBimonth <- function(input.date) {
+  bimonth <- case_when(
+    month(input.date) %in% c(1, 2) ~ 1, # Maps to 03-01
+    month(input.date) %in% c(3, 4) ~ 2, # Map to 05-01
+    month(input.date) %in% c(5, 6) ~ 3, # Map to 07-01
+    month(input.date) %in% c(7, 8) ~ 4, # Map to 09-01
+    month(input.date) %in% c(9, 10) ~ 5, # Map to 11-01  
+    month(input.date) %in% c(11, 12) ~ 6, # Maps to Jan 01 because this is the preceding
+  )
+  return(bimonth)
+}
+
+# Get the number of days away from water year
+daysfromWY <- function(input.date) {
+  daysWY <- abs(yday(input.date)-
+                  yday(dmy(paste0('0107', as.character(year(input.date)))))) # get the day of the year that is July 1
+}
+
+
+
+# Modeling and prediction -------------------------------------------------
+
+# A function to return NA when trying to predict new factor levels for fixed effects
+checklevels <- function(newdata, mod) {
+  # Get the factor levels
+  faclevs <- model.frame(mod) %>% select_if(is.factor) %>% 
+    map(unique)
+  # and the ones that are fixed factors (not random effects)
+  fixedvars <- attributes(attributes(model.frame(mod))$terms)$varnames.fixed
+  # throw out any potential random effects
+  faclevs[!(names(faclevs) %in% fixedvars)] <- NULL
+  
+  # get the levels available in the data
+  datalevs <- newdata %>% 
+    st_drop_geometry() %>% # only relevant if sf
+    select(any_of(names(faclevs))) %>% 
+    map(unique)
+  
+  # if no factors are needed, just short-circuit
+  if (length(faclevs) == 0 & length(datalevs) == 0) {
+    return(TRUE)
+  }
+  
+  # function to check if they are in
+  checkin <- function(x,y) {
+    tf <- (x %in% y)
+  }
+  
+  # use map-reduce to ask if all levels are available for all factors across
+  # what might be an uneven list.
+  facsinmodel <- map2(datalevs, faclevs, checkin) %>% reduce(all)
+  return(facsinmodel)
+}
+
+# a new function to allow prediction over new levels of RANDOM effects
+# add_predictions is pretty slick, but seems to also not be very full-featured.
+# can I write my own?
+add_preds <- function(newdata, mod, predname = NULL) {
+  if (is.null(predname)) {
+    predname <- deparse(substitute(mod))
+  }
+  
+  if (!checklevels(newdata, mod)) {
+    predf <- mutate(newdata, tempname = NA)
+  } else {
+    preds <- predict(mod, newdata = newdata, allow.new.levels = TRUE)
+    predf <- bind_cols(newdata, tempname = preds)
+  }
+  
+  names(predf)[which(names(predf) == 'tempname')] <- predname # avoiding rlang to sort out the name programatically
+  return(predf)
+}
+

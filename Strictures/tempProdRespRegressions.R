@@ -206,17 +206,7 @@ tempDOY # + geom_smooth(method = 'lm')
 # Let's try making an abs(distance from July 1 start of water year) variable.
 # It'll still be sinusoid, but close enough to linear for our purposes
 
-# And assign 'seasons'- I dont like this one very much, but I guess look at it
-# From https://stackoverflow.com/questions/36502140/determine-season-from-date-using-lubridate-in-r
-# Modified for southern hemisphere
-getSeason <- function(input.date){
-  numeric.date <- 100*month(input.date)+day(input.date)
-  ## input Seasons upper limits in the form MMDD in the "break =" option:
-  cuts <- base::cut(numeric.date, breaks = c(0,319,0620,0921,1220,1231)) 
-  # rename the resulting groups (could've been done within cut(...levels=) if "Winter" wasn't double
-  levels(cuts) <- c("Summer","Autumn","Winter","Spring","Summer")
-  return(cuts)
-}
+# FUNCTIONS USED IN THIS SECTION MOVED TO HELPERS.R
 
 # Ah, but the months ARE quanitized, at least with hydrology. But is it always the same two months?
 # Created in inundationCatchmentAggregate
@@ -261,25 +251,13 @@ exd2 <- dmy('07052015')
 # then the wateryear is the previous
 year(exd2-dyears()) # the construction here is funny, but works
 
-# Make that a function to save space
-getWaterYear <- function(input.date) {
-  wateryear <- ifelse((month(input.date) >= 7), year(input.date),
-                      year(input.date-dyears()))
-  return(wateryear)
-}
+
 
 joinedTempPasses <- joinedTempPasses %>%
   # will be off by 1 for leap years, don't care
   mutate(daysAwayFromWaterYear = abs(yday(sampledate)-yday(dmy('01072019')))) %>%
   mutate(season = getSeason(sampledate)) %>%
-  mutate(inunBimonthGroup = case_when(
-    month(sampledate) %in% c(1, 2) ~ 1, # Maps to 03-01
-    month(sampledate) %in% c(3, 4) ~ 2, # Map to 05-01
-    month(sampledate) %in% c(5, 6) ~ 3, # Map to 07-01
-    month(sampledate) %in% c(7, 8) ~ 4, # Map to 09-01
-    month(sampledate) %in% c(9, 10) ~ 5, # Map to 11-01  
-    month(sampledate) %in% c(11, 12) ~ 6, # Maps to Jan 01 because this is the preceding
-  ),
+  mutate(inunBimonthGroup = getBimonth(sampledate),
   bimonthFactor = as.factor(inunBimonthGroup)) %>%
   mutate(wateryear = getWaterYear(sampledate))
 
@@ -350,14 +328,14 @@ jtp <- filter(joinedTempPasses, gpp > 0 & !is.na(tempC))
   # subtest: should I use lme4 or TMB
 tempdaysvalleyRwgpp <- lme4::lmer(logGPP ~ tempC + daysAwayFromWaterYear + ValleyName + (1|wateryear),
            data = jtp) # I think I don't need any fancy families or anything
-tempdaysvalleyRwgppTMB <- glmmTMB::glmmTMB(logGPP ~ tempC + daysAwayFromWaterYear + ValleyName + (1|wateryear),
-                                data = jtp) # I think I don't need any fancy families or anything
+# tempdaysvalleyRwgppTMB <- glmmTMB::glmmTMB(logGPP ~ tempC + daysAwayFromWaterYear + ValleyName + (1|wateryear),
+#                                 data = jtp) # I think I don't need any fancy families or anything
 
 # TMB much slower, but gives p values, but not single-value anovas
 summary(tempdaysvalleyRwgpp)
-summary(tempdaysvalleyRwgppTMB)
+# summary(tempdaysvalleyRwgppTMB)
 AIC(tempdaysvalleyRwgpp)
-AIC(tempdaysvalleyRwgppTMB)
+# AIC(tempdaysvalleyRwgppTMB)
 anova(tempdaysvalleyRwgpp)
 # anova(tempdaysvalleyRwgppTMB)
 # 
