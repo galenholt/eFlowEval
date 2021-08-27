@@ -1,6 +1,7 @@
 # Lippia output summary and figures
 
-yearsummary <- function(strictList, whichSave = NULL, subdir = NULL, outsuffix, datebreaks) {
+yearsummary <- function(strictList, whichSave = NULL, subdir = NULL, 
+                        outsuffix, datebreaks, FUN = propor) {
 
 # Summarise over year -----------------------------------------------------
   # TODO: More flexible time summaries
@@ -38,7 +39,7 @@ yearsummary <- function(strictList, whichSave = NULL, subdir = NULL, outsuffix, 
   
   yrlist <- list()
   for (y in noANAE) {
-    yrlist[[y]] <- tempaggregate(strictList[[y]], by = by_t, FUN = propor, na.rm = TRUE)
+    yrlist[[y]] <- tempaggregate(strictList[[y]], by = by_t, FUN = FUN, na.rm = TRUE)
     # Would be nice if temaggregate could do the rename internally dependent on FUN
     names(yrlist[[y]]) <- 'propDaysPassed'
     
