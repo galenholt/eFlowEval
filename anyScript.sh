@@ -3,6 +3,11 @@
 # # Working on setting up for Pearcey
 # # Each node has 10 cores. 325 nodes have 128GB memory and 500GB disk, 16 have 512GB mem and 100GB disk
 
+# # Trying to set this up so it can run arbitrary scripts as arguments.
+# # e.g. sbatch -J 'jobname' anyScript.sh "Scripts/DataProcessing/testingandscratch/metabolismSpeed.R"
+
+# # wondering if it makes sense to make myself declare a time
+# # Would be done with -t 1:00:00 ( not sure if quotes). But then would need to comment out the setting below
 # # See OneNote 'Basic HPC workflow to build on' from 9 Feb 2021 for more detail about connection and file transfer
 
 
@@ -22,10 +27,10 @@ begin=`date +%s`
 
 module load R/4.0.2
 
-# print the catchment to the outfile
+# print the script to the outfile
 echo $1
 
-Rscript hpc_wrap.R "Scripts/DataProcessing/concatTemps.R" "weightedMean"
+Rscript hpc_wrap.R $1 
 
 # Copy to ruby datastore. copying to the {lw-mer} on bowen is at /datasets/work/lw-mer/work/galen_holt, but need to sort this out a bit better
 # cp -rp testout.rdata /datastore/hol436/HPC_testing
