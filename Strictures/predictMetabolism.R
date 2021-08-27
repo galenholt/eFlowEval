@@ -465,13 +465,19 @@ load(regIn)
 
 # Whole basin predictions -------------------------------------------------
 
-
+# Somehow going for the sf creates something 524Gb. that's bad. will need to chunk. which means the question is how much to chunk
 # subCatch <- Murrumbidgee_weightedMean %>% slice('geometry', 1:10) %>% slice('time', 500:515)
 # Turn the kelvins into tempC?
 Murrumbidgee_weightedMean[[1]] <- as.numeric(Murrumbidgee_weightedMean[[1]])-272.15
 names(Murrumbidgee_weightedMean) <- 'tempC'
 
 # Make into an sf dataframe so we can do the predictions
+# THIS IS A BIT ABSURD- BEEN GOING 30 MINS AND NOT FINISHED. SO THINK I'LL NEED
+# TO WRAP ALL THIS IN A FOREACH WITH A CHUNKMAKER BIT ON IT.
+# Question is how big to make the chunks.
+# Probably should write the whole smash as a function, then do a test.
+# Suppose another question is whether the HPC can just do it quickly.
+# AND, do I want to chunk over space, time, or both? Would be nice if I only chunked one dimension
 catchSF <- st_as_sf(Murrumbidgee_weightedMean, long = TRUE) # THe long argument keeps times
 
 # create the columns we need
@@ -509,3 +515,6 @@ starpredictions
   # Honestly, might just be easier to scrap the random effects and use lm predict
   # looks like library(merTools) is the way to go
   # https://stats.stackexchange.com/questions/147836/prediction-interval-for-lmer-mixed-effects-model-in-r
+
+## CAREFUL WHEN USING THESE STARS ELSEWHERE- SOME FUNCTIONS (YEARSUMMARY,
+## ROLLINGTIMEFUNCTIONS) EXPECT ONLY ONE ATTRIBUTE AND SO OPERATE ON STARS[[1]]
