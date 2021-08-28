@@ -139,7 +139,7 @@ endbig <- proc.time()
 
 print('Time taken for loop')
 print(endbig-startbig)
-
+# 3578 seconds total for bidgee (27000 anaes). Ends up just under 1GB. So that's not terrible
 save(starpreds, file = file.path(datOut, 'TESTMETABOLISM.rdata'))
 #this is going to then need to be looped over catchments. I'd like to
 #auto-generate the shell scripts per catchment, I think. Unless I can just print
