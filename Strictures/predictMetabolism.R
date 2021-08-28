@@ -32,7 +32,7 @@ thisCatch <- args[7] # 'Murrumbidgee' # For testing- needs to be grabbed from ca
 
 print(thisCatch)
 
-stop('testing end here to make sure passing catchment name')
+# stop('testing end here to make sure passing catchment name')
 # Read in data ------------------------------------------------------------
 
 ## TEMPS
