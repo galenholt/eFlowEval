@@ -44,7 +44,7 @@ catchNames
   # Though parallelizing would be nice. so maybe I will foreach it, but not return anything
 
 # trashOut <- foreach(ca = 4:5) %dopar% {
-trashOut <- foreach(ca = 1:length(catchNames)) {
+trashOut <- foreach(ca = 1:length(catchNames)) %dopar% {
   # Will need to loop over this
   thisCatch <- catchNames[ca]
   load(file.path(predictIn, paste0(thisCatch, '_predictedGPPER.rdata')))
