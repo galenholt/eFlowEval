@@ -11,6 +11,12 @@
 # ## The outerchunks need to start outer and go in, ie '8', '6' is the 6th subchunk of the 8th main chunk
 # Need to handle the edge case wehre there aren't enough polys to do the array we're asking for
 
+## NOTES
+# The first function is designed to handle chunking. The second is for the case
+# where there should only be a single file per catchment. I'm sure they could be
+# done with a single function, but it's not super straightforward, so easier to
+# just do separately
+
 makeSHfails <- function(outerDir, varName, summaryFuns, 
                         nchunks = 100, lengthOrChunk, runImmediate = FALSE,
                         forceAllCatchments = FALSE) {

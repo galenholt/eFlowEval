@@ -1,7 +1,7 @@
 # script to check failures and make new shell scripts for temperature
 
 # Rscript is easier than dealing with slurm for this
-# Rscript hpc_wrap.R 'Scripts/DataProcessing/predictFails.R'
+# Rscript hpc_wrap.R 'Strictures/temppredictFails.R'
 
 
 # Header from the temperature file to retain all the directories,  --------

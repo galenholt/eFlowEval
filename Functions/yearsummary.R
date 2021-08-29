@@ -1,7 +1,8 @@
 # Lippia output summary and figures
 
 yearsummary <- function(strictList, whichSave = NULL, subdir = NULL, 
-                        outsuffix, datebreaks, FUN = propor) {
+                        outsuffix, datebreaks, FUN = propor,
+                        aggNames = 'propDaysPassed') {
 
 # Summarise over year -----------------------------------------------------
   # TODO: More flexible time summaries
@@ -28,10 +29,10 @@ yearsummary <- function(strictList, whichSave = NULL, subdir = NULL,
   # this works, but it causes the scale_id error in ggplot (see facet_scale_id_error.R)
   # That's fixable by faceting by as.character(time). Do we want to do that? Maybe? Should be OK, I think?
   
-  if (lubridate::is.POSIXt(interDates)) {
+  if (lubridate::is.POSIXt(datebreaks)) {
     by_t <- c(startdate, datebreaks,  enddate)
   } else {
-    by_t <- interDates # If, for example, interDates is 'years'
+    by_t <- datebreaks # If, for example, datebreaks is 'years'
   }
   
   # Don't average isANAE over time
