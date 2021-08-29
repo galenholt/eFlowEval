@@ -5,13 +5,14 @@
 
 # # Trying to set this up so it can run arbitrary scripts as arguments.
 # # e.g. sbatch -J 'jobname' anyScript.sh "Scripts/DataProcessing/testingandscratch/metabolismSpeed.R"
-
+# # without time below
+# # sbatch -J 'jobname' -t 1:00:00 anyScript.sh "Scripts/DataProcessing/testingandscratch/metabolismSpeed.R"
 # # wondering if it makes sense to make myself declare a time
 # # Would be done with -t 1:00:00 ( not sure if quotes). But then would need to comment out the setting below
 # # See OneNote 'Basic HPC workflow to build on' from 9 Feb 2021 for more detail about connection and file transfer
 
 
-#SBATCH --time=1:00:00 # request time (walltime, not compute time)
+###SBATCH --time=1:00:00 # request time (walltime, not compute time)
 #SBATCH --mem=128GB # request memory
 #SBATCH --nodes=1 # number of nodes
 #SBATCH --ntasks-per-node=10 # This is the cores per node # If I want 20 cpus on 2 nodes, for ex, use --nodes=2 --ntasks-per-node=10
