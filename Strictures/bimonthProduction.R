@@ -37,18 +37,21 @@ inunIn <- file.path(datOut, 'Inundationprocessed', 'volInun')
 catchFiles <- list.files(predictIn, pattern = '.rdata')
 catchNames <- str_extract(catchFiles, pattern = '[A-z]*_') %>%
   str_remove('_') # I'm sure I could do this in one regex, but this is easier
-catchNames
+print(catchNames)
 
 # I'm not building anything with chunks, just saving. So, I think I can probably
 # run this locally, and use a standard for loop?
   # Though parallelizing would be nice. so maybe I will foreach it, but not return anything
 
-# trashOut <- foreach(ca = 4:5) %dopar% {
-trashOut <- foreach(ca = 1:length(catchNames)) %dopar% {
+trashOut <- foreach(ca = 3) %dopar% {
+# trashOut <- foreach(ca = 1:length(catchNames)) %dopar% {
   # Will need to loop over this
   thisCatch <- catchNames[ca]
+  print(thisCatch)
   load(file.path(predictIn, paste0(thisCatch, '_predictedGPPER.rdata')))
+  print('loaded predictedGPPER')
   load(file.path(inunIn, paste0(thisCatch, '_volInun.rdata')))
+  print('loaded volInun')
   
   # Give them generic names
   # should have saved this with a different name. I COULD use starpreds, since
@@ -91,8 +94,10 @@ trashOut <- foreach(ca = 1:length(catchNames)) %dopar% {
   
   thisOutName <- paste0(thisCatch, '_PredictBimonthMean')
   assign(thisOutName, bimonthPredict)
+  print('about to save to')
+  print(file.path(scriptOut, paste0(thisOutName, '.rdata')))
   save(list = thisOutName, file = file.path(scriptOut, paste0(thisOutName, '.rdata')))
-  
+  print('saved')
   # Get aggressive about cleanup, since some things will have new names
   rm(list = c(thisOutName, 'bimonthPredict', 'catchPredict', 'by_t', 
               'startdate', 'enddate', 'overlaptimes', 'catchInun', 'catchPredict'))
