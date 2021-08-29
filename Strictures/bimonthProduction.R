@@ -34,7 +34,7 @@ inunIn <- file.path(datOut, 'Inundationprocessed', 'volInun')
 # Read in data ------------------------------------------------------------
 
 # First, get the names of the catchments, so I can match them
-catchFiles <- list.files(predictIn)
+catchFiles <- list.files(predictIn, pattern = '.rdata')
 catchNames <- str_extract(catchFiles, pattern = '[A-z]*_') %>%
   str_remove('_') # I'm sure I could do this in one regex, but this is easier
 catchNames
