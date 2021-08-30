@@ -17,12 +17,6 @@ registerDoFuture()
 # plan(multisession)
 plan(sequential) # dopar doesn't work, so no sense setting up a multisession
 
-# This is almost EXACTLY a library load at this point. Just need to actually wrap it up and split the git
-basicfuns <- list.files(here('Functions'))
-basicfuns <- file.path('Functions', basicfuns)
-# read in those functions
-sapply(basicfuns, source)
-
 # Set the crs
 whichcrs <- 3577
 # directory

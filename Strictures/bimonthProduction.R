@@ -49,7 +49,7 @@ catchNames
 
 # For testing
 # ca <- 1
-
+startloop <- proc.time()
 # trashOut <- foreach(ca = 4:5) %dopar% {
 trashOut <- foreach(ca = 1:length(catchNames)) %dopar% {
   # Will need to loop over this
@@ -143,3 +143,8 @@ trashOut <- foreach(ca = 1:length(catchNames)) %dopar% {
   dummy <- NULL
 }
 
+endloop <- proc.time()
+looptime <- endloop - startloop
+print('total time:')
+print(looptime)
+# 850 seconds local, 230 HPC
