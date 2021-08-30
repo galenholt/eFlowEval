@@ -21,11 +21,14 @@ plan(multisession) # dopar doesn't work, so no sense setting up a multisession
 whichcrs <- 3577
 # directorys for the predictions themselves and the predictions x volume
 filesubdirs <- c('bimonth', 'bimonth/predictxvol')
+# These are the data name suffixes
+# suffixes <- c('PredictBimonthMean', 'PredictxVol')
 
 for(sfun in 1:length(filesubdirs)) {
   filedir <- filesubdirs[sfun]
+  # suffix <- suffixes[sfun]
   # There are some that were NOT chunked- leave them alone, and just look in the chunked folder
-  allIn <- file.path(datOut, 'TempAndProduction', 'Predictions')
+  allIn <- file.path(datOut, 'TempAndProduction', 'Predictions', filedir)
   
   # I don't think I actually use the ANAEs, so no need to bring them in, now that I have ltimNoNorth alone
   # anaeIn <- file.path(datOut, 'ANAEprocessed')
@@ -42,6 +45,8 @@ for(sfun in 1:length(filesubdirs)) {
   catchNames <- str_extract(catchFiles, pattern = '[A-z]*_') %>%
     str_remove('_') # I'm sure I could do this in one regex, but this is easier
   catchNames
+  
+  suffix <- str_extract(catchFiles, pattern = '_[A-z]*')
   
   # Loop over each catchment, since that's how the files are structured for memory purposes
   # for (i in 1:length(catchNames)) {
@@ -83,9 +88,10 @@ for(sfun in 1:length(filesubdirs)) {
                           # TODO: make the predictions return catchment-specific
                           # names. otherwise this is silly. But want to be set
                           # up for that fix- see inundationCatchmentAggregate for an example
-                         thesePolys <- get('starpreds')
+                         thesePolys <- get(paste0(thisCatch, suffix))
+                         # get('starpreds')
                          # theseIndices <- get(paste0(thisCatch, '_', summaryFun, '_index'))
-                         rm(list = c('starpreds')) 
+                         rm(list = c(paste0(thisCatch, suffix))) 
                          
                          # the predictions are logged, but the multiplied by volume are not
                          if (filedir == 'bimonth') {
