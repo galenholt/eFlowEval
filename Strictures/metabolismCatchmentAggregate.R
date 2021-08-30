@@ -78,7 +78,7 @@ for(sfun in 1:length(filesubdirs)) {
                          valleys <- str_remove_all(valleys, ' ')
                          # Cut to just the valley we want
                          thisvalley <- which(valleys == thisCatch)
-                         thisPoly <- ltimNoNorth[ltimNoNorth$ValleyName == thisCatch, ]
+                         thisPoly <- ltimNoNorth[str_remove_all(ltimNoNorth$ValleyName, ' ') == thisCatch, ]
                          # thisPoly <- ltimNoNorth %>% slice(thisvalley)
                          
                          # give standard names
@@ -146,6 +146,22 @@ for(sfun in 1:length(filesubdirs)) {
                                                  by = thisPoly, 
                                                  FUN = sum, na.rm = TRUE)
                          }
+                         
+                         # For some terrible reason, if everything is NA, it returns 0s instead of NAs. Fix
+                         allNAS <- function(x) {
+                           all(is.na(x))
+                         }
+                         
+                         whichAllNAS <- which(purrr::map_lgl(thesePolys, allNAS))
+                         
+                         # indexing into the stars attributes is terrible
+                         if (length(whichAllNAS) > 0) {
+                           for (n in 1:length(whichAllNAS)) {
+                             catchAgg[[whichAllNAS[n]]] <- NA
+                           }
+                         }
+                         
+                         
                          
                          
                          # names(catchAgg) <- 'totalareainundated'

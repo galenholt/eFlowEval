@@ -100,10 +100,13 @@ for(sfun in 1:length(summaryFuns)) {
                            select(area) %>%
                            pull()
                          
-                         # Let's just try my catchment aggregator
-                         # use sum for total area of ANAEs inundated
-                         inunAgg <- catchAggW(strict = theseInuns, strictWeights = areas,
-                                              FUN = sum, summaryPoly = thisPoly)
+                         # We do NOT want to area-weight here,
+                         # because we're just adding up total inundation, and
+                         # area or volume already takes care of all relevant
+                         # area effects
+                         inunAgg <- aggregate(theseInuns, 
+                                               by = thisPoly, 
+                                               FUN = sum, na.rm = TRUE)
                          names(inunAgg) <- 'totalareainundated'
                          
                          # oneloopend <- proc.time()
