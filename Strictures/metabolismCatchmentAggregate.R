@@ -46,7 +46,6 @@ for(sfun in 1:length(filesubdirs)) {
     str_remove('_') # I'm sure I could do this in one regex, but this is easier
   catchNames
   
-  suffix <- str_extract(catchFiles, pattern = '_[A-z]*')
   
   # Loop over each catchment, since that's how the files are structured for memory purposes
   # for (i in 1:length(catchNames)) {
@@ -61,7 +60,7 @@ for(sfun in 1:length(filesubdirs)) {
                          # Set up loop iterations
                          thisCatch <- catchNames[i] #13 is lachlan, to keep consistent with previous checking
                          thisFile <- catchFiles[i]
-                         
+                         suffix <- str_extract(thisFile, pattern = '_[A-z]*')
                          
                          # Read in the data
                          # anfile <- file.path(anaeIn, paste0(thisCatch, 'ANAE.rdata'))
@@ -161,7 +160,7 @@ for(sfun in 1:length(filesubdirs)) {
   loopend <- proc.time()
   looptime <- loopend-loopstart
   looptime
-  # 8 seconds???
+  # 212 on HPC, longer local
   
   # Let's save that so we don't have to re-do the loop calcs
   save(catchmentBasin, 
