@@ -32,7 +32,8 @@ joinedTempProd <- filter(joinedTempProd, ValleyName != "Loddon")
 joinedTempProd <- joinedTempProd %>% 
   mutate(tempC = as.numeric(tempK)-272.15) %>%
   mutate(month = lubridate::month(sampledate, label = TRUE)) %>%
-  mutate(passesCriteria = ifelse(meetsusecriteria %in% c('Y', 'Yes'), TRUE, FALSE)) # Don't check the c('N', 'No'), because if there are missing, they should code as no anyway
+  mutate(passesCriteria = ifelse(meetsusecriteria %in% c('Y', 'Yes'), TRUE, FALSE)) %>% # Don't check the c('N', 'No'), because if there are missing, they should code as no anyway
+  mutate(ValleyName = str_remove_all(ValleyName, ' ')) # Match the way we have to deal with valleyname everywhere else
 
 joinedTempPasses <- filter(joinedTempProd, passesCriteria)
 
@@ -654,3 +655,4 @@ save(gppDaysValleys,
      erDays,
      erBimonth,
      file = file.path(scriptOut, 'tempMetabolismRegressions.rdata'))
+
