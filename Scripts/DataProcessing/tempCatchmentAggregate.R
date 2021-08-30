@@ -46,7 +46,7 @@ for(sfun in 1:length(filesubdirs)) {
     str_remove('_') # I'm sure I could do this in one regex, but this is easier
   catchNames
   
-  suffix <- str_extract(catchFiles, pattern = '_[A-z]*')
+  
   
   # Loop over each catchment, since that's how the files are structured for memory purposes
   # for (i in 1:length(catchNames)) {
@@ -61,7 +61,7 @@ for(sfun in 1:length(filesubdirs)) {
                               # Set up loop iterations
                               thisCatch <- catchNames[i] #13 is lachlan, to keep consistent with previous checking
                               thisFile <- catchFiles[i]
-                              
+                              suffix <- str_extract(thisFile, pattern = '_[A-z]*')
                               
                               # Read in the data
                               # anfile <- file.path(anaeIn, paste0(thisCatch, 'ANAE.rdata'))
@@ -79,7 +79,7 @@ for(sfun in 1:length(filesubdirs)) {
                               valleys <- str_remove_all(valleys, ' ')
                               # Cut to just the valley we want
                               thisvalley <- which(valleys == thisCatch)
-                              thisPoly <- ltimNoNorth[ltimNoNorth$ValleyName == thisCatch, ]
+                              thisPoly <- ltimNoNorth[str_remove_all(ltimNoNorth$ValleyName, ' ') == thisCatch, ]
                               # thisPoly <- ltimNoNorth %>% slice(thisvalley)
                               
                               # give standard names
@@ -130,9 +130,27 @@ for(sfun in 1:length(filesubdirs)) {
                               #                       FUN = mean, summaryPoly = thisPoly)
                               # 
                               
+                              # Testing 
+                              # wmeans <- foreach(r = 1:nrow(thesePolys[[1]]), .combine = c) %do% {
+                              #   weighted.mean(thesePolys[[1]][r, ], w = areas, na.rm = TRUE)
+                              # }
+                              
                               # That said, we DO want to area-weight the temp averages
-                              catchAgg <- aggregate(thesePolys, by = thisPoly, 
-                                                    FUN = weighted.mean, w = areas, na.rm = TRUE)
+                              # For some super frustrating reason,
+                              # weighted.mean and weights stops working for
+                              # big stars objects. There is no obvious reason
+                              # catchAgg <- aggregate(thesePolys, by = thisPoly, 
+                              #                       FUN = weighted.mean, w = areas, na.rm = TRUE)
+                              
+                              # So, a horrible workaround is to use catchAggW to
+                              # get the weighted SUM, and then divide to get the
+                              # mean
+                              catchAgg <- catchAggW(strict = thesePolys, strictWeights = areas,
+                                                                          FUN = sum, summaryPoly = thisPoly)
+                              # And for some reason NA turns into 0 this way. argh
+                              catchAgg[[1]][which(catchAgg[[1]] == 0)] <- NA
+                              catchAgg <- catchAgg/sum(areas)
+                              
                               # names(catchAgg) <- 'totalareainundated'
                               names(catchAgg) <- str_c('catchMean_', names(catchAgg))
                               
@@ -145,7 +163,6 @@ for(sfun in 1:length(filesubdirs)) {
   loopend <- proc.time()
   looptime <- loopend-loopstart
   looptime
-  # 8 seconds???
   
   # Let's save that so we don't have to re-do the loop calcs
   save(catchmentBasin, 
