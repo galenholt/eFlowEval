@@ -128,10 +128,27 @@ for(sfun in 1:length(filesubdirs)) {
                            st_area() %>%
                            as.numeric()
                          
-                         # Let's just try my catchment aggregator
-                         # use sum for total metabolic activity across the catchment
-                         catchAgg <- catchAggW(strict = thesePolys, strictWeights = areas,
-                                              FUN = sum, summaryPoly = thisPoly)
+                         # Aggregate to the catchment
+                         # the predictions are based on the average temp in the
+                         # polygon. To add them up to the catchment, we should
+                         # sum, but weight by area- this is a bit funny, since
+                         # they're volumetric, but the idea is just to weight
+                         # the POTENTIAL of each wetland
+                         if (filedir == 'bimonth') {
+                           # use sum for total metabolic activity across the catchment
+                           catchAgg <- catchAggW(strict = thesePolys, strictWeights = areas,
+                                                FUN = sum, summaryPoly = thisPoly)
+                         } else {
+                           # For metabolism x volume, we do NOT want to area-weight,
+                           # because we're just adding up total metabolism in the
+                           # catchment, and volume already takes care of all
+                           # relevant area effects
+                           catchAgg <- aggregate(thesePolys, 
+                                                 by = thisPoly, 
+                                                 FUN = sum, na.rm = TRUE)
+                         }
+                         
+                         
                          # names(catchAgg) <- 'totalareainundated'
                          names(catchAgg) <- str_c('catchSum_', names(catchAgg))
                          
