@@ -91,6 +91,7 @@ for(sfun in 1:length(filesubdirs)) {
                          thesePolys <- get(paste0(thisCatch, suffix))
                          # get('starpreds')
                          # theseIndices <- get(paste0(thisCatch, '_', summaryFun, '_index'))
+                         # This works, but throws warnings, and I'm not sure why
                          rm(list = c(paste0(thisCatch, suffix))) 
                          
                          # the predictions are logged, but the multiplied by volume are not
