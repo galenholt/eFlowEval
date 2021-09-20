@@ -164,6 +164,65 @@ surfvlogGPPpass + geom_smooth(method = 'lm')
 
 # Yeah, stick with logs
 
+
+# Save some more readable plots --------------------------------------------------
+
+# GPP to surface
+surfvlogGPPPretty <- ggplot(joinedTempPasses, aes(x = tempC, y = log(gpp), 
+                                                color = ValleyName)) + 
+  geom_point() +
+  scale_color_brewer(palette = 'Dark2') +
+  labs(y = 'log(GPP)',
+       x = 'Temperature',
+       color = 'Catchment')
+# labs(x = 'Water temp', y = 'Surface temp', color = 'Month')
+surfvlogGPPPretty + geom_smooth(method = 'lm') + theme_bw()
+# less modal, but less of a relationship too
+
+# ER to surface
+surfvlogERPretty <- ggplot(joinedTempPasses, aes(x = tempC, y = log(er), 
+                                               color = ValleyName)) + 
+  geom_point() +
+  scale_color_brewer(palette = 'Dark2') +
+  labs(y = 'log(ER)',
+       x = 'Temperature',
+       color = 'Catchment')
+# labs(x = 'Water temp', y = 'Surface temp', color = 'Month')
+surfvlogERPretty + geom_smooth(method = 'lm') + theme_bw()
+
+
+# Those are actually pretty ugly
+# GPP to surface
+surfvlogGPPPrettyL <- ggplot(joinedTempPasses, aes(x = tempC, y = log(gpp), 
+                                                  color = ValleyName)) + 
+  geom_smooth(method = 'lm') +
+  scale_color_brewer(palette = 'Dark2') +
+  labs(y = 'log(GPP)',
+       x = 'Temperature',
+       color = '')
+# labs(x = 'Water temp', y = 'Surface temp', color = 'Month')
+surfvlogGPPPrettyL + theme_bw()
+# less modal, but less of a relationship too
+
+# ER to surface
+surfvlogERPrettyL <- ggplot(joinedTempPasses, aes(x = tempC, y = log(er), 
+                                                 color = ValleyName)) + 
+  geom_smooth(method = 'lm') +
+  scale_color_brewer(palette = 'Dark2') +
+  labs(y = 'log(ER)',
+       x = 'Temperature',
+       color = '')
+# labs(x = 'Water temp', y = 'Surface temp', color = 'Month')
+surfvlogERPrettyL + theme_bw()
+
+png(file.path(scriptOut, 'regressionPlot.png'), height = 8/2.54, width = 12/2.54, units = 'in', res = 300)
+ggpubr::ggarrange(surfvlogGPPPrettyL + theme_bw(),
+                  surfvlogERPrettyL + theme_bw(),
+                  common.legend = TRUE)
+dev.off()
+
+
+
 # TODO --------------------------------------------------------------------
 
 # See if I can put a location effect in? DONE
