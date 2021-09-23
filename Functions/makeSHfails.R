@@ -22,6 +22,7 @@ makeSHfails <- function(outerDir, varName, summaryFuns,
                         forceAllCatchments = FALSE) {
   # Outerdir is the outer directory, containing all summaryFun directories and chunking
   # varName is just a unique name to avoid overwriting other variables
+    # it tends to be the name in the SLURM script: allvarnameSLURM.sh
   # lengthOrChunk can be one of 'short', 'long', or 'chunk'
   # runImmediate creates the file and fires off the bash call
   # forceALLCatchments just puts in a list of catchments, even if they haven't been run.
