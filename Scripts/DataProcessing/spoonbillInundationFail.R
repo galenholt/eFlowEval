@@ -1,6 +1,7 @@
 # script to check failures and make new shell scripts for spoonbill foraging inundation
 
 # Rscript is easier than dealing with slurm for this
+# module load R/4.0.2
 # Rscript hpc_wrap.R 'Scripts/DataProcessing/tempFails.R'
 
 
@@ -28,7 +29,7 @@ makeSHfails(outerDir = file.path(datOut, 'Inundationprocessed'),
             summaryFuns = 'areaSpoonbillForage',
             varName = 'SpoonbillForage',
             nchunks = 100,
-            lengthOrChunk = c('short'), # , 'long', 'chunk'
+            lengthOrChunk = c('short', 'long', 'chunk'), # , 'long', 'chunk'
             runImmediate = FALSE,
             forceAllCatchments = TRUE)
 
@@ -36,6 +37,6 @@ makeSHfails(outerDir = file.path(datOut, 'Inundationprocessed'),
             summaryFuns = 'areaSpoonbillBreed',
             varName = 'SpoonbillBreed',
             nchunks = 100,
-            lengthOrChunk = c('short'), # , 'long', 'chunk'
+            lengthOrChunk = c('short', 'long', 'chunk'), # , 'long', 'chunk'
             runImmediate = FALSE,
             forceAllCatchments = TRUE)
