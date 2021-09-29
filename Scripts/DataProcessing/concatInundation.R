@@ -23,10 +23,12 @@ plan(sequential) # no need to parallelize, I don't think
 
 # Concatenate -------------------------------------------------------------
 
+# system.time(concatANAEchunks(outerDir = file.path(datOut, 'Inundationprocessed'),
+#                  summaryFuns = c('areaInun', 'volInun')))
+
 system.time(concatANAEchunks(outerDir = file.path(datOut, 'Inundationprocessed'),
-                 summaryFuns = c('areaInun', 'volInun')))
-
-
+                                              summaryFuns = c('areaSpoonbillBreed',
+                                                              'areaSpoonbillForage')))
 # and a quick look
 # load(file.path(datOut, 'Tempprocessed', 'WeightedMean', 'Avoca_weightedMean.rdata'))
 # plot(Avoca_weightedMean[,1:20, 1:9])
