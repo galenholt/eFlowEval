@@ -99,7 +99,10 @@ makeSHfails <- function(outerDir, varName, summaryFuns,
     # If we're done, just wrap up here
     if (length(misslist) == 0) {
       print("Finished all catchments")
-      if ('length' %in% lengthOrChunk) {
+      if ('long' %in% lengthOrChunk) {
+        writeLines(c("echo 'All catchments finished, not running anything'", "\n"), con = paste0('missing', varName, 'long.sh'))
+      }
+      if ('short' %in% lengthOrChunk) {
         writeLines(c("echo 'All catchments finished, not running anything'", "\n"), con = paste0('missing', varName, '.sh'))
       }
       if ('chunk' %in% lengthOrChunk) {
