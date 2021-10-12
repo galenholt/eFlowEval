@@ -31,8 +31,10 @@ if (grepl('^pearcey', Sys.info()["nodename"]) | grepl('^c', Sys.info()["nodename
   # print(.libPaths())
   
 } else if (grepl('^Windows', Sys.info()["sysname"])) {
+  # myhome <- stringr::str_remove(path.expand("~"), "/Documents")
   myhome <- paste0('C:/Users/', Sys.getenv("USERNAME"))
   datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
+  
   datOut <- "datOut"
 }
 
