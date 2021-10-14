@@ -164,17 +164,17 @@ print(paste0('starting polygon split, time is ', Sys.time(), ', run is ', dataWh
 system.time(ANAEbasinclim <- wetCut %>%
   st_intersection(kopCut) %>% # intersect with Koppen
   st_intersection(ltimNoNorth) %>% # and add the ltim catchment ## Not sure this is the best way to to this, ie, could probably do it as a selection somehow
-  mutate(UID = lwgeom::st_geohash(geometry, precision = 9))) # Re-set the UID. This is the way to keep every polygon unique, and still retains the original SYSIDs from before.
-
+  mutate(UID = lwgeom::st_geohash(geometry, precision = 11))) # Re-set the UID. This is the way to keep every polygon unique, and still retains the original SYSIDs from before.
+# 11 prevents all but one duplicate. that one is basically a line, and precision can go out to hundreds and not separate it
 
 print(paste0('finished polygon split, time is ', Sys.time(), ', run is ', dataWhere))
 
 
-# # And, just as an extra check, throw some flags on there. Not sure why this
-# # happens, but it does. Just brute force fix it.
-# while (any(duplicated(bothANAE$SYS2))) {
-#   bothANAE$SYS2[which(duplicated(bothANAE$SYS2))] <- paste0(bothANAE$SYS2[which(duplicated(bothANAE$SYS2))], '_DUP')
-# }
+# There is one remaining duplicate that never goes away, no matter the
+# resolution of the geohash. Brute-foce fix
+while (any(duplicated(bothANAE$SYS2))) {
+  bothANAE$SYS2[which(duplicated(bothANAE$SYS2))] <- paste0(bothANAE$SYS2[which(duplicated(bothANAE$SYS2))], '_DUP')
+}
 # 
 # # And, to make sorting easier when we break things up
 # bothANAE <- arrange(bothANAE, SYS2)
