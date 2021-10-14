@@ -1,23 +1,61 @@
 # Function to sort stars according to their index files and deal with any duplicated ANAEs
 
-matchStarsIndex <- function(index1, stars1, index2, stars2, indexcol = 1, testfinal = TRUE) {
+matchStarsIndex <- function(index1, stars1 = NULL, index2, stars2, indexcol = c(1, 1), testfinal = TRUE) {
   # index1 and index2 expected to be an sf with an index in the first column and geometry
   # testfinal does a big st_intersects on the stars, and so can take FOREVER. Turn it off for speed
+  # If stars1 is NULL, this just matches to index1. particularly useful for matching to the ANAE in sf form,
+    # e.g. resortFromANAE <- matchStarsIndex(index1 = EdwardWakoolANAE, stars1 = NULL,
+              # index2 = predictIndices, stars2 = catchPredict, indexcol = c(1, 1))
+  
+  ## 
+  # Fix single indexcol to match for both datasets
+  if (length(indexcol) == 1) {
+    indexcol <- rep(indexcol, 2)
+  }
+  
+  # deal with the time and geometry dimensions being flopped
+  # Note that this assumes there are only time and geometry dimensions
+  # do it off the bat to catch the flopped issue even if they're sorted correctly
+  if (attributes(st_dimensions(stars2))$name[1] != 'geometry') {
+    stars2 <- aperm(stars2, c(2,1))
+    warning('re-set geometry dimension in stars2 to be first. 
+            Probably should do that earlier (e.g. aperm(stars2, c(2,1))) 
+            to avoid other hidden problems with this dataset')
+  }
+  
+  # if stars1 is null, skip
+  if(!is.null(stars1)) {
+    # To test, need geometry of stars1 to be correct too- this might really slow things down though
+    if (attributes(st_dimensions(stars1))$name[1] != 'geometry') {
+      stars1 <- aperm(stars1, c(2,1))
+      warning('stars1 has geometry dimension not first. 
+    DIMENSION SWAP FOR TESTING HERE, DOES NOT GET RETURNED. 
+            Probably should swap dims earlier (e.g. aperm(stars1, c(2,1))) 
+            to avoid other hidden problems with this dataset')
+    }
+    
+  }
+  
   
   # can have any index column, but typically it will be 1 and named UID. Going
-  # to rename it though in case it ever isn't
-  origname1 <- names(index1)[1]
-  origname2 <- names(index2)[1]
+  # to rename it though in case it ever isn't, but throw a warning
+  if(names(index1)[indexcol[1]] != 'UID' |
+     names(index2)[indexcol[2]] != 'UID') {
+    warning('indexcol is not UID, it is ', names(index2)[indexcol[2]])
+  }
   
-  names(index1)[1] <- 'INDEX'
-  names(index2)[1] <- 'INDEX'
+  origname1 <- names(index1)[indexcol[1]]
+  origname2 <- names(index2)[indexcol[2]]
+  
+  names(index1)[indexcol[1]] <- 'INDEX'
+  names(index2)[indexcol[2]] <- 'INDEX'
   
   # expected behaviour is that this will sort 2 to match 1, and so only returns
   # the sorted index and stars for 2
   
   # First, do a check, and if they already match, don't need to do any more
   if (all(index1$INDEX == index2$INDEX)) {
-    names(index2)[1] <- origname2
+    names(index2)[indexcol[2]] <- origname2
     return(lst(index2, stars2))
   }
   
@@ -70,24 +108,6 @@ matchStarsIndex <- function(index1, stars1, index2, stars2, indexcol = 1, testfi
   
   # Now, finally, sort the stars
 
-  # deal with the time and geometry dimensions being flopped
-    # Note that this assumes there are only time and geometry dimensions
-  if (attributes(st_dimensions(stars2))$name[1] != 'geometry') {
-    stars2 <- aperm(stars2, c(2,1))
-    warning('re-set geometry dimension in stars2 to be first. 
-            Probably should do that earlier (e.g. aperm(stars2, c(2,1))) 
-            to avoid other hidden problems with this dataset')
-  }
-  
-  # To test, need geometry of stars1 to be correct too- this might really slow things down though
-  if (attributes(st_dimensions(stars1))$name[1] != 'geometry') {
-    stars1 <- aperm(stars1, c(2,1))
-    warning('stars1 has geometry dimension not first. 
-    DIMENSION SWAP FOR TESTING HERE, DOES NOT GET RETURNED. 
-            Probably should swap dims earlier (e.g. aperm(stars1, c(2,1))) 
-            to avoid other hidden problems with this dataset')
-  }
-  
   # sort the geometry dimension in the second to match the first
   stars2 <- stars2[ ,order(ordermatcher), ]
   
@@ -95,8 +115,15 @@ matchStarsIndex <- function(index1, stars1, index2, stars2, indexcol = 1, testfi
   # geometries may not be exact after a few transforms, but catches most thigns
   if (testfinal) {
     print('testfinal is on, might take a long time')
-    inter3 <- diag(st_intersects(st_as_sf(stars1[1, , 1]), 
-                                 st_as_sf(stars2[1, , 1]), sparse = FALSE))
+    # If there is a stars1, test on that for best safety, otherwise use the index
+    if (is.null(stars1)) {
+      inter3 <- diag(st_intersects(st_geometry(index1), 
+                                   st_geometry(stars2), sparse = FALSE))
+    } else {
+      inter3 <- diag(st_intersects(st_geometry(stars1), 
+                                   st_geometry(stars2), sparse = FALSE))
+    }
+    
     if (sum(!inter3) != 0) {
       warning(sum(!inter3), " geometries still unmatched")
     } else {
@@ -111,7 +138,7 @@ matchStarsIndex <- function(index1, stars1, index2, stars2, indexcol = 1, testfi
     # avoid dups in the first place in processANAE. Basically, the dup issue
     # will be sorted here with the sorting that needs to be done to compare
     # anyway
-    names(index2)[1] <- origname2
+    names(index2)[indexcol[2]] <- origname2
     index2$INDUP <- NULL
     
     # test <- 1

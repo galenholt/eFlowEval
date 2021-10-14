@@ -111,6 +111,24 @@ trashOut <- foreach(ca = 1:length(catchNames)) %dopar% {
   # are they all there though? Yes
   all(pull(st_drop_geometry(inunIndices)) %in% pull(st_drop_geometry(predictIndices)))
   
+  
+  # Is the ANAE itself usorted?
+    # And did it work to re-write mathStarsIndex to use it?
+  load(file.path(datOut, 'ANAEprocessed', 'EdwardWakoolANAE.rdata'))
+  which(duplicated(EdwardWakoolANAE$UID))
+  all(inunIndices$UID == EdwardWakoolANAE$UID) # True
+  all(predictIndices$UID == EdwardWakoolANAE$UID) # false
+  # AAAAA THE CRSES
+  EdwardWakoolANAE <- st_transform(EdwardWakoolANAE, st_crs(catchPredict))
+  # TEST
+  resortFromANAE <- matchStarsIndex(index1 = EdwardWakoolANAE, stars1 = NULL,
+                  index2 = predictIndices, stars2 = catchPredict, indexcol = 1)
+  
+  # Test the check with something that should work
+  inter3 <- diag(st_intersects(st_geometry(EdwardWakoolANAE), 
+                               st_geometry(inunIndices), sparse = FALSE))
+  
+  sum(!inter3)
   ### THIS BIT OF CODE WRITTEN AFTER LOTS BELOW (now commented out so we can get
   ### to further checks). FUNCTION TESTING AND SETTING UP FOR REAL RUNNING
   resortpredict <- matchStarsIndex(index1 = inunIndices, stars1 = catchInun,
@@ -123,6 +141,8 @@ trashOut <- foreach(ca = 1:length(catchNames)) %dopar% {
   # Test
   all(st_drop_geometry(inunIndices) == st_drop_geometry(predictIndices))
   
+  
+  # 
   
   # # How do the orders work?
   # ordermatcher <- match(pull(st_drop_geometry(inunIndices)), pull(st_drop_geometry(predictIndices)))
