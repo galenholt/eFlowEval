@@ -89,12 +89,12 @@ for (i in 1:length(allobj)) {
 # where are we?
 # plot(st_as_sfc(werai))
 tmap_mode("view")
-tm_shape(werai) + tm_borders()
+# tm_shape(werai) + tm_borders()
 
 # does that match ramsar?
 
 ramsarW <- filter(ramsarMDB, WNAME == 'Werai Forest')
-tm_shape(ramsarW) + tm_borders()  + tm_shape(werai) + tm_borders()
+# tm_shape(ramsarW) + tm_borders()  + tm_shape(werai) + tm_borders()
 
 # yeah, roughly. It's a subset.
 
@@ -112,60 +112,60 @@ tm_shape(ramsarW1) + tm_borders() + tm_shape(werai) + tm_borders()
 # weraiCropTemp <- st_crop(EdwardWakool_TempBimonthMean, ramsarW1)
 weraiCropTemp <- EdwardWakool_TempBimonthMean[ramsarW1]
 # interesting. that actually DID crop it to the polygon. Maybe because they're polygons?
-plot(weraiCropTemp[,,10])
+# plot(weraiCropTemp[,,10])
 
 # keep looking at what's outside ramsar
 werbb <- st_as_sfc(st_bbox(ramsarW1))
 weraiCropTempBox <- EdwardWakool_TempBimonthMean[werbb]
-plot(weraiCropTempBox[,,10])
-# There's some, but it's mostly in the ramsar, and the ramsar view is sure cleaner
-
-# Sure starting to look like a dashboard...
-# Will need to apply these with a general mapping
-temppal <- divergingx_hcl(9, palette = 'Spectral',
-                          rev = TRUE)
-midtemp <- median(weraiCropTemp[[1]], na.rm = TRUE)
-tm_shape(weraiCropTemp[,,10]) + tm_fill(palette = temppal, midpoint = midtemp) # tm_fill(palette = 'RdYlBu', rev = TRUE)
+# plot(weraiCropTempBox[,,10])
+# # There's some, but it's mostly in the ramsar, and the ramsar view is sure cleaner
+# 
+# # Sure starting to look like a dashboard...
+# # Will need to apply these with a general mapping
+# temppal <- divergingx_hcl(9, palette = 'Spectral',
+#                           rev = TRUE)
+# midtemp <- median(weraiCropTemp[[1]], na.rm = TRUE)
+# tm_shape(weraiCropTemp[,,10]) + tm_fill(palette = temppal, midpoint = midtemp) # tm_fill(palette = 'RdYlBu', rev = TRUE)
 
 # Let's do the same for the inundation and the outputs, and we might be almost
 # there. Will need to do something temporal too, but a "last two months (or x period) summary dashboard" might actually be really good
 weraiCropInun <- EdwardWakool_volInun[ramsarW1]
 
-# MAKE INUNDATION IN something other than liters
-# weraiCropInun <- weraiCropInun/1000000
-# names(weraiCropInun) <- 'megalitersInundation'
-
-
-inunpal <- divergingx_hcl(9, palette = 'Earth',
-                      rev = FALSE)
-# 10th slice won't match in time, sort out using actual times
-midinun <- median(weraiCropInun[[1]], na.rm = TRUE)
-# I used log(inundation) for the basin-scale stuff, but not sure that's so useful here.
-# tm_shape(log(weraiCropInun[,,100])) + tm_fill(palette = inunpal, midpoint = 0)
-# tm_shape(weraiCropInun[,,100]) + 
-#   tm_fill(col = 'depth', palette = inunpal, midpoint = midinun)
-# The log is better, but is confusing. Can we do even better?
-
-# Can't use col for stars, but
-tm_shape(st_as_sf(1+weraiCropInun[,,100])) + 
-  tm_fill(col = '2004-07-01 10:00:00', palette = inunpal, 
-          midpoint = midinun, style = 'log10_pretty')
+# # MAKE INUNDATION IN something other than liters
+# # weraiCropInun <- weraiCropInun/1000000
+# # names(weraiCropInun) <- 'megalitersInundation'
+# 
+# 
+# inunpal <- divergingx_hcl(9, palette = 'Earth',
+#                       rev = FALSE)
+# # 10th slice won't match in time, sort out using actual times
+# midinun <- median(weraiCropInun[[1]], na.rm = TRUE)
+# # I used log(inundation) for the basin-scale stuff, but not sure that's so useful here.
+# # tm_shape(log(weraiCropInun[,,100])) + tm_fill(palette = inunpal, midpoint = 0)
+# # tm_shape(weraiCropInun[,,100]) + 
+# #   tm_fill(col = 'depth', palette = inunpal, midpoint = midinun)
+# # The log is better, but is confusing. Can we do even better?
+# 
+# # Can't use col for stars, but
+# tm_shape(st_as_sf(1+weraiCropInun[,,100])) + 
+#   tm_fill(col = '2004-07-01 10:00:00', palette = inunpal, 
+#           midpoint = midinun, style = 'log10_pretty')
 
 # That's pretty good. Now the relevant predictions
 # Let's do the same for the inundation and the outputs, and we might be almost
 # there. Will need to do something temporal too, but a "last two months (or x period) summary dashboard" might actually be really good
 weraiCropPred <- EdwardWakool_PredictxVol[ramsarW1]
-gpppal <- sequential_hcl(9, palette = 'Emrld', rev = TRUE)
-erpal <- sequential_hcl(9, palette = 'Purples', rev = TRUE)
-# there might be an advantage of some transformations here, but need to sort out
-# a consistent color scale- right now, it smears out whatever it has, instead of
-# knowing what the full range should be for comparing across days
-  # ggplot could do it, but I'm kind of liking tmap. We'll see
-tm_shape(weraiCropPred[1,,10]) +
-  tm_fill(palette = gpppal) # tm_fill(palette = 'RdYlBu', rev = TRUE)
-
-tm_shape(weraiCropPred[3,,10]) +
-  tm_fill(palette = erpal)
+# gpppal <- sequential_hcl(9, palette = 'Emrld', rev = TRUE)
+# erpal <- sequential_hcl(9, palette = 'Purples', rev = TRUE)
+# # there might be an advantage of some transformations here, but need to sort out
+# # a consistent color scale- right now, it smears out whatever it has, instead of
+# # knowing what the full range should be for comparing across days
+#   # ggplot could do it, but I'm kind of liking tmap. We'll see
+# tm_shape(weraiCropPred[1,,10]) +
+#   tm_fill(palette = gpppal) # tm_fill(palette = 'RdYlBu', rev = TRUE)
+# 
+# tm_shape(weraiCropPred[3,,10]) +
+#   tm_fill(palette = erpal)
 
 # Then what? 
 
@@ -178,18 +178,15 @@ weraiCropTemp <- st_set_dimensions(weraiCropTemp, which = 'time',
 weraiCropPred <- st_set_dimensions(weraiCropPred, which = 'time', 
                                    values = as.Date(st_get_dimension_values(weraiCropPred, which = 'time')))
 
-# make a list of the potential times- don't use inundation, it goes back too far
-availDays <- st_get_dimension_values(weraiCropTemp, which = 'time')
-availDays
 
 # Now let's have a consistent way to make the plots
   # Does setting the breaks allow me to establish breaks from the whole dataset,
   # and avoid rescaling figs?
 
 
-midinun <- median(weraiCropInun[[1]], na.rm = TRUE)
-
-gpppal <- sequential_hcl(9, palette = 'Emrld', rev = TRUE)
+# midinun <- median(weraiCropInun[[1]], na.rm = TRUE)
+# 
+# gpppal <- sequential_hcl(9, palette = 'Emrld', rev = TRUE)
 
 
 # Set breaks and labels
@@ -272,6 +269,12 @@ gpplabels_log
 
 
 # Plots- let's make these consistently
+
+# make a list of the potential times- don't use inundation, it goes back too far
+availDays <- st_get_dimension_values(weraiCropTemp, which = 'time')
+availDays
+
+
 datewanted <- as.character(availDays[18]) # just pick something for now
 
 # Temp plot
@@ -336,6 +339,7 @@ er_tm
 # Can I make a big facet thing
 tmap_arrange(temp_tm, inun_tm,
              gpp_tm, er_tm)
+# Yep. Though two might make more sense- one for inputs, one for predictions
 
 
 # write it up
