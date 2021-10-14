@@ -1,5 +1,17 @@
 # import and plot Ramsar wetlands 
 
+# Libraries and system setup
+source('directorySet.R')
+
+# Let's get libraries here
+library(here)
+library(tidyverse)
+library(sf)
+library(stars)
+
+# Directory to export TO
+scriptOut <- file.path(datOut, 'WetlandBoundaries')
+if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
 
 # https://data.gov.au/data/dataset/04cd73cc-24d9-4ae9-aeaa-046a022cb592
 # metadata html in folder
@@ -26,6 +38,13 @@ basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), 
   st_make_valid() %>%
   select(LEVEL2NAME) # no need for other info
 
+#crop Ramsar to basin 
+# RamsarMDB <- Ramsar[basin] # crops to bounding box
+ramsarMDB <- st_intersection(Ramsar, basin)
+
+save(ramsarMDB, file = file.path(scriptOut, "ramsarMDB.rdata"))
+
+# Pushing the watercourses down here, so don't have to run them if all we want to do is the processing
 st_layers(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'))
 
 #read in watercourses for context, plots
@@ -35,13 +54,6 @@ watercourses <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.
 #filter to major rivers 
 M_D <- watercourses%>% filter(., Name == c("MURRAY RIVER", "DARLING RIVER"))
 # could filter by length to get a more manageable subset
-
-#crop Ramsar to basin 
-# RamsarMDB <- Ramsar[basin] # crops to bounding box
-ramsarMDB <- st_intersection(Ramsar, basin)
-
-save(ramsarMDB, file = file.path(myhome, "Source/datOut/WetlandBoundaries/ramsarMDB.rdata"))
-
 
 plot(st_geometry(basin), bg = NA)
 plot(st_geometry(LTIM_Valleys), add = TRUE, bg = NA)
