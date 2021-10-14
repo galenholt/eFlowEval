@@ -36,6 +36,7 @@ basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), 
 
 # Catchments
 basinRef <- file.path(datOut, 'ANAEprocessed', 'ltimNoNorth.rdata')
+load(basinRef)
 
 ## Raw inundation
 # data location
@@ -302,3 +303,5 @@ gpper <- ggpubr::ggarrange(bothgpp, bother, nrow = 2)
 png(file.path(scriptOut, 'GPPplot.png'), height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
 gpper
 dev.off()
+
+# That all took a while, 
