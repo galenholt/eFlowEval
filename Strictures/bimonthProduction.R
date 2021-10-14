@@ -15,8 +15,6 @@ library(doFuture)
 registerDoFuture()
 plan(multisession)
 
-
-
 # Setup -------------------------------------------------------------------
 scriptOut <- file.path(datOut, 'TempAndProduction', 'Predictions', 'bimonth')
 if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
@@ -34,6 +32,8 @@ predictIn <- file.path(datOut, 'TempAndProduction', 'Predictions')
   # Use volume; it's most relevant
 inunIn <- file.path(datOut, 'Inundationprocessed', 'volInun')
 
+# directory with temperatures (needed for getting the relevant indices for predictions)
+tempIn <- file.path(datOut, 'Tempprocessed', 'weightedMean')
 
 # Read in data ------------------------------------------------------------
 
@@ -48,27 +48,58 @@ catchNames
   # Though parallelizing would be nice. so maybe I will foreach it, but not return anything
 
 # For testing
-# ca <- 1
+# ca <- 9 # 9 is Ed-Wak
 startloop <- proc.time()
-# trashOut <- foreach(ca = 4:5) %dopar% {
+# trashOut <- foreach(ca = 1) %dopar% {
 trashOut <- foreach(ca = 1:length(catchNames)) %dopar% {
   # Will need to loop over this
   thisCatch <- catchNames[ca]
   load(file.path(predictIn, paste0(thisCatch, '_predictedGPPER.rdata')))
   load(file.path(inunIn, paste0(thisCatch, '_volInun.rdata')))
+  load(file.path(tempIn, paste0(thisCatch, '_weightedMean.rdata')))
+  
+  # starpreds is in a different order than inundation because the processed
+  # temps are in a different order and that's what the predictions depend on.
+  # Ideally, would have saved the indices attached to starpreds. Next time. But
+  # for now, read in temps and get the indices
+  
+  
   
   # Give them generic names
   # should have saved this with a different name. I COULD use starpreds, since
   # it's already generic, but keep consistent (and hopefully I'll fix it so it's
   # not generic later anyway)
-  catchPredict <- get('starpreds') 
+  catchPredict <- get('starpreds')
+  predictIndices <- get(paste0(thisCatch, "_weightedMean_index"))
+  
+  
   rm(list = paste0('starpreds'))
+  rm(list = paste0(thisCatch, "_weightedMean_index"))
+  rm(list = paste0(thisCatch, "_weightedMean"))
   
   catchInun <- get(paste0(thisCatch, "_volInun"))
+  inunIndices <- get(paste0(thisCatch, "_volInun_index"))
+  
   rm(list = paste0(thisCatch, "_volInun"))
   rm(list = paste0(thisCatch, "_volInun_index"))
   
+  # Transform. Why on earth is predict back to WGS?
+  catchPredict <- st_transform(catchPredict, st_crs(catchInun))
+  predictIndices <- st_transform(predictIndices, st_crs(catchInun))
   
+  # Make the ANAEs match in case they were sorted differently
+    # see Scripts/testingandscratch/mis_sortedANAEtesting.R for sorting this out
+  resortpredict <- matchStarsIndex(index1 = inunIndices, stars1 = catchInun,
+                                   index2 = predictIndices, stars2 = catchPredict,
+                                   testfinal = FALSE)
+  
+  # set the sorted versions as the names
+  predictIndices <- resortpredict$index2
+  catchPredict <- resortpredict$stars2
+  rm(resortpredict)
+  # # Test
+  # all(st_drop_geometry(inunIndices) == st_drop_geometry(predictIndices))
+  # 
   
   # Get date breaks ---------------------------------------------------------
   
@@ -117,13 +148,28 @@ trashOut <- foreach(ca = 1:length(catchNames)) %dopar% {
   bimonthPredict <- st_set_dimensions(bimonthPredict, which = 'time', values = st_dimensions(overlapInun)[2])
   bimonthPredict
   
+  # HAVE TO PUT THE DIMS BACK IN THE RIGHT ORDER
+  if (attributes(st_dimensions(bimonthPredict))$name[1] != 'geometry') {
+    bimonthPredict <- aperm(bimonthPredict, c(2,1))
+  }
 
 # Multiply predictions by volumes -----------------------------------------
 
   # This is probably not necessary
   bimonthPredict <- st_transform(bimonthPredict, st_crs(overlapInun))
   
-  # Then just do the mult. the dims are swapped, but Ops.stars seems to handle that
+  # Then just do the mult. 
+  # CHECK DIMS ARE IN THE RIGHT ORDER OR IT IS JUNK
+  if (attributes(st_dimensions(bimonthPredict))$name[1] != 'geometry') {
+    bimonthPredict <- aperm(bimonthPredict, c(2,1))
+    warning("tempaggregate didn't swap dimensions for some reasons. setting geom first")
+  }
+  
+  if (attributes(st_dimensions(overlapInun))$name[1] != 'geometry') {
+    overlapInun <- aperm(overlapInun, c(2,1))
+    warning("Inundation dimensions got swapped. This is unexpected. Investigate")
+  }
+  
   totalPredictVol <- bimonthPredict*overlapInun
   names(totalPredictVol) <- str_replace(names(totalPredictVol), pattern = 'bimonth', replacement = 'predict_x_vol')
   
@@ -147,4 +193,4 @@ endloop <- proc.time()
 looptime <- endloop - startloop
 print('total time:')
 print(looptime)
-# 850 seconds local, 230 HPC
+# 950 seconds local, 230+ HPC (for the whole basin, not just a test catchment)
