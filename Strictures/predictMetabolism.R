@@ -28,7 +28,7 @@ chunksize <- 1000
   # could do either, really. Sort out arg orders.
 # arraynum <- as.numeric(args[8])
 # Going to be easiest I think to base on names rather than arraynums and name indices.
-thisCatch <- args[7] # 'Murrumbidgee' # For testing- needs to be grabbed from catchNames in a loop
+thisCatch <- args[7] # "EdwardWakool" #  # 'Murrumbidgee' # For testing- needs to be grabbed from catchNames in a loop
 
 print(thisCatch)
 
@@ -159,5 +159,10 @@ endbig <- proc.time()
 
 print('Time taken for loop')
 print(endbig-startbig)
+
+## TODO IF COPYING FOR NEW VERSIONS:
+# save the name of the outputs, instead of starpreds (see other sorts of scripts for the assign() code)
+# SAVE THE INDICES sf- they aren't the same coming out of the processing script, which translates to here
+
 # 3578 seconds total for bidgee (27000 anaes). Ends up just under 1GB. So that's not terrible
 save(starpreds, file = file.path(scriptOut, paste0(thisCatch, '_predictedGPPER.rdata')))
