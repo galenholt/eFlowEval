@@ -130,6 +130,12 @@ tm_shape(weraiCropTemp[,,10]) + tm_fill(palette = temppal, midpoint = midtemp) #
 # Let's do the same for the inundation and the outputs, and we might be almost
 # there. Will need to do something temporal too, but a "last two months (or x period) summary dashboard" might actually be really good
 weraiCropInun <- EdwardWakool_volInun[ramsarW1]
+
+# MAKE INUNDATION IN something other than liters
+# weraiCropInun <- weraiCropInun/1000000
+# names(weraiCropInun) <- 'megalitersInundation'
+
+
 inunpal <- divergingx_hcl(9, palette = 'Earth',
                       rev = FALSE)
 # 10th slice won't match in time, sort out using actual times
@@ -179,21 +185,95 @@ availDays
 # Now let's have a consistent way to make the plots
   # Does setting the breaks allow me to establish breaks from the whole dataset,
   # and avoid rescaling figs?
-# Palettes from above
-temppal <- divergingx_hcl(9, palette = 'Spectral',
-                          rev = TRUE)
-midtemp <- median(weraiCropTemp[[1]], na.rm = TRUE)
 
-inunpal <- divergingx_hcl(9, palette = 'Earth',
-                          rev = FALSE)
+
 midinun <- median(weraiCropInun[[1]], na.rm = TRUE)
 
 gpppal <- sequential_hcl(9, palette = 'Emrld', rev = TRUE)
-erpal <- sequential_hcl(9, palette = 'Purples', rev = TRUE)
+
+
+# Set breaks and labels
+  # breaks up to 10, because 9 seems to be the standard for how long a palette
+  # can be and stay discernible
+
+# Temp
+tempbreaks <- labeling::extended(m = 10,
+                                 dmin = min(weraiCropTemp[[1]], na.rm = TRUE),
+                                 dmax = max(weraiCropTemp[[1]], na.rm = TRUE))
+temppal <- divergingx_hcl(length(tempbreaks)-1, palette = 'Spectral',
+                          rev = TRUE)
+midtemp <- median(weraiCropTemp[[1]], na.rm = TRUE)
+
+# inundation
+inunbreaks <- labeling::extended(m = 10,
+                                 dmin = min(weraiCropInun[[1]], na.rm = TRUE),
+                                 dmax = max(weraiCropInun[[1]], na.rm = TRUE))
+inunpal <- divergingx_hcl(length(inunbreaks)-1, palette = 'Earth',
+                          rev = FALSE)
+midinun <- median(weraiCropInun[[1]], na.rm = TRUE)
+
+inunbreaks_log <- labeling::extended(m = 10,
+                                 dmin = min(log10(1+weraiCropInun[[1]]), na.rm = TRUE),
+                                 dmax = ceiling(max(log10(1+weraiCropInun[[1]]), na.rm = TRUE)))
+
+inunpal_log <- divergingx_hcl(length(inunbreaks_log)-1, palette = 'Earth',
+                          rev = FALSE)
+midinun_log <- median(log10(1+weraiCropInun[[1]]), na.rm = TRUE)
+
+# Make pretty labels. Breaks CONTAIN the endpoints
+inunlabels_log <- 10^inunbreaks_log
+inunlabels_log <- format(inunlabels_log, big.mark=",", scientific=FALSE, trim = TRUE)
+inunstart <- inunlabels_log[1:(length(inunlabels_log)-1)]
+inunstart[1] <- "0" # instead of 1
+inunlabels_log <- paste0(inunstart, ' to ', inunlabels_log[2:length(inunlabels_log)])
+inunlabels_log
+
+# ER
+erbreaks <- labeling::extended(m = 10,
+                               dmin = min(weraiCropPred[[3]], na.rm = TRUE),
+                               dmax = max(weraiCropPred[[3]], na.rm = TRUE))
+erbreaks_log <- labeling::extended(m = 10, 
+                                   dmin = min(log10(1+weraiCropPred[[3]]), na.rm = TRUE), 
+                                   dmax = ceiling(max(log10(1 + weraiCropPred[[3]]), na.rm = TRUE)))
+
+# and those breaks might not quite yield 10, so maximise the palette differences
+erpal_log <- sequential_hcl(length(erbreaks_log)-1, palette = 'Purples', rev = TRUE)
+
+# Make pretty labels. Breaks CONTAIN the endpoints
+erlabels_log <- 10^erbreaks_log
+erlabels_log <- format(erlabels_log, big.mark=",", scientific=FALSE, trim = TRUE)
+erstart <- erlabels_log[1:(length(erlabels_log)-1)]
+erstart[1] <- "0" # instead of 1
+erlabels_log <- paste0(erstart, ' to ', erlabels_log[2:length(erlabels_log)])
+erlabels_log
+
+
+
+# GPP
+gppbreaks <- labeling::extended(m = 10,
+                               dmin = min(weraiCropPred[[1]], na.rm = TRUE),
+                               dmax = max(weraiCropPred[[1]], na.rm = TRUE))
+gppbreaks_log <- labeling::extended(m = 10, 
+                                   dmin = min(log10(1+weraiCropPred[[1]]), na.rm = TRUE), 
+                                   # adding ceiling because this misses the actual max
+                                   dmax = ceiling(max(log10(1 + weraiCropPred[[1]]), na.rm = TRUE)))
+
+# and those breaks might not quite yield 10, so maximise the palette differences
+gpppal_log <- sequential_hcl(length(gppbreaks_log)-1, palette = 'Emrld', rev = TRUE)
+
+# Make pretty labels. Breaks CONTAIN the endpoints
+gpplabels_log <- 10^gppbreaks_log
+gpplabels_log <- format(gpplabels_log, big.mark=",", scientific=FALSE, trim = TRUE)
+gppstart <- gpplabels_log[1:(length(gpplabels_log)-1)]
+gppstart[1] <- "0" # instead of 1
+gpplabels_log <- paste0(gppstart, ' to ', gpplabels_log[2:length(gpplabels_log)])
+gpplabels_log
+
 
 
 # Plots- let's make these consistently
-datewanted <- as.character(availDays[10]) # just pick something for now
+datewanted <- as.character(availDays[18]) # just pick something for now
+
 # Temp plot
 temp_sf <- weraiCropTemp %>% 
   st_as_sf() %>% 
@@ -202,87 +282,62 @@ temp_sf <- weraiCropTemp %>%
 temp_tm <- temp_sf %>%
   tm_shape() + 
   tm_fill(col = 'Temp', palette = temppal,
-          midpoint = midtemp)
-temp_tm
+          midpoint = midtemp,
+          breaks = tempbreaks) +
+  tm_layout(title = paste0('Two months preceding ', datewanted))
+temp_tm 
 
 # Inundation 
 inun_sf <- weraiCropInun %>% 
   st_as_sf() %>% 
   select(all_of(datewanted)) %>%  
   rename(InundationVolume = 1) %>%
-  mutate(logVolume = 1+InundationVolume) # don't actually log, that happens in the plot
+  mutate(logVolume = log10(1+InundationVolume)) # don't actually log, that happens in the plot
 inun_tm <- inun_sf %>%
   tm_shape() + 
-  tm_fill(col = 'logVolume', palette = inunpal,
-          midpoint = midinun, style = 'log10_pretty')
+  tm_fill(col = 'logVolume', palette = inunpal_log,
+          midpoint = midinun_log, 
+          breaks = inunbreaks_log,
+          labels = inunlabels_log,
+          title = 'Volume Inundation') +
+  tm_layout(title = paste0('Two months preceding ', datewanted))
 inun_tm  
 
+# GPP
 gpp_sf <- weraiCropPred[1,,] %>% 
   st_as_sf() %>% 
   select(all_of(datewanted)) %>%
   rename(GPP = 1) %>%
-  mutate(logGPP = log(1+GPP))
+  mutate(logGPP = log10(1+GPP))
 gpp_tm <- gpp_sf %>%
   tm_shape() +
-  tm_fill(col = 'logGPP', palette = gpppal)
+  tm_fill(col = 'logGPP', palette = gpppal_log,
+          breaks = gppbreaks_log,
+          labels = gpplabels_log,
+          title = 'GPP') +
+  tm_layout(title = paste0('Two months preceding ', datewanted))
 gpp_tm
 
+# ER plot
 er_sf <- weraiCropPred[3,,] %>% 
   st_as_sf() %>% 
   select(all_of(datewanted)) %>%
   rename(ER = 1) %>%
-  mutate(logER = log(1+ER))
+  mutate(logER = log10(1+ER))
 er_tm <- er_sf %>%
   tm_shape() +
-  tm_fill(col = 'logER', palette = erpal)
+  tm_fill(col = 'logER', palette = erpal_log,
+          breaks = erbreaks_log,
+          labels = erlabels_log,
+          title = 'ER') +
+  tm_layout(title = paste0('Two months preceding ', datewanted))
 er_tm
 
-# why don't those line up with the inundation?
-# The predictions are shuffled relative to the base layer. Well, I don't think
-# they are relative to the base layer they CAME FROM (temp), but they are
-# shuffled relative to the others. Which means that the code to push rasters
-# into ANAEs is NOT STABLE relative to ANAE sorting
-   # AND there was a problem wiht the bimonth multiplication
-
-# allparts <- st_join(temp_sf, inun_sf) # too many close intersects
-
-pairint <- vector(mode = 'logical', length = nrow(temp_sf))
-for (i in 1:nrow(temp_sf)) {
-  pairint[i] <- st_intersects(temp_sf[i, ], inun_sf[i, ], sparse = FALSE)
-}
-all(pairint)
-
-pairint2 <- vector(mode = 'logical', length = nrow(temp_sf))
-for (i in 1:nrow(temp_sf)) {
-  pairint2[i] <- st_intersects(temp_sf[i, ], er_sf[i, ], sparse = FALSE)
-}
-all(pairint2)
-
-# so I can just glue together (I think)
-allbound <- bind_cols(st_drop_geometry(temp_sf), st_drop_geometry(inun_sf), gpp_sf)
-ggplot(allbound, aes(x = logVolume, y = logGPP, color = Temp)) + geom_point()
-# AHHHHHH. what is going on here? when I had screwed up and grabbed the temp
-# ones (before the inundation multiplier), they were right, in the sense that
-# the outcome was clearly linearly related to temp. But now it's not related to
-# anything. It SHOULD be super clearly related to inundation.
-# Does the inundation multiplication part screw up?
-ggplot(allbound, aes(x = Temp, y = logGPP, color = logVolume)) + geom_point()
-
-tm_shape(weraiCropTemp[,,10]) + 
-  tm_fill(palette = temppal, midpoint = midtemp) 
-
-tm_shape(st_as_sf(1+weraiCropInun[,,100])) + 
-  tm_fill(col = '2004-07-01 10:00:00', palette = inunpal, 
-          midpoint = midinun, style = 'log10_pretty')
-
-tm_shape(weraiCropPred[1,,10]) +
-  tm_fill(palette = gpppal) # tm_fill(palette = 'RdYlBu', rev = TRUE)
-
-tm_shape(weraiCropPred[3,,10]) +
-  tm_fill(palette = erpal)
+# Can I make a big facet thing
+tmap_arrange(temp_tm, inun_tm,
+             gpp_tm, er_tm)
 
 
-# Check the legend labels
 # write it up
 # Sure is close to a dashboard
 
