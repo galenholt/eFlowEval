@@ -1,0 +1,116 @@
+#
+# This is a Shiny web application. You can run the application by clicking
+# the 'Run App' button above.
+#
+# Find out more about building applications with Shiny here:
+#
+#    http://shiny.rstudio.com/
+#
+
+library(shiny)
+setwd(here::here())
+# source(file.path(here::here(), 'Scripts', 'Scenarios', 'plotting', 'metabolismLocalAndStatic.R'))
+
+# Can I make a UI with columns?
+ui <- fluidPage(
+    # Application title
+    titlePanel("Local Example: Werai Forest"),
+    
+    fluidRow(
+        column(4,
+               h4("Two months preceding: ")
+               ),
+        column(4,
+               selectInput("datewanted", "Bimonth end", choices = availDays)
+               )
+    ),
+    
+    fluidRow(column(12, h3("Drivers"))),
+    
+    fluidRow(
+        column(6,
+               tmapOutput("temp")
+               ),
+        column(6,
+               tmapOutput("inun")
+               )
+    ),
+    
+    fluidRow(column(12, h3("Predictions"))),
+    
+    fluidRow(
+        column(6,
+               tmapOutput("gpp")
+        ),
+        column(6,
+               tmapOutput("er")
+        )
+    )
+)
+
+# # Define UI
+# ui <- fluidPage(
+# 
+#     # Application title
+#     titlePanel("Local Example: Werai Forest"),
+#     
+#     # Sidebar with a slider input for number of bins
+#     sidebarLayout(
+#         sidebarPanel(
+#             selectInput("datewanted", "Bimonth end", choices = availDays)
+#         ),
+#         
+#         # Show a plot of the generated distribution
+#         mainPanel(
+#             # tmapOutput("invars"),
+#             tmapOutput("temp"),
+#             tmapOutput("inun"),
+#             tmapOutput("gpp"),
+#             tmapOutput("er"),
+#         )
+#     )
+# )
+
+# Define server logic required to draw a histogram
+server <- function(input, output) {
+
+    output$temp <- renderTmap({
+        # Works. the others might work, if I do something reactive?
+        # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
+        tempfun(input$datewanted, titled = TRUE)
+        # tmap_leaflet(inputsfun(input$datewanted), in.shiny = TRUE)
+        # tmap_leaflet(tempfun(input$datewanted), in.shiny = TRUE)
+    })
+    
+    output$inun <- renderTmap({
+        # Works. the others might work, if I do something reactive?
+        # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
+        inunfun(input$datewanted, titled = FALSE)
+        # fastgrab(input$datewanted)
+        # tmap_leaflet(inputsfun(input$datewanted), in.shiny = TRUE)
+        # tmap_leaflet(tempfun(input$datewanted), in.shiny = TRUE)
+    })
+    
+    output$gpp <- renderTmap({
+        # Works. the others might work, if I do something reactive?
+        # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
+        gppfun(input$datewanted, titled = FALSE)
+        # fastgrab(input$datewanted)
+        # tmap_leaflet(inputsfun(input$datewanted), in.shiny = TRUE)
+        # tmap_leaflet(tempfun(input$datewanted), in.shiny = TRUE)
+    })
+    
+    output$er <- renderTmap({
+        # Works. the others might work, if I do something reactive?
+        # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
+        erfun(input$datewanted, titled = FALSE)
+        # fastgrab(input$datewanted)
+        # tmap_leaflet(inputsfun(input$datewanted), in.shiny = TRUE)
+        # tmap_leaflet(tempfun(input$datewanted), in.shiny = TRUE)
+    })
+    # test
+    # output$texttest <- renderText(input$datewanted)
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
