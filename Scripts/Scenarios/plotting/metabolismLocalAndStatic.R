@@ -15,6 +15,7 @@ library(transformr)
 library(gganimate)
 library(viridis)
 library(colorspace)
+library(doFuture)
 
 
 # Set the crs
@@ -101,7 +102,7 @@ ramsarW <- filter(ramsarMDB, WNAME == 'Werai Forest')
 # Single ramsar polygon
 # TURN ON ESRI WORLD TOPO MAP TO SEE WHERE WE ARE IN THE LAYERS MENU THING.
 ramsarW1 <- summarise(ramsarW)
-tm_shape(ramsarW1) + tm_borders() + tm_shape(werai) + tm_borders()
+# tm_shape(ramsarW1) + tm_borders() + tm_shape(werai) + tm_borders()
 # Cool. and the box does a better job hitting the state forest, Ramsar is bigger
 
 # crop down to the ramsar polygon- should I crop or intersect? Not entirely
@@ -272,77 +273,128 @@ gpplabels_log
 
 # make a list of the potential times- don't use inundation, it goes back too far
 availDays <- st_get_dimension_values(weraiCropTemp, which = 'time')
-availDays
+availDays <- availDays[2:length(availDays)] # since the first temp is NA
 
 
-datewanted <- as.character(availDays[18]) # just pick something for now
+# datewanted <- as.character(availDays[18]) # just pick something for now
 
-# Temp plot
-temp_sf <- weraiCropTemp %>% 
-  st_as_sf() %>% 
-  select(all_of(datewanted)) %>%
-  rename(Temp = 1) 
-temp_tm <- temp_sf %>%
-  tm_shape() + 
-  tm_fill(col = 'Temp', palette = temppal,
-          midpoint = midtemp,
-          breaks = tempbreaks) +
-  tm_layout(title = paste0('Two months preceding ', datewanted))
-temp_tm 
+# Do these as functions
+tempfun <- function(datewanted, titled = TRUE) {
+  # Temp plot
+  temp_sf <- weraiCropTemp %>% 
+    st_as_sf() %>% 
+    select(all_of(datewanted)) %>%
+    rename(Temp = 1) 
+  temp_tm <- temp_sf %>%
+    tm_shape() + 
+    tm_fill(col = 'Temp', palette = temppal,
+            midpoint = midtemp,
+            breaks = tempbreaks) 
+  if (titled) {
+    temp_tm <- temp_tm + 
+      tm_layout(title = paste0('Two months preceding ', datewanted))
+  }
+  return(temp_tm) 
+}
+# tempfun(datewanted)
 
 # Inundation 
-inun_sf <- weraiCropInun %>% 
-  st_as_sf() %>% 
-  select(all_of(datewanted)) %>%  
-  rename(InundationVolume = 1) %>%
-  mutate(logVolume = log10(1+InundationVolume)) # don't actually log, that happens in the plot
-inun_tm <- inun_sf %>%
-  tm_shape() + 
-  tm_fill(col = 'logVolume', palette = inunpal_log,
-          midpoint = midinun_log, 
-          breaks = inunbreaks_log,
-          labels = inunlabels_log,
-          title = 'Volume Inundation') +
-  tm_layout(title = paste0('Two months preceding ', datewanted))
-inun_tm  
+inunfun <- function(datewanted, titled = TRUE) {
+  inun_sf <- weraiCropInun %>% 
+    st_as_sf() %>% 
+    select(all_of(datewanted)) %>%  
+    rename(InundationVolume = 1) %>%
+    mutate(logVolume = log10(1+InundationVolume)) # don't actually log, that happens in the plot
+  inun_tm <- inun_sf %>%
+    tm_shape() + 
+    tm_fill(col = 'logVolume', palette = inunpal_log,
+            midpoint = midinun_log, 
+            breaks = inunbreaks_log,
+            labels = inunlabels_log,
+            title = 'Volume Inundation') 
+  if (titled) {
+    inun_tm <- inun_tm + 
+      tm_layout(title = paste0('Two months preceding ', datewanted))
+  }
+  return(inun_tm)  
+}
+# inunfun(datewanted)
+
 
 # GPP
-gpp_sf <- weraiCropPred[1,,] %>% 
-  st_as_sf() %>% 
-  select(all_of(datewanted)) %>%
-  rename(GPP = 1) %>%
-  mutate(logGPP = log10(1+GPP))
-gpp_tm <- gpp_sf %>%
-  tm_shape() +
-  tm_fill(col = 'logGPP', palette = gpppal_log,
-          breaks = gppbreaks_log,
-          labels = gpplabels_log,
-          title = 'GPP') +
-  tm_layout(title = paste0('Two months preceding ', datewanted))
-gpp_tm
+gppfun <- function(datewanted, titled = TRUE) {
+  gpp_sf <- weraiCropPred[1,,] %>% 
+    st_as_sf() %>% 
+    select(all_of(datewanted)) %>%
+    rename(GPP = 1) %>%
+    mutate(logGPP = log10(1+GPP))
+  gpp_tm <- gpp_sf %>%
+    tm_shape() +
+    tm_fill(col = 'logGPP', palette = gpppal_log,
+            breaks = gppbreaks_log,
+            labels = gpplabels_log,
+            title = 'GPP') 
+  if (titled) {
+    gpp_tm <- gpp_tm + 
+      tm_layout(title = paste0('Two months preceding ', datewanted))
+  }
+  return(gpp_tm)
+}
+# gppfun(datewanted)
+
 
 # ER plot
-er_sf <- weraiCropPred[3,,] %>% 
-  st_as_sf() %>% 
-  select(all_of(datewanted)) %>%
-  rename(ER = 1) %>%
-  mutate(logER = log10(1+ER))
-er_tm <- er_sf %>%
-  tm_shape() +
-  tm_fill(col = 'logER', palette = erpal_log,
-          breaks = erbreaks_log,
-          labels = erlabels_log,
-          title = 'ER') +
-  tm_layout(title = paste0('Two months preceding ', datewanted))
-er_tm
+erfun <- function(datewanted, titled = TRUE) {
+  er_sf <- weraiCropPred[3,,] %>% 
+    st_as_sf() %>% 
+    select(all_of(datewanted)) %>%
+    rename(ER = 1) %>%
+    mutate(logER = log10(1+ER))
+  er_tm <- er_sf %>%
+    tm_shape() +
+    tm_fill(col = 'logER', palette = erpal_log,
+            breaks = erbreaks_log,
+            labels = erlabels_log,
+            title = 'ER')
+  if (titled) {
+    er_tm <- er_tm + 
+      tm_layout(title = paste0('Two months preceding ', datewanted))
+  }
+    
+  return(er_tm)
+}
+# erfun(datewanted)
+
 
 # Can I make a big facet thing
-tmap_arrange(temp_tm, inun_tm,
-             gpp_tm, er_tm)
+inputsfun <- function(datewanted) {
+  tmap_arrange(tempfun(datewanted), inunfun(datewanted))
+}
+# inputsfun(datewanted)
+
+predictfun <- function(datewanted) {
+  tmap_arrange(gppfun(datewanted), erfun(datewanted))
+}
+
+allfun <- function(datewanted) {
+  tmap_arrange(tempfun(datewanted), inunfun(datewanted),
+               gppfun(datewanted), erfun(datewanted))
+}
+
+# allfun
 # Yep. Though two might make more sense- one for inputs, one for predictions
 
 
 # write it up
 # Sure is close to a dashboard
 
+# Test whether there's a faster way to serve the data
+fastserveInun <- foreach(i = 1:5) %do% {
+  inunfun(datewanted = as.character(availDays[i]))
+}
+
+# Getting argument length zero again
+fastgrab <- function(datewanted) {
+  fastserveInun[which(as.character(availDays) == datewanted)]
+}
 
