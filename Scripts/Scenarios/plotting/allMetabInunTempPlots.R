@@ -195,6 +195,47 @@ png(file.path(scriptOut, 'GPPflatexampleplot.png'), height = 12/2.54, width = 12
 gppNoValley
 dev.off()
 
+
+
+gppNoValley2 <- ggplot() +
+  geom_stars(data = metabolism[2,,20]) +
+  coord_sf() +
+  # facet_wrap(~as.character(time)) +
+  theme_void()  +
+  # scale_fill_gradient(low = 'firebrick', high = 'forestgreen' ) +
+  scale_fill_continuous_sequential(palette = 'Emrld') +
+  labs(fill = 'Total wetland\nGPP')
+gppNoValley2
+
+
+png(file.path(scriptOut, 'GPPflatexampleplot2.png'), height = 12/2.54, width = 12/2.54, units = 'in', res = 300)
+gppNoValley2
+dev.off()
+
+
+# Can I make simple annual reporting?
+interDates <- as.POSIXct(c("2014-06-30", "2015-06-30", "2016-06-30", "2017-06-30", "2018-06-30", "2019-06-30"))
+
+metannual <- tempaggregate(metabolism, by_t = as.Date(interDates), FUN = sum, na.rm = TRUE)
+
+gppNoValleyTimeCompare <- ggplot() +
+  geom_stars(data = metannual[2,,]) +
+  coord_sf() +
+  facet_wrap(~as.character(time)) +
+  theme_void()  +
+  # scale_fill_gradient(low = 'firebrick', high = 'forestgreen' ) +
+  scale_fill_continuous_sequential(palette = 'Emrld') +
+  labs(fill = 'Yearly wetland\nGPP')
+gppNoValleyTimeCompare
+
+
+png(file.path(scriptOut, 'GPPflatexampleplot.png'), height = 12/2.54, width = 12/2.54, units = 'in', res = 300)
+gppNoValley
+dev.off()
+
+
+
+
 # Animations --------------------------------------------------------------
 
   
