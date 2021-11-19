@@ -27,7 +27,7 @@ plan(multicore) # multicore on HPC
 
 # # For local testing
 # plan(multisession)
-# summaryFun <- 'weightedMean'
+# summaryFun <- 'weightedMeanCLIM'
 # args <- c('blah', 'b', 'c', 'g', '3', 't', 'a', '3', 'Warrego', '8', '6', '8')
 # args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '9', 'Warrego', '8', '6', '10')
 # Does it break with one level of chunking?
@@ -69,7 +69,7 @@ maxPix <- 100000 # Seems likely to be a good balance based on local testing, but
 if (summaryFun == 'weightedMeanCLIM') {
   # Weighted mean, ignoring NA by default
   chosenSummary <- function(x, area) {
-    weighted.mean(x+2, area, na.rm = TRUE)
+    weighted.mean(x+units::set_units(2, K), area, na.rm = TRUE)
   }
 } else {
   stop('need to choose a summary function')
@@ -253,6 +253,7 @@ anaePolys <- st_transform(anaePolys, starCRS)
 # dpList <- foreach(s = 8:12) %dopar% {
 dpList <- foreach(s = 1:nrow(anaePolys)) %dopar% {
   thiscrop <- st_crop(soilTstars, anaePolys[s,], as_points = FALSE)
+  
   thistemp <- rastPolyJoin(polysf = anaePolys[s,], rastst = thiscrop, FUN = chosenSummary,
                            grouper = 'UID', maintainPolys = TRUE,
                            na.replace = NA, whichcrs = commonCRS, 
