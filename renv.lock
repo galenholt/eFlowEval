@@ -184,6 +184,20 @@
       "Repository": "CRAN",
       "Hash": "2368dde18d8ef1ca933e7e2eea3ece57"
     },
+    "bslib": {
+      "Package": "bslib",
+      "Version": "0.3.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "56ae7e1987b340186a8a5a157c2ec358"
+    },
+    "cachem": {
+      "Package": "cachem",
+      "Version": "1.0.5",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "5346f76a33eb7417812c270b04a5581b"
+    },
     "calecopal": {
       "Package": "calecopal",
       "Version": "0.1.0",
@@ -272,6 +286,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "6cab523af06ac301e7a40c5529d45882"
+    },
+    "commonmark": {
+      "Package": "commonmark",
+      "Version": "1.7",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "0f22be39ec1d141fd03683c06f3a6e67"
     },
     "conquer": {
       "Package": "conquer",
@@ -412,6 +433,20 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "c98eb5133d9cb9e1622b8691487f11bb"
+    },
+    "fastmap": {
+      "Package": "fastmap",
+      "Version": "1.1.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "77bd60a6157420d4ffa93b27cf6a58b8"
+    },
+    "fontawesome": {
+      "Package": "fontawesome",
+      "Version": "0.2.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "55624ed409e46c5f358b2c060be87f67"
     },
     "forcats": {
       "Package": "forcats",
@@ -597,10 +632,10 @@
     },
     "htmltools": {
       "Package": "htmltools",
-      "Version": "0.5.1.1",
+      "Version": "0.5.2",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "af2c2531e55df5cf230c4b5444fc973c"
+      "Hash": "526c484233f42522278ab06fb185cb26"
     },
     "htmlwidgets": {
       "Package": "htmlwidgets",
@@ -608,6 +643,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "6fdaa86d0700f8b3e92ee3c445a5a10d"
+    },
+    "httpuv": {
+      "Package": "httpuv",
+      "Version": "1.6.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "65e865802fe6dd1bafef1dae5b80a844"
     },
     "httr": {
       "Package": "httr",
@@ -637,6 +679,13 @@
       "Repository": "CRAN",
       "Hash": "64778782a89480e9a644f69aad9a2877"
     },
+    "jquerylib": {
+      "Package": "jquerylib",
+      "Version": "0.1.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "5aab57a3bd297eee1c1d862735972182"
+    },
     "jsonify": {
       "Package": "jsonify",
       "Version": "1.2.1",
@@ -664,6 +713,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "3d5108641f47470611a32d0bdf357a72"
+    },
+    "later": {
+      "Package": "later",
+      "Version": "1.2.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "b61890ae77fea19fc8acadd25db70aa4"
     },
     "lattice": {
       "Package": "lattice",
@@ -938,6 +994,13 @@
       "Repository": "CRAN",
       "Hash": "14dc9f7a3c91ebb14ec5bb9208a07061"
     },
+    "promises": {
+      "Package": "promises",
+      "Version": "1.2.0.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "4ab2c43adb4d4699cf3690acd378d75d"
+    },
     "proxy": {
       "Package": "proxy",
       "Version": "0.4-26",
@@ -1085,6 +1148,13 @@
       "Repository": "CRAN",
       "Hash": "02f7d4821a7ca841bbfdf3b7176ce6cf"
     },
+    "sass": {
+      "Package": "sass",
+      "Version": "0.4.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "50cf822feb64bb3977bda0b7091be623"
+    },
     "scales": {
       "Package": "scales",
       "Version": "1.1.1",
@@ -1112,6 +1182,20 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "c1bd5fbd6bed3c16a20df15d9bc20c55"
+    },
+    "shiny": {
+      "Package": "shiny",
+      "Version": "1.7.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "00344c227c7bd0ab5d78052c5d736c44"
+    },
+    "sourcetools": {
+      "Package": "sourcetools",
+      "Version": "0.1.7",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "947e4e02a79effa5d512473e10f41797"
     },
     "sp": {
       "Package": "sp",
@@ -1287,6 +1371,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "d4d71a75dd3ea9eb5fa28cc21f9585e2"
+    },
+    "xtable": {
+      "Package": "xtable",
+      "Version": "1.8-4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "b8acdf8af494d9ec19ccb2481a9b11c2"
     },
     "yaml": {
       "Package": "yaml",
