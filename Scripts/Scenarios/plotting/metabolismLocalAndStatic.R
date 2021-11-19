@@ -385,16 +385,44 @@ allfun <- function(datewanted) {
 # Yep. Though two might make more sense- one for inputs, one for predictions
 
 
-# write it up
-# Sure is close to a dashboard
-
 # Test whether there's a faster way to serve the data
-fastserveInun <- foreach(i = 1:5) %do% {
-  inunfun(datewanted = as.character(availDays[i]))
-}
+  # This doesn't work in shiny, not sure why
+# fastserveInun <- foreach(i = 1:5) %do% {
+#   inunfun(datewanted = as.character(availDays[i]))
+# }
+# 
+# # Getting argument length zero again
+# fastgrab <- function(datewanted) {
+#   fastserveInun[which(as.character(availDays) == datewanted)]
+# }
 
-# Getting argument length zero again
-fastgrab <- function(datewanted) {
-  fastserveInun[which(as.character(availDays) == datewanted)]
-}
 
+# How about an annual reporting version? ---------------------------------------------
+
+# Can I make simple annual reporting?
+interDates <- as.POSIXct(c("2014-06-30", "2015-06-30", "2016-06-30", "2017-06-30", "2018-06-30", "2019-06-30"))
+
+tempannual <- tempaggregate(weraiCropTemp, by_t = as.Date(interDates), FUN = mean, na.rm = TRUE)
+inunannual <- tempaggregate(weraiCropInun, by_t = as.Date(interDates), FUN = sum, na.rm = TRUE)
+gppannual <- tempaggregate(weraiCropPred[1,,], by_t = as.Date(interDates), FUN = sum, na.rm = TRUE)
+erannual <- tempaggregate(weraiCropPred[3,,], by_t = as.Date(interDates), FUN = sum, na.rm = TRUE)
+
+# aggregate to werai
+# temp area-weighted
+areas <- tempannual %>%
+  st_geometry() %>%
+  st_area() %>%
+  as.numeric()
+tempW <- catchAgg <- catchAggW(strict = tempannual, strictWeights = areas,
+                               FUN = mean, summaryPoly = ramsarW1)
+  
+inunW <- aggregate(inunannual, 
+                      by = ramsarW1, 
+                      FUN = sum, na.rm = TRUE)
+
+gppW <- aggregate(gppannual, 
+                   by = ramsarW1, 
+                   FUN = sum, na.rm = TRUE)
+erW <- aggregate(erannual, 
+                   by = ramsarW1, 
+                   FUN = sum, na.rm = TRUE)
