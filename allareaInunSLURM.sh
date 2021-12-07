@@ -25,7 +25,7 @@ module load R/4.0.2
 # print the catchment to the outfile
 echo $1
 
-Rscript hpc_wrap.R "Scripts/DataProcessing/processInundationBird.R" "areaInun" ${SLURM_ARRAY_TASK_ID} $1
+Rscript hpc_wrap.R "Scripts/DataProcessing/processInundationGeneral.R" "areaInun" ${SLURM_ARRAY_TASK_ID} $1
 
 # Copy to ruby datastore. copying to the {lw-mer} on bowen is at /datasets/work/lw-mer/work/galen_holt, but need to sort this out a bit better
 # cp -rp testout.rdata /datastore/hol436/HPC_testing
