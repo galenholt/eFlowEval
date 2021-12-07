@@ -24,7 +24,7 @@ plan(multicore) # multicore on HPC
 
 # # For local testing
 # plan(multisession)
-# summaryFun <- 'areaSpoonbillForage'
+# summaryFun <- 'volInun'
 # args <- c('blah', 'b', 'c', 'g', '3', 't', 'a', '3', 'Warrego', '8', '6', '8')
 # args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '9', 'Warrego', '8', '6', '10')
 # Does it break with one level of chunking?
@@ -54,6 +54,7 @@ chunkName <- args[8]
 # this may be NA if there are no outer chunks
 if (length(args) > 9) {
   outerchunks <- as.integer(args[10:length(args)])
+  onelayer <- FALSE
 } else {
   onelayer <- TRUE
 }

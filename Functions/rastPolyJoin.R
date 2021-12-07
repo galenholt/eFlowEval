@@ -50,7 +50,7 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
     # rpintersect is just a wrapper of st_intersection with a bunch of read-in and transform boilerplate so it works consistently
   if (is.na(pixneeded) | is.na(maxPixels) | (pixneeded <= maxPixels)) {
     intPR <- rpintersect(singlesf = polysf, singleraster = rastst, 
-                         na.replace = na.replace, whichcrs = 3577)
+                         na.replace = na.replace, whichcrs = whichcrs)
   } else if (pixneeded > maxPixels) {
     # make a grid that breaks up the polygon (or is just the bb if the number of pixels is small enough)
     grid <- st_make_grid(polysf, n = ceiling(sqrt(pixneeded/maxPixels)))
@@ -73,7 +73,7 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
                        
                        # Use the core rpintersect function to do the intersection
                        intPRsmall <- rpintersect(singlesf = thissmall, singleraster = smallcrop, 
-                                                 na.replace = na.replace, whichcrs = 3577)
+                                                 na.replace = na.replace, whichcrs = whichcrs)
                        # Return to be row-bound
                        intPRsmall
                      } # end foreach
@@ -102,6 +102,13 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
       ungroup()
     
     # Save the indexer column (is it possible to glue this back on as a dimension? Probably not, because it's parallel to shape)
+      # need to make the sf have the right transform. Can't just do this above because the stars can't be shifted until after rpintersect
+    # ensure the polygons match
+    if (st_crs(polysf)$epsg != whichcrs) {
+      polysf <- st_transform(polysf, whichcrs) %>%
+        st_make_valid()
+    }
+    
     avgPRindex <- polysf[ ,grouper] # leave the geometry ON this one, maybe?
     
     # Put the geometry back on the summarised data
