@@ -134,15 +134,15 @@ metabolismPotential <- st_set_dimensions(metabolismPotential, which = 'time',
 
   
   # # Plot the basin to try to sort out what's missing where things are missing
-  # basinPlot <- ggplot() +
-  #   geom_sf(data = ltimNoNorth, mapping = aes(fill = ValleyName)) +
-  #   geom_sf_label(data = ltimNoNorth, mapping = aes(label = ValleyName)) +
-  #   coord_sf() +
-  #   theme_void()  +
-  #   # scale_fill_gradient(low = 'firebrick', high = 'forestgreen' ) +
-  #   # scale_fill_brewer(palette = 'Dark2') +
-  #   ggtitle('Catchments')
-  # basinPlot
+  basinPlot <- ggplot() +
+    geom_sf(data = ltimNoNorth, mapping = aes(fill = ValleyName)) +
+    geom_sf_label(data = ltimNoNorth, mapping = aes(label = ValleyName)) +
+    coord_sf() +
+    theme_void()  +
+    # scale_fill_gradient(low = 'firebrick', high = 'forestgreen' ) +
+    # scale_fill_brewer(palette = 'Dark2') +
+    ggtitle('Catchments')
+  basinPlot
   # 
   # # Try to id the missing basins by overlaying
   # # inundation checks
@@ -178,7 +178,30 @@ metabolismPotential <- st_set_dimensions(metabolismPotential, which = 'time',
   #   geom_sf_label(data = ltimNoNorth, mapping = aes(label = ValleyName), size = 3)
   # 
   
-
+  # Can we just color the catchments as a comparison mockup?
+  map1 <- ggplot() +
+    geom_stars(data = log(metabolism[2,,5])) +
+    # geom_sf(data = ltimNoNorth, mapping = aes(color = ValleyName), fill = NA) +
+    # geom_sf_label(data = ltimNoNorth, mapping = aes(label = ValleyName), size = 3) +
+    scale_fill_continuous_sequential(palette = 'Batlow')
+  # scale_fill_viridis(option = 'mako')
+  #
+  
+  # just a mixed-up comparison
+  metab2 <- metabolism
+  metab2[[4]] <- sample(metab2[[4]])
+  map2 <- ggplot() +
+    geom_stars(data = log(metab2[4,,15])) +
+    # geom_sf(data = ltimNoNorth, mapping = aes(color = ValleyName), fill = NA) +
+    # geom_sf_label(data = ltimNoNorth, mapping = aes(label = ValleyName), size = 3) +
+    scale_fill_continuous_sequential(palette = 'Batlow')
+   
+  ggpubr::ggarrange(map1 + theme(legend.position = 'none'), map2 + theme(legend.position = 'none'))
+  
+  png(file.path(scriptOut, 'ComparisonExampleplot.png'), height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+  ggpubr::ggarrange(map1 + theme(legend.position = 'none'), map2 + theme(legend.position = 'none'))
+  dev.off()
+  
 # Print an example scaled up plot -----------------------------------------
   gppNoValley <- ggplot() +
     geom_stars(data = metabolism[2,,15]) +
