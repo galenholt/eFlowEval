@@ -6,4 +6,8 @@ if (grepl('^pearcey', Sys.info()["nodename"]) | grepl('^c', Sys.info()["nodename
 
  oldpaths <- .libPaths() # Gets the renv libs
  .libPaths(new = c(oldpaths[1],'/apps/R/4.0.2/lib64/R/library' ))
+} else if (grepl('^petrichor', Sys.info()["nodename"])) {
+oldpaths <- .libPaths() # Gets the renv libs
+ .libPaths(new = c(oldpaths[1],'/apps/R/4.0.5/lib64/R/library' ))
 }
+
