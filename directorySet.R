@@ -6,10 +6,12 @@
 print(Sys.info())
 
 # Rather than a functtion, I want this to set a few things, so building as a script instead
-# Set directory structure for pearcey
+# Set directory structure for pearcey (or petrichor)
 # Pearcey seems to have all the nodes named 'c###' 
 # trying to avoid needing to say sysname == Linux, because would be nice to run on local linux
-if (grepl('^pearcey', Sys.info()["nodename"]) | grepl('^c', Sys.info()["nodename"])) {
+if (grepl('^petrichor', Sys.info()["nodename"]) | 
+    grepl('^pearcey', Sys.info()["nodename"]) | 
+    grepl('^c', Sys.info()["nodename"])) {
   
   if (dataWhere == 'SCRATCH') {
     # Let's assume I cp from flush/scratch/whatever into JOBDIR at the start of the job.
