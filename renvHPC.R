@@ -25,7 +25,10 @@ if ('calecopal' %in% notinstalled) {
 }
 
 # I could just do this the old rbrary way I guess too, and bypass renv here
-renv::install(notinstalled)
+# If notinstalled is length 0, this tries a full renv::install() of everything.
+if (length(notinstalled) > 0) {
+  renv::install(notinstalled)
+}
 
 # where do we want to put this? a standalone helper, or source it every time as
 # a check for updates to renv.lock?
