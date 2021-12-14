@@ -32,6 +32,9 @@ if (grepl('^petrichor', Sys.info()["nodename"]) |
   source(".Rprofile")
   # print(.libPaths())
   
+  # sort out libraries for HPC
+  source('renvHPC.R')
+  
 } else if (grepl('^Windows', Sys.info()["sysname"])) {
   # myhome <- stringr::str_remove(path.expand("~"), "/Documents")
   myhome <- paste0('C:/Users/', Sys.getenv("USERNAME"))
