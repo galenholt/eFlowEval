@@ -23,7 +23,7 @@ notinstalled <- renvpks2[which(!(renvpks2 %in% installed.packages()))]
 print('packages not installed are')
 print(notinstalled)
 
-stop('stopping to check here')
+# stop('stopping to check here')
 
 # There's an issue with packages installed from github. I could sort out
 # programatically, but doesn't matter right now
