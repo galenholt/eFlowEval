@@ -30,7 +30,8 @@ if (grepl('^petrichor', Sys.info()["nodename"]) |
 
   print(paste0('datOut is ', datOut))
   source(".Rprofile")
-  # print(.libPaths())
+  print('libPaths in directorySet are now')
+  print(.libPaths())
   
   # sort out libraries for HPC
   source('renvHPC.R')
