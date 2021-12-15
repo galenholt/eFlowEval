@@ -32,6 +32,7 @@ plan(multicore) # multicore on HPC
 # args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '9', 'Warrego', '8', '6', '10')
 # Does it break with one level of chunking?
 # args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '100', 'Avoca')
+# args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '10', 'Avoca')
 
 # args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '96', 'Broken')
 
