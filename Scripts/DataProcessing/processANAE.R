@@ -33,7 +33,10 @@ library(sf)
 library(stars)
 
 
-
+# Set the projected CRS we want to use (australian Albers, typically)
+  # This isn't super important here, since the ANAEs get transformed a few times
+  # to match stars objects, but let's try to be consistent throughout.
+commonCRS <- 3577
 
 print(paste0('starting processANAE, time is ', Sys.time(), ', run is ', dataWhere))
 
@@ -48,6 +51,7 @@ print(paste0('starting processANAE, time is ', Sys.time(), ', run is ', dataWher
 wetlands <- read_sf(dsn = file.path(datDir, 
                                     'ANAE/ANAE_Wetlands_v3_24mar2021/Wetlands_ANAE_v3_24mar2021/Wetlands_ANAE_v3_24mar2021.shp')) %>%
   st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
+  st_transform(anaePolys, commonCRS) %>%
   st_make_valid()
  
 # # And the interim NSW data
@@ -59,16 +63,19 @@ wetlands <- read_sf(dsn = file.path(datDir,
 # Get koppen climate region as a test of the joining of data
 kopSub <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'BoM_Koppen_subregions') %>%
   st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
+  st_transform(anaePolys, commonCRS) %>%
   st_make_valid()
 
 # And get the LTIM_Valleys to use to subset for toy models at scale, but not enormous scale
 LTIM_Valleys <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'LTIM_Valleys') %>%
   st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
+  st_transform(anaePolys, commonCRS) %>%
   st_make_valid()
 
 # and the basin boundary, might be useful, especially for clipping rasters
 basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'MDB_Boundary') %>%
   st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
+  st_transform(anaePolys, commonCRS) %>%
   st_make_valid() %>%
   select(LEVEL2NAME) # no need for other info
 
