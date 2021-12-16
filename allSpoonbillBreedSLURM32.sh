@@ -11,8 +11,8 @@
 #SBATCH --nodes=1 # number of nodes
 #SBATCH --ntasks-per-node=32 # This is the cores per node # If I want 20 cpus on 2 nodes, for ex, use --nodes=2 --ntasks-per-node=10
 
-#SBATCH -o $1_32_%A_%a.out # Standard output
-#SBATCH -e $1_32_%A_%a.err # Standard error
+#SBATCH -o %j_%A_%a.out # Standard output
+#SBATCH -e %j_32_%A_%a.err # Standard error
 
 # timing
 begin=`date +%s`
