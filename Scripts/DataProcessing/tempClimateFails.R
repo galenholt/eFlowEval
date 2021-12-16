@@ -28,6 +28,6 @@ makeSHfails(outerDir = file.path(datOut, 'Climateprocessed'),
             summaryFuns = 'weightedMeanCLIM',
             varName = 'TempClim',
             nchunks = 100,
-            lengthOrChunk = c('short'), # , 'long', 'chunk 
+            lengthOrChunk = c('short', 'long'), # , 'long', 'chunk 
             runImmediate = FALSE,
             forceAllCatchments = TRUE)
