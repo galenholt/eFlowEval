@@ -17,7 +17,7 @@ plan(multisession)
 
 
 # Setup -------------------------------------------------------------------
-scriptOut <- file.path(datOut, 'Climaterocessed', 'weightedMeanCLIM', 'bimonth')
+scriptOut <- file.path(datOut, 'Climateprocessed', 'weightedMeanCLIM', 'bimonth')
 if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
 
 # directory with metabolism predictions
