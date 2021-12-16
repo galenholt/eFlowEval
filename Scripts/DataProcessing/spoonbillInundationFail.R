@@ -29,7 +29,7 @@ makeSHfails(outerDir = file.path(datOut, 'Inundationprocessed'),
             summaryFuns = 'areaSpoonbillForage',
             varName = 'SpoonbillForage',
             nchunks = 100,
-            lengthOrChunk = c('short', 'long', 'chunk'), # , 'long', 'chunk'
+            lengthOrChunk = c('short', 'long'), # , 'long', 'chunk'
             runImmediate = FALSE,
             forceAllCatchments = TRUE)
 
@@ -37,6 +37,6 @@ makeSHfails(outerDir = file.path(datOut, 'Inundationprocessed'),
             summaryFuns = 'areaSpoonbillBreed',
             varName = 'SpoonbillBreed',
             nchunks = 100,
-            lengthOrChunk = c('short', 'long', 'chunk'), # , 'long', 'chunk'
+            lengthOrChunk = c('short', 'long'), # , 'long', 'chunk'
             runImmediate = FALSE,
             forceAllCatchments = TRUE)
