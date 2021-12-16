@@ -14,7 +14,7 @@ sleep 2
 
 thiscatch='Avoca'
 echo 'start' $thiscatch '32'
-sbatch -J $thiscatch --array=1-2 allSpoonbillBreedSLURM32sh $thiscatch
+sbatch -J $thiscatch --array=1-2 allSpoonbillBreedSLURM32.sh $thiscatch
 sleep 2
 
 thiscatch='Murrumbidgee'
