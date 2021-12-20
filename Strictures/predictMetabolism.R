@@ -194,6 +194,7 @@ assign(paste0(thisCatch, '_logERdays'), erd)
 assign(paste0(thisCatch, '_index'), weightedMeanIndex)
 
 # 3578 seconds total for bidgee (27000 anaes). Ends up just under 1GB. So that's not terrible
+# New version with predictInterval took 6621 for Avoca. That's wuite a bit worse. Going to try with more cores on petrichor
 save(list = c(paste0(thisCatch, '_logGPPdaysvalleys'), paste0(thisCatch, '_index')), 
      file = file.path(scriptOut, 'logGPPdaysvalleys', paste0(thisCatch, '_logGPPdaysvalleys.rdata')))
 
