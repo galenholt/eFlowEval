@@ -193,19 +193,62 @@ checklevels <- function(newdata, mod) {
 # a new function to allow prediction over new levels of RANDOM effects
 # add_predictions is pretty slick, but seems to also not be very full-featured.
 # can I write my own?
-add_preds <- function(newdata, mod, predname = NULL) {
+add_preds <- function(newdata, mod, predname = NULL, 
+                      interval = 'none', level = 0.9) {
   if (is.null(predname)) {
     predname <- deparse(substitute(mod))
   }
+  test <- 1
   
+  # first handle the situation where the data's not there
   if (!checklevels(newdata, mod)) {
     predf <- mutate(newdata, tempname = NA)
-  } else {
-    preds <- predict(mod, newdata = newdata, allow.new.levels = TRUE)
-    predf <- bind_cols(newdata, tempname = preds)
+    # need the other terms if they'll be there for other catchments etc
+    if ('prediction' %in% interval | interval %in% c('both', 'all')) {
+      predf <- mutate(predf, 
+                      tempname_pfit = NA, 
+                      tempname_pupr = NA, 
+                      tempname_plwr = NA)
+    }
+    
+    if ('confidence' %in% interval | interval %in% c('both', 'all')) {
+      predf <- mutate(predf, 
+                      tempname_cfit = NA, 
+                      tempname_cupr = NA, 
+                      tempname_clwr = NA)
+    }
+      
+      } else {
+      preds <- predict(mod, newdata = newdata, allow.new.levels = TRUE)
+      predf <- bind_cols(newdata, tempname = preds)
+      
+      # Easier to do the fit first, but I'll leave the $fit part of the predictIntervals on there too to check
+      
+      # Prediction intervals
+        if ('prediction' %in% interval | interval %in% c('both', 'all')) {
+          predsP <- merTools::predictInterval(merMod = mod, 
+                                             newdata = newdata, 
+                                             level = level, 
+                                             include.resid.var = TRUE)
+        predsP <- rename(predsP,
+                        tempname_pfit = fit, tempname_pupr = upr, tempname_plwr = lwr)
+        predf <- bind_cols(predf, predsP)
+        } 
+      # Confidence intervals
+      if ('confidence' %in% interval | interval %in% c('both', 'all')) {
+        predsC <- merTools::predictInterval(merMod = mod, 
+                                           newdata = newdata, 
+                                           level = level, 
+                                           include.resid.var = FALSE)
+        predsC <- rename(predsC,
+                        tempname_cfit = fit, tempname_cupr = upr, tempname_clwr = lwr)
+        predf <- bind_cols(predf, predsC)
+      } 
+    
   }
   
-  names(predf)[which(names(predf) == 'tempname')] <- predname # avoiding rlang to sort out the name programatically
+  # names(predf)[which(names(predf) == 'tempname')] <- predname # avoiding rlang to sort out the name programatically
+  names(predf) <- str_replace(names(predf), 'tempname', predname)
   return(predf)
 }
 

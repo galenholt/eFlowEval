@@ -386,21 +386,51 @@ jtp <- filter(joinedTempPasses, gpp > 0 & !is.na(tempC))
 
 # Temp, from daysAwayFromWaterYear, catchment, year as random
   # subtest: should I use lme4 or TMB
-tempdaysvalleyRwgpp <- lme4::lmer(logGPP ~ tempC + daysAwayFromWaterYear + ValleyName + (1|wateryear),
-           data = jtp) # I think I don't need any fancy families or anything
-# tempdaysvalleyRwgppTMB <- glmmTMB::glmmTMB(logGPP ~ tempC + daysAwayFromWaterYear + ValleyName + (1|wateryear),
-#                                 data = jtp) # I think I don't need any fancy families or anything
-
-# TMB much slower, but gives p values, but not single-value anovas
-summary(tempdaysvalleyRwgpp)
+system.time(tempdaysvalleyRwgpp <- lme4::lmer(logGPP ~ tempC + daysAwayFromWaterYear + ValleyName + 
+                                                (1|wateryear),
+           data = jtp)) # I think I don't need any fancy families or anything
+# system.time(tempdaysvalleyRwgppTMB <- glmmTMB::glmmTMB(logGPP ~ tempC + daysAwayFromWaterYear + ValleyName + 
+#                                                          (1|wateryear),
+#                                 data = jtp)) # I think I don't need any fancy families or anything
+# # library(glmm)
+# # library(nlme)
+# # aaaa different syntax
+#   # system.time(tempdaysvalleyRwgppGLMM <- glmm::glmm(fixed = logGPP ~ tempC + daysAwayFromWaterYear + ValleyName,
+#   #                                                   random = random = logGPP ~ wateryear,
+#   #                                                      data = jtp))
+# # so is nlme. This is frustrating
+# # TMB much slower, but gives p values, but not single-value anovas
+# summary(tempdaysvalleyRwgpp)
 # summary(tempdaysvalleyRwgppTMB)
-AIC(tempdaysvalleyRwgpp)
+# AIC(tempdaysvalleyRwgpp)
 # AIC(tempdaysvalleyRwgppTMB)
-anova(tempdaysvalleyRwgpp)
+# anova(tempdaysvalleyRwgpp)
 # anova(tempdaysvalleyRwgppTMB)
 # 
 # I think I'm going to stick with lmer, since it's more common, faster, and gives anova tables.
 
+# but predictions don't have intervals. do they for glmmTMB?
+# no
+
+# # code found here:https://www.r-bloggers.com/2015/06/confidence-intervals-for-prediction-in-glmms/
+# # says #first CI and PI using predict-like method, using code posted here: http://glmm.wikidot.com/faq
+#   # Which is Ben Bolker's website, since moved to http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html
+# # modifying the terms, but
+# ## UUUUNNNGGGGHHHH. Newdata is a pain. I might actually be better off sorting
+# ## this out in predictMetabolism where I've generated the newdatas
+# newdat<-data.frame(logGPP = seq(-4,4,length=20)) # ROughly the range(jtp$logGPP)
+# mm <- model.matrix(~logGPP, newdat)
+# newdat$y <- mm %*% lme4::fixef(tempdaysvalleyRwgpp) 
+# # predict(m,newdat, re.form=NA) would give the same results
+# pvar1 <- diag(mm %*% tcrossprod(vcov(m),mm))
+# tvar1 <- pvar1+VarCorr(m)$f[1] # must be adapted for more complex models
+# newdat <- data.frame(
+#   newdat
+#   , plo = newdat$y-1.96*sqrt(pvar1)
+#   , phi = newdat$y+1.96*sqrt(pvar1)
+#   , tlo = newdat$y-1.96*sqrt(tvar1)
+#   , thi = newdat$y+1.96*sqrt(tvar1)
+# )
 
 # For the days away from water year ---------------------------------------
 

@@ -21,6 +21,13 @@ plan(multicore)
 scriptOut <- file.path(datOut, 'TempAndProduction', 'Predictions')
 if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
 
+subOuts <- file.path(scriptOut, c('logGPPdaysvalleys', 'logGPPdays', 'logERdaysvalleys','logERdays'))
+for (i in 1:length(subOuts)) {
+  if (!dir.exists(subOuts[i])) {dir.create(subOuts[i], recursive = TRUE)}
+}
+
+
+
 # chunksize in n anae polygons
 chunksize <- 1000
 
@@ -51,7 +58,8 @@ load(regIn)
 # change its name to something generic
 # This is annoying, but I guess not too bad
 weightedMeanTemps <- get(thisWMname)
-rm(list = thisWMname)
+weightedMeanIndex <- get(paste0(thisWMname, '_index'))
+rm(list = c(thisWMname, paste0(thisWMname, '_index')))
 
 
 # Whole basin predictions -------------------------------------------------
@@ -85,15 +93,15 @@ chunkpred <- function(bottom, top) {
            wateryear = getWaterYear(time))
   
   # predict new values
-  catchSF <- catchSF %>% 
-    add_preds(gppDaysValleys, predname = 'logGPPdaysvalleys')  %>% 
-    add_preds(gppDays, predname = 'logGPPdays') %>%
-    add_preds(erDaysValleys, predname = 'logERdaysvalleys') %>%
-    add_preds(erDays, predname = 'logERdays')
+  catchSF <- catchSF %>%
+    add_preds(gppDaysValleys, predname = 'logGPPdaysvalleys', interval = 'both')  %>%
+    add_preds(gppDays, predname = 'logGPPdays', interval = 'both') %>%
+    add_preds(erDaysValleys, predname = 'logERdaysvalleys', interval = 'both') %>%
+    add_preds(erDays, predname = 'logERdays', interval = 'both')
   
   # throw out all the extra variables, leaving just the predictions
   catchSF <- catchSF %>%
-    select(time, starts_with('log'))
+    select(time, starts_with('log'), -contains('pfit'), -contains('cfit'))
   # catchSF
   
   # Turn into stars
@@ -164,5 +172,38 @@ print(endbig-startbig)
 # save the name of the outputs, instead of starpreds (see other sorts of scripts for the assign() code)
 # SAVE THE INDICES sf- they aren't the same coming out of the processing script, which translates to here
 
+### Break up into fit and intervals separately
+gppdv <- starpreds %>%
+  select(contains('logGPPdaysvalleys'))
+
+gppd <- starpreds %>%
+  select(contains('logGPPdays'), -contains('valleys'))
+
+erdv <- starpreds %>%
+  select(contains('logERdaysvalleys'))
+
+erd <- starpreds %>%
+  select(contains('logERdays'), -contains('valleys'))
+
+# Name them
+assign(paste0(thisCatch, '_logGPPdaysvalleys'), gppdv)
+assign(paste0(thisCatch, '_logGPPdays'), gppd)
+assign(paste0(thisCatch, '_logERdaysvalleys'), erdv)
+assign(paste0(thisCatch, '_logERdays'), erd)
+
+assign(paste0(thisCatch, '_index'), weightedMeanIndex)
+
 # 3578 seconds total for bidgee (27000 anaes). Ends up just under 1GB. So that's not terrible
-save(starpreds, file = file.path(scriptOut, paste0(thisCatch, '_predictedGPPER.rdata')))
+save(list = c(paste0(thisCatch, '_logGPPdaysvalleys'), paste0(thisCatch, '_index')), 
+     file = file.path(scriptOut, 'logGPPdaysvalleys', paste0(thisCatch, '_logGPPdaysvalleys.rdata')))
+
+save(list = c(paste0(thisCatch, '_logGPPdays'), paste0(thisCatch, '_index')), 
+     file = file.path(scriptOut, 'logGPPdays', paste0(thisCatch, '_logGPPdays.rdata')))
+
+save(list = c(paste0(thisCatch, '_logERdaysvalleys'), paste0(thisCatch, '_index')), 
+     file = file.path(scriptOut, 'logERdaysvalleys', paste0(thisCatch, '_logERdaysvalleys.rdata')))
+
+save(list = c(paste0(thisCatch, '_logERdays'), paste0(thisCatch, '_index')), 
+     file = file.path(scriptOut, 'logERdays', paste0(thisCatch, '_logERdays.rdata')))
+
+# save(starpreds, file = file.path(scriptOut, paste0(thisCatch, '_predictedGPPER.rdata')))
