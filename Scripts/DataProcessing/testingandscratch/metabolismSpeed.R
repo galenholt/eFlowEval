@@ -64,15 +64,15 @@ chunkpred <- function(bottom, top) {
            wateryear = 2100)
   
   # predict new values
-  catchSF <- catchSF %>% 
-    add_preds(gppDaysValleys, predname = 'logGPPdaysvalleys')  %>% 
-    add_preds(gppDays, predname = 'logGPPdays') %>%
-    add_preds(erDaysValleys, predname = 'logERdaysvalleys') %>%
-    add_preds(erDays, predname = 'logERdays')
+  catchSF <- catchSF %>%
+    add_preds(gppDaysValleys, predname = 'logGPPdaysvalleys', interval = 'both')  %>%
+    add_preds(gppDays, predname = 'logGPPdays', interval = 'both') %>%
+    add_preds(erDaysValleys, predname = 'logERdaysvalleys', interval = 'both') %>%
+    add_preds(erDays, predname = 'logERdays', interval = 'both')
   
   # throw out all the extra variables, leaving just the predictions
   catchSF <- catchSF %>%
-    select(time, starts_with('log'))
+    select(time, starts_with('log'), -contains('pfit'), -contains('cfit'))
   # catchSF
   
   # Turn into stars
@@ -89,18 +89,18 @@ a <- chunkpred(bottom = 1, top = 2)
 b <- chunkpred(bottom = 1, top = 2)
 c(a,b, along = 1)
 
-# # Step 1: sort out an optimal chunksize
-# benchChunk <- microbenchmark::microbenchmark("a2" = { b <- chunkpred(bottom = 1, top = 2)},
-#                                              "a10" = { b <- chunkpred(bottom = 1, top = 10)},
-#                                              "a100" = { b <- chunkpred(bottom = 1, top = 100)},
-#                                              "a200" = { b <- chunkpred(bottom = 1, top = 200)},
-#                                              "a1000" = { b <- chunkpred(bottom = 1, top = 1000)},
-#                                            times = 1, unit = 's')
-# # benchS_S
-# print('chunk speeds')
-# print(benchChunk)
-# # benchChunk$mean
-# 
+# Step 1: sort out an optimal chunksize
+benchChunk <- microbenchmark::microbenchmark("a2" = { b <- chunkpred(bottom = 1, top = 2)},
+                                             "a10" = { b <- chunkpred(bottom = 1, top = 10)},
+                                             "a100" = { b <- chunkpred(bottom = 1, top = 100)},
+                                             "a200" = { b <- chunkpred(bottom = 1, top = 200)},
+                                             "a1000" = { b <- chunkpred(bottom = 1, top = 1000)},
+                                           times = 1, unit = 's')
+# benchS_S
+print('chunk speeds')
+print(benchChunk)
+# benchChunk$mean
+
 # # on HPC, 2 was
 # 245/2
 # # 10 
@@ -121,28 +121,28 @@ c(a,b, along = 1)
 # step 2: modify the function to allow a bottom and top, then with the optimal
 # chunksize, run and c() together as in the subchunk scripts
 # Stolen from rastPolyJoin, need to modify the chunksizes, and confirm this makes sense
-
-startbig <- proc.time()
-chunksize <- 1000
-ngeoms <- dim(Murrumbidgee_weightedMean)['geometry']
-nbreaks <- ceiling(ngeoms/chunksize) + 1
-breaks <- round(seq(from = 0, to = ngeoms, length.out = nbreaks))
-starpreds <- foreach(l = 1:(length(breaks)-1),
-                      .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
-                      .multicombine=TRUE) %do% {
-                        bottom <- breaks[l]+1
-                        top <- breaks[l+1]
-                        chunkpred(bottom, top) # NEED TO MODIFY CHUNKPRED
-                      }
-
-endbig <- proc.time()
-
-print('Time taken for loop')
-print(endbig-startbig)
-# 3578 seconds total for bidgee (27000 anaes). Ends up just under 1GB. So that's not terrible
-save(starpreds, file = file.path(datOut, 'TESTMETABOLISM.rdata'))
-#this is going to then need to be looped over catchments. I'd like to
-#auto-generate the shell scripts per catchment, I think. Unless I can just print
-#the output directly and run them all together?
+# 
+# startbig <- proc.time()
+# chunksize <- 1000
+# ngeoms <- dim(Murrumbidgee_weightedMean)['geometry']
+# nbreaks <- ceiling(ngeoms/chunksize) + 1
+# breaks <- round(seq(from = 0, to = ngeoms, length.out = nbreaks))
+# starpreds <- foreach(l = 1:(length(breaks)-1),
+#                       .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
+#                       .multicombine=TRUE) %do% {
+#                         bottom <- breaks[l]+1
+#                         top <- breaks[l+1]
+#                         chunkpred(bottom, top) # NEED TO MODIFY CHUNKPRED
+#                       }
+# 
+# endbig <- proc.time()
+# 
+# print('Time taken for loop')
+# print(endbig-startbig)
+# # 3578 seconds total for bidgee (27000 anaes). Ends up just under 1GB. So that's not terrible
+# save(starpreds, file = file.path(datOut, 'TESTMETABOLISM.rdata'))
+# #this is going to then need to be looped over catchments. I'd like to
+# #auto-generate the shell scripts per catchment, I think. Unless I can just print
+# #the output directly and run them all together?
 
 # If it's reasonably fast, I COULD do that.
