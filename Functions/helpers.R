@@ -194,7 +194,8 @@ checklevels <- function(newdata, mod) {
 # add_predictions is pretty slick, but seems to also not be very full-featured.
 # can I write my own?
 add_preds <- function(newdata, mod, predname = NULL, 
-                      interval = 'none', level = 0.9) {
+                      interval = 'none', level = 0.9,
+                      parTF = FALSE) {
   if (is.null(predname)) {
     predname <- deparse(substitute(mod))
   }
@@ -229,7 +230,8 @@ add_preds <- function(newdata, mod, predname = NULL,
           predsP <- merTools::predictInterval(merMod = mod, 
                                              newdata = newdata, 
                                              level = level, 
-                                             include.resid.var = TRUE)
+                                             include.resid.var = TRUE,
+                                             .parallel = parTF)
         predsP <- rename(predsP,
                         tempname_pfit = fit, tempname_pupr = upr, tempname_plwr = lwr)
         predf <- bind_cols(predf, predsP)
@@ -239,7 +241,8 @@ add_preds <- function(newdata, mod, predname = NULL,
         predsC <- merTools::predictInterval(merMod = mod, 
                                            newdata = newdata, 
                                            level = level, 
-                                           include.resid.var = FALSE)
+                                           include.resid.var = FALSE,
+                                           .parallel = parTF)
         predsC <- rename(predsC,
                         tempname_cfit = fit, tempname_cupr = upr, tempname_clwr = lwr)
         predf <- bind_cols(predf, predsC)
