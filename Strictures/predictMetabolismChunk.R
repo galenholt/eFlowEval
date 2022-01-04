@@ -28,7 +28,7 @@ plan(multicore)
 
 subOuts <- c('logGPPdaysvalleys', 'logGPPdays', 'logERdaysvalleys','logERdays')
 
-scriptOut <- file.path(datOut, 'TempAndProduction', 'PredictionsTESTING')
+scriptOut <- file.path(datOut, 'TempAndProduction', 'Predictions')
 scriptOuts <- file.path(scriptOut,
                        subOuts, 
                        'chunked',
