@@ -30,16 +30,16 @@ plan(sequential) # no need to parallelize, I don't think
 #             lengthOrChunk = c('short', 'long'),
 #             runImmediate = FALSE,
 #             forceAllCatchments = TRUE)
-makeSHfails(outerDir = file.path(datOut, 'TempAndProduction'),
-            summaryFuns = 'Predictions/logGPPdays', # sort of a cop-out, will need to check the others by hand for now
+makeSHfails(outerDir = file.path(datOut, 'TempAndProduction', 'Predictions'),
+            summaryFuns = 'logGPPdays', # sort of a cop-out, will need to check the others by hand for now
             varName = 'GPPER',
             nchunks = 100,
             lengthOrChunk = c('short', 'long'), # , 'long', 'chunk'
             runImmediate = FALSE,
             forceAllCatchments = TRUE)
 
-makeSHfails(outerDir = file.path(datOut, 'ClimateAndProduction'),
-            summaryFuns = 'Predictions/logGPPdays', # sort of a cop-out, will need to check the others by hand for now
+makeSHfails(outerDir = file.path(datOut, 'ClimateAndProduction', 'Predictions'),
+            summaryFuns = 'logGPPdays', # sort of a cop-out, will need to check the others by hand for now
             varName = 'GPPERclim',
             nchunks = 100,
             lengthOrChunk = c('short', 'long'), # , 'long', 'chunk'
