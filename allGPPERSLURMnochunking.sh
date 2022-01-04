@@ -6,7 +6,7 @@
 # # See OneNote 'Basic HPC workflow to build on' from 9 Feb 2021 for more detail about connection and file transfer
 
 
-#SBATCH --time=0:30:00 # request time (walltime, not compute time)
+#SBATCH --time=3:00:00 # request time (walltime, not compute time)
 #SBATCH --mem=480GB # request memory
 #SBATCH --nodes=1 # number of nodes
 #SBATCH --ntasks-per-node=64 # This is the cores per node # If I want 20 cpus on 2 nodes, for ex, use --nodes=2 --ntasks-per-node=10
@@ -25,7 +25,7 @@ module load R
 # print the catchment to the outfile
 echo $1
 
-Rscript hpc_wrap.R "Strictures/predictMetabolismChunk.R" "NOSUMFUN" ${SLURM_ARRAY_TASK_ID} $1
+Rscript hpc_wrap.R "Strictures/predictMetabolism.R" $1
 
 # Copy to ruby datastore. copying to the {lw-mer} on bowen is at /datasets/work/lw-mer/work/galen_holt, but need to sort this out a bit better
 # cp -rp testout.rdata /datastore/hol436/HPC_testing
