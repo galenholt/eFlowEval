@@ -40,7 +40,7 @@ makeSHfails(outerDir = file.path(datOut, 'TempAndProduction'),
 
 makeSHfails(outerDir = file.path(datOut, 'ClimateAndProduction'),
             summaryFuns = 'Predictions/logGPPdays', # sort of a cop-out, will need to check the others by hand for now
-            varName = 'GPPER',
+            varName = 'GPPERclim',
             nchunks = 100,
             lengthOrChunk = c('short', 'long'), # , 'long', 'chunk'
             runImmediate = FALSE,
