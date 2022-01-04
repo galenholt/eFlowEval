@@ -24,9 +24,16 @@ plan(sequential) # no need to parallelize, I don't think
 
 # Find failures and make new sh script -------------------------------------------------------------
 
-makeSHfailsNoChunk(outerDir = file.path(datOut, 'TempAndProduction'),
+# makeSHfailsNoChunk(outerDir = file.path(datOut, 'TempAndProduction'),
+#             summaryFuns = 'Predictions/logGPPdays', # sort of a cop-out, will need to check the others by hand for now
+#             varName = 'GPPER',
+#             lengthOrChunk = c('short', 'long'),
+#             runImmediate = FALSE,
+#             forceAllCatchments = TRUE)
+makeSHfails(outerDir = file.path(datOut, 'TempAndProduction'),
             summaryFuns = 'Predictions/logGPPdays', # sort of a cop-out, will need to check the others by hand for now
             varName = 'GPPER',
-            lengthOrChunk = c('short', 'long'),
+            nchunks = 100,
+            lengthOrChunk = c('short', 'long'), # , 'long', 'chunk'
             runImmediate = FALSE,
             forceAllCatchments = TRUE)
