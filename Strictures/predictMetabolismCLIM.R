@@ -17,7 +17,7 @@ plan(multicore)
 # plan(multisession)
 # # we don't actually need args[7] because it specifies summaryFun in the
 # # dataProcessing scripts. But easier to leave and throw away?
-# args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '96', 'Broken')
+# args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '97', 'Broken') # 96 is the last one for broken
 
 # Setup -------------------------------------------------------------------
 
@@ -30,9 +30,9 @@ subOuts <- c('logGPPdaysvalleys', 'logGPPdays', 'logERdaysvalleys','logERdays')
 
 scriptOut <- file.path(datOut, 'ClimateAndProduction', 'Predictions')
 scriptOuts <- file.path(scriptOut,
-                       subOuts, 
-                       'chunked',
-                       str_flatten(args[9:length(args)], collapse = '/sub_'))
+                        subOuts, 
+                        'chunked',
+                        str_flatten(args[9:length(args)], collapse = '/sub_'))
 # if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
 
 # 
@@ -91,6 +91,10 @@ load(regIn)
 weightedMeanTemps <- get(thisWMname)
 weightedMeanIndex <- get(paste0(thisWMname, '_index'))
 rm(list = c(thisWMname, paste0(thisWMname, '_index')))
+
+# Turn the kelvins into tempC
+weightedMeanTemps[[1]] <- as.numeric(weightedMeanTemps[[1]])-272.15
+names(weightedMeanTemps) <- 'tempC'
 
 # Sort out the chunks -----------------------------------------------------
 
@@ -207,13 +211,17 @@ print(paste0('number of polygons processing is ', nrow(weightedMeanIndex)))
 
 # Somehow going for the sf creates something 524Gb. that's bad. will need to chunk. which means the question is how much to chunk
 # subCatch <- weightedMeanTemps %>% slice('geometry', 1:10) %>% slice('time', 500:515)
-# Turn the kelvins into tempC
-weightedMeanTemps[[1]] <- as.numeric(weightedMeanTemps[[1]])-272.15
-names(weightedMeanTemps) <- 'tempC'
+
 
 # Let's ignore time and just loop over the anaes. doing it that way simplifies
 # things and has worked elsewhere (the subchunk files and rastPolyjoin)
 chunkpred <- function(bottom, top) {
+  
+  # error catch
+  if (top == 0) {
+    return(NULL)
+  }
+  
   subCatch <- weightedMeanTemps %>% slice('geometry', bottom:top, drop = FALSE) # %>% slice('time', 500:515)
   
   
@@ -298,13 +306,38 @@ startbig <- proc.time()
 # ngeoms <- dim(weightedMeanTemps)['geometry']
 # nbreaks <- ceiling(ngeoms/chunksize) + 1
 # breaks <- round(seq(from = 0, to = ngeoms, length.out = nbreaks))
-starpreds <- foreach(l = 1:nrow(weightedMeanIndex),
-                     .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
-                     .multicombine=TRUE) %do% {
-                       bottom <- l
-                       top <- l
-                       chunkpred(bottom, top) 
-                     }
+
+# Deal with the off the top rounding issue
+if (nrow(weightedMeanIndex) == 0) {
+  starpreds <- NULL
+  gppdv <- NULL
+  gppd <- NULL
+  erdv <- NULL
+  erd <- NULL
+} else {
+  starpreds <- foreach(l = 1:nrow(weightedMeanIndex),
+                       .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
+                       .multicombine=TRUE) %dopar% {
+                         bottom <- l
+                         top <- l
+                         chunkpred(bottom, top) 
+                       }
+  
+  # Getting ugly
+  ### Break up into fit and intervals separately
+  gppdv <- starpreds %>%
+    select(contains('logGPPdaysvalleys'))
+  
+  gppd <- starpreds %>%
+    select(contains('logGPPdays'), -contains('valleys'))
+  
+  erdv <- starpreds %>%
+    select(contains('logERdaysvalleys'))
+  
+  erd <- starpreds %>%
+    select(contains('logERdays'), -contains('valleys'))
+}
+
 
 endbig <- proc.time()
 
@@ -315,18 +348,7 @@ print(endbig-startbig)
 # save the name of the outputs, instead of starpreds (see other sorts of scripts for the assign() code)
 # SAVE THE INDICES sf- they aren't the same coming out of the processing script, which translates to here
 
-### Break up into fit and intervals separately
-gppdv <- starpreds %>%
-  select(contains('logGPPdaysvalleys'))
 
-gppd <- starpreds %>%
-  select(contains('logGPPdays'), -contains('valleys'))
-
-erdv <- starpreds %>%
-  select(contains('logERdaysvalleys'))
-
-erd <- starpreds %>%
-  select(contains('logERdays'), -contains('valleys'))
 
 # Name them
 assign(paste0(thisCatch, '_logGPPdaysvalleys', '_', chunkName), gppdv)
