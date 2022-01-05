@@ -21,11 +21,12 @@ plan(multisession) # no need to parallelize, I don't think
 
 
 # Concatenate -------------------------------------------------------------
+## NEEDS 2 hours on HPC
 
-# system.time(concatANAEchunks(outerDir = file.path(datOut, 'TempAndProduction', 'Predictions'),
-#                              summaryFuns = 'logERdays', namedIndex = FALSE))
-# system.time(concatANAEchunks(outerDir = file.path(datOut, 'TempAndProduction', 'Predictions'),
-#                              summaryFuns = 'logERdaysvalleys', namedIndex = FALSE))
+system.time(concatANAEchunks(outerDir = file.path(datOut, 'TempAndProduction', 'Predictions'),
+                             summaryFuns = 'logERdays', namedIndex = FALSE))
+system.time(concatANAEchunks(outerDir = file.path(datOut, 'TempAndProduction', 'Predictions'),
+                             summaryFuns = 'logERdaysvalleys', namedIndex = FALSE))
 system.time(concatANAEchunks(outerDir = file.path(datOut, 'TempAndProduction', 'Predictions'),
                              summaryFuns = 'logGPPdays', namedIndex = FALSE))
 system.time(concatANAEchunks(outerDir = file.path(datOut, 'TempAndProduction', 'Predictions'),
