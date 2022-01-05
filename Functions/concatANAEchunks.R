@@ -1,6 +1,6 @@
 # # Function to concatenate chunked ANAE outputs
 
-concatANAEchunks <- function(outerDir, summaryFuns) {
+concatANAEchunks <- function(outerDir, summaryFuns, namedIndex = TRUE) {
   # loop over summary functions
   for (su in 1:length(summaryFuns)) {
     summaryFun <- summaryFuns[su]
@@ -35,8 +35,16 @@ concatANAEchunks <- function(outerDir, summaryFuns) {
       # I need to know the names of the files to get() them
       partnames <- str_remove(catchfiles, pattern = '.rdata') %>%
         str_remove(pattern = paste0('^.*(?=(', thiscatch, '))')) # remove all the nested directories too
-      indexnames <- str_replace(partnames, pattern = summaryFun, 
-                                replacement = paste0(summaryFun, '_index'))
+      
+      # Sometimes the indices are shared across summaryFuns, and so not uniquely named
+      if (namedIndex) {
+        indexnames <- str_replace(partnames, pattern = summaryFun, 
+                                  replacement = paste0(summaryFun, '_index'))
+      } else {
+        indexnames <- str_replace(partnames, pattern = summaryFun, 
+                                  replacement = paste0('index'))
+      }
+      
       
       # Same code as for the main processing script, except I'm rebuilding the dpList
       # instead of making it initially

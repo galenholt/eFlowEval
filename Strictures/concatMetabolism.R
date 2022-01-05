@@ -23,13 +23,13 @@ plan(multisession) # no need to parallelize, I don't think
 # Concatenate -------------------------------------------------------------
 
 system.time(concatANAEchunks(outerDir = file.path(datOut, 'TempAndProduction', 'Predictions'),
-                             summaryFuns = 'logERdays'))
+                             summaryFuns = 'logERdays', namedIndex = FALSE))
 system.time(concatANAEchunks(outerDir = file.path(datOut, 'TempAndProduction', 'Predictions'),
-                             summaryFuns = 'logERdaysvalleys'))
+                             summaryFuns = 'logERdaysvalleys', namedIndex = FALSE))
 system.time(concatANAEchunks(outerDir = file.path(datOut, 'TempAndProduction', 'Predictions'),
-                             summaryFuns = 'logGPPdays'))
+                             summaryFuns = 'logGPPdays', namedIndex = FALSE))
 system.time(concatANAEchunks(outerDir = file.path(datOut, 'TempAndProduction', 'Predictions'),
-                             summaryFuns = 'logGPPdaysvalleys'))
+                             summaryFuns = 'logGPPdaysvalleys', namedIndex = FALSE))
 # and a quick look
 # load(file.path(datOut, 'Tempprocessed', 'WeightedMean', 'Avoca_weightedMean.rdata'))
 # plot(Avoca_weightedMean[,1:20, 1:9])
