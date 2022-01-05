@@ -22,10 +22,10 @@ plan(multisession) # no need to parallelize, I don't think
 
 # Concatenate -------------------------------------------------------------
 
-system.time(concatANAEchunks(outerDir = file.path(datOut, 'ClimateAndProduction', 'Predictions'),
-                             summaryFuns = 'logERdays', namedIndex = FALSE))
-system.time(concatANAEchunks(outerDir = file.path(datOut, 'ClimateAndProduction', 'Predictions'),
-                             summaryFuns = 'logERdaysvalleys', namedIndex = FALSE))
+# system.time(concatANAEchunks(outerDir = file.path(datOut, 'ClimateAndProduction', 'Predictions'),
+#                              summaryFuns = 'logERdays', namedIndex = FALSE))
+# system.time(concatANAEchunks(outerDir = file.path(datOut, 'ClimateAndProduction', 'Predictions'),
+                             # summaryFuns = 'logERdaysvalleys', namedIndex = FALSE))
 system.time(concatANAEchunks(outerDir = file.path(datOut, 'ClimateAndProduction', 'Predictions'),
                              summaryFuns = 'logGPPdays', namedIndex = FALSE))
 system.time(concatANAEchunks(outerDir = file.path(datOut, 'ClimateAndProduction', 'Predictions'),
