@@ -62,7 +62,8 @@ concatANAEchunks <- function(outerDir, summaryFuns, namedIndex = TRUE) {
       # end of the anaepolys and expected. Just cut those out, but still warn.
         # Logical indexing into unnamed lists is a pain. I guess loop it
       nullindices <- foreach(l = 1:length(dpList), .combine = c) %do% {
-        if (is.null(dpList[[l]][[1]]) & is.null(dpList[[l]][[2]])) {
+        if (is.null(dpList[[l]][[1]]) & 
+            (is.null(dpList[[l]][[2]]) || nrow(dpList[[l]][[2]]) == 0)) { # either null indices or a 0-lenght tibble
           l
         } else {
           NULL

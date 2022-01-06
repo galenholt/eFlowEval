@@ -255,3 +255,13 @@ add_preds <- function(newdata, mod, predname = NULL,
   return(predf)
 }
 
+# function to check and change crs
+
+crscheck <- function(obj, whichcrs) {
+  if (st_crs(obj)$epsg != whichcrs) {
+    obj <- st_transform(obj, whichcrs) %>%
+      st_make_valid()
+  } 
+  
+  return(obj)
+}

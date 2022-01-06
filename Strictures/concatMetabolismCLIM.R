@@ -22,15 +22,20 @@ plan(multisession) # no need to parallelize, I don't think
 
 # Concatenate -------------------------------------------------------------
 ## NEEDS 2 hours on HPC
+# let's array to fic that
+predicteds <- c('logERdays', 'logERdaysvalleys', 'logGPPdays', 'logGPPdaysvalleys')
+
+thispredict <- predicteds[as.numeric(args[7])]
+
+system.time(concatANAEchunks(outerDir = file.path(datOut, 'ClimateAndProduction', 'Predictions'),
+                             summaryFuns = thispredict, namedIndex = FALSE))
 
 # system.time(concatANAEchunks(outerDir = file.path(datOut, 'ClimateAndProduction', 'Predictions'),
-#                              summaryFuns = 'logERdays', namedIndex = FALSE))
-# system.time(concatANAEchunks(outerDir = file.path(datOut, 'ClimateAndProduction', 'Predictions'),
 #                              summaryFuns = 'logERdaysvalleys', namedIndex = FALSE))
-system.time(concatANAEchunks(outerDir = file.path(datOut, 'ClimateAndProduction', 'Predictions'),
-                             summaryFuns = 'logGPPdays', namedIndex = FALSE))
-system.time(concatANAEchunks(outerDir = file.path(datOut, 'ClimateAndProduction', 'Predictions'),
-                             summaryFuns = 'logGPPdaysvalleys', namedIndex = FALSE))
-# and a quick look
+# system.time(concatANAEchunks(outerDir = file.path(datOut, 'ClimateAndProduction', 'Predictions'),
+#                              summaryFuns = 'logGPPdays', namedIndex = FALSE))
+# system.time(concatANAEchunks(outerDir = file.path(datOut, 'ClimateAndProduction', 'Predictions'),
+#                              summaryFuns = 'logGPPdaysvalleys', namedIndex = FALSE))
+# # and a quick look
 # load(file.path(datOut, 'Tempprocessed', 'WeightedMean', 'Avoca_weightedMean.rdata'))
 # plot(Avoca_weightedMean[,1:20, 1:9])
