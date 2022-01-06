@@ -27,6 +27,20 @@ predicteds <- c('logERdays', 'logERdaysvalleys', 'logGPPdays', 'logGPPdaysvalley
 # leave the nested foreach below if I'm NOT arraying
 predicteds <- predicteds[as.numeric(args[7])]
 
+# To allow catchname in nested foreach, use the inundation directories because they're common to everything
+# Directory with inundation
+# Use volume; it's most relevant
+inunIn <- file.path(datOut, 'Inundationprocessed', 'volInun')
+
+# 10% volume inundations
+inunIn10p <- file.path(datOut, 'Inundationprocessed', 'vol10p')
+
+# First, get the names of the catchments, so I can match them
+catchFiles <- list.files(inunIn, pattern = '.rdata')
+catchNames <- str_extract(catchFiles, pattern = '[A-z]*_') %>%
+  str_remove('_') # I'm sure I could do this in one regex, but this is easier
+catchNames
+
 # Kludgy, loop everything over teh predicteds. should probably nested foreach this.
 # for (i in 1:length(predicteds)) {
 startloop <- proc.time()
@@ -52,24 +66,24 @@ trashout <- foreach(i = 1:length(predicteds)) %:%
   # directory with metabolism predictions
   predictIn <- file.path(datOut, 'TempAndProduction', 'Predictions', predicteds[i])
   
-  # Directory with inundation
-  # Use volume; it's most relevant
-  inunIn <- file.path(datOut, 'Inundationprocessed', 'volInun')
-  
-  # 10% volume inundations
-  inunIn10p <- file.path(datOut, 'Inundationprocessed', 'vol10p')
-  
-  # directory with temperatures (needed for getting the relevant indices for predictions)
-  # Should be deprecated now
-  # tempIn <- file.path(datOut, 'Tempprocessed', 'weightedMean')
-  
-  # Read in data ------------------------------------------------------------
-  
-  # First, get the names of the catchments, so I can match them
-  catchFiles <- list.files(predictIn, pattern = '.rdata')
-  catchNames <- str_extract(catchFiles, pattern = '[A-z]*_') %>%
-    str_remove('_') # I'm sure I could do this in one regex, but this is easier
-  catchNames
+  # # Directory with inundation
+  # # Use volume; it's most relevant
+  # inunIn <- file.path(datOut, 'Inundationprocessed', 'volInun')
+  # 
+  # # 10% volume inundations
+  # inunIn10p <- file.path(datOut, 'Inundationprocessed', 'vol10p')
+  # 
+  # # directory with temperatures (needed for getting the relevant indices for predictions)
+  # # Should be deprecated now
+  # # tempIn <- file.path(datOut, 'Tempprocessed', 'weightedMean')
+  # 
+  # # Read in data ------------------------------------------------------------
+  # 
+  # # First, get the names of the catchments, so I can match them
+  # catchFiles <- list.files(predictIn, pattern = '.rdata')
+  # catchNames <- str_extract(catchFiles, pattern = '[A-z]*_') %>%
+  #   str_remove('_') # I'm sure I could do this in one regex, but this is easier
+  # catchNames
   
   # I'm not building anything with chunks, just saving. So, I think I can probably
   # run this locally, and use a standard for loop?
