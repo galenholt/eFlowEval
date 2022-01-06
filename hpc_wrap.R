@@ -1,7 +1,9 @@
 # HPC wrapper
 
 args <- commandArgs()
+print('args are:')
 print(args)
+print('end args')
 
 # For now, let me pass an argument about where we want the data to be for testing what's fastest
 dataWhere <- 'MER'
