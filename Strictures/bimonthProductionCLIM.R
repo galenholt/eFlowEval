@@ -35,51 +35,50 @@ startloop <- proc.time()
 #   foreach(ca = 6:7) %dopar% {
 trashout <- foreach(i = 1:length(predicteds)) %:%
   foreach(ca = 1:length(catchNames)) %dopar% {
+    scriptOut <- file.path(datOut, 'ClimateAndProduction', 'Predictions', predicteds[i], 'bimonth')
+    if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
     
-  scriptOut <- file.path(datOut, 'TempAndProduction', 'Predictions', predicteds[i], 'bimonth')
-  if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
-  
-  # and to save the predicted x volumes
-  totalOut <- file.path(scriptOut, 'predictxvol')
-  if (!dir.exists(totalOut)) {dir.create(totalOut, recursive = TRUE)}
-  
-  # and to save the predicted x volume 10% scenario
-  totalOut10p <- file.path(scriptOut, 'predictxvol10p')
-  if (!dir.exists(totalOut10p)) {dir.create(totalOut10p, recursive = TRUE)}
-  
-  # NOTE: this same approach should be easily extensible to bimonthing the temp itself if we want
-  
-  # directory with metabolism predictions
-  predictIn <- file.path(datOut, 'TempAndProduction', 'Predictions', predicteds[i])
-  
-  # Directory with inundation
-  # Use volume; it's most relevant
-  inunIn <- file.path(datOut, 'Inundationprocessed', 'volInun')
-  
-  # 10% volume inundations
-  inunIn10p <- file.path(datOut, 'Inundationprocessed', 'vol10p')
-  
-  # directory with temperatures (needed for getting the relevant indices for predictions)
-  # Should be deprecated now
-  # tempIn <- file.path(datOut, 'Tempprocessed', 'weightedMean')
-  
-  # Read in data ------------------------------------------------------------
-  
-  # First, get the names of the catchments, so I can match them
-  catchFiles <- list.files(predictIn, pattern = '.rdata')
-  catchNames <- str_extract(catchFiles, pattern = '[A-z]*_') %>%
-    str_remove('_') # I'm sure I could do this in one regex, but this is easier
-  catchNames
-  
-  # I'm not building anything with chunks, just saving. So, I think I can probably
-  # run this locally, and use a standard for loop?
-  # Though parallelizing would be nice. so maybe I will foreach it, but not return anything
-  
-  # For testing
-  # ca <- 9 # 9 is Ed-Wak
-  # startloop <- proc.time()
-  # trashOut <- foreach(ca = 6) %dopar% {
-  # trashOut <- foreach(ca = 1:length(catchNames)) %dopar% {
+    # and to save the predicted x volumes
+    totalOut <- file.path(scriptOut, 'predictxvol')
+    if (!dir.exists(totalOut)) {dir.create(totalOut, recursive = TRUE)}
+    
+    # and to save the predicted x volume 10% scenario
+    totalOut10p <- file.path(scriptOut, 'predictxvol10p')
+    if (!dir.exists(totalOut10p)) {dir.create(totalOut10p, recursive = TRUE)}
+    
+    # NOTE: this same approach should be easily extensible to bimonthing the temp itself if we want
+    
+    # directory with metabolism predictions
+    predictIn <- file.path(datOut, 'ClimateAndProduction', 'Predictions', predicteds[i])
+    
+    # Directory with inundation
+    # Use volume; it's most relevant
+    inunIn <- file.path(datOut, 'Inundationprocessed', 'volInun')
+    
+    # 10% volume inundations
+    inunIn10p <- file.path(datOut, 'Inundationprocessed', 'vol10p')
+    
+    # directory with temperatures (needed for getting the relevant indices for predictions)
+    # Should be deprecated now
+    # tempIn <- file.path(datOut, 'Tempprocessed', 'weightedMean')
+    
+    # Read in data ------------------------------------------------------------
+    
+    # First, get the names of the catchments, so I can match them
+    catchFiles <- list.files(predictIn, pattern = '.rdata')
+    catchNames <- str_extract(catchFiles, pattern = '[A-z]*_') %>%
+      str_remove('_') # I'm sure I could do this in one regex, but this is easier
+    catchNames
+    
+    # I'm not building anything with chunks, just saving. So, I think I can probably
+    # run this locally, and use a standard for loop?
+    # Though parallelizing would be nice. so maybe I will foreach it, but not return anything
+    
+    # For testing
+    # ca <- 9 # 9 is Ed-Wak
+    # startloop <- proc.time()
+    # trashOut <- foreach(ca = 6) %dopar% {
+    # trashOut <- foreach(ca = 1:length(catchNames)) %dopar% {
     # Will need to loop over this
     thisCatch <- catchNames[ca]
     load(file.path(predictIn, paste0(thisCatch, '_', predicteds[i], '.rdata')))
@@ -150,7 +149,7 @@ trashout <- foreach(i = 1:length(predicteds)) %:%
     rm(resortpredict)
     
     
-
+    
     
     # # Test
     # all(st_drop_geometry(inunIndices) == st_drop_geometry(predictIndices))
@@ -209,7 +208,7 @@ trashout <- foreach(i = 1:length(predicteds)) %:%
     }
     
     # Multiply predictions by volumes -----------------------------------------
-
+    
     # CHECK DIMS ARE IN THE RIGHT ORDER OR IT IS JUNK
     if (attributes(st_dimensions(overlapInun))$name[1] != 'geometry') {
       overlapInun <- aperm(overlapInun, c(2,1))
@@ -255,10 +254,10 @@ trashout <- foreach(i = 1:length(predicteds)) %:%
   }
 
 
-  endloop <- proc.time()
-  looptime <- endloop - startloop
-  print('total time:')
-  print(looptime)
-  # 950 seconds local, 230+ HPC (for the whole basin, not just a test catchment)
+endloop <- proc.time()
+looptime <- endloop - startloop
+print('total time:')
+print(looptime)
+# 950 seconds local, 230+ HPC (for the whole basin, not just a test catchment)
 # }
 
