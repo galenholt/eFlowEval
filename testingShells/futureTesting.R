@@ -81,7 +81,7 @@ print(unique(processtest$pid))
 # MULTISESSION --------------------------------------------------------------
 
 print('MULTISESSION')
-plan(multisession)
+plan(multisession(workers = availableCores(methods = 'Slurm')))
 
 print('available Workers:')
 print(availableWorkers())
@@ -114,7 +114,7 @@ print(unique(processtest$pid))
 # MULTICORE --------------------------------------------------------------
 
 print('multicore')
-plan(multicore)
+plan(multicore(workers = availableCores(methods = 'Slurm')))
 
 print('available Workers:')
 print(availableWorkers())
