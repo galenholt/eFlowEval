@@ -55,7 +55,7 @@ print('available Workers:')
 print(availableWorkers())
 
 print('available Cores:')
-print(availableCores())
+print(availableCores(methods = 'Slurm'))
 
 # base R process id
 print('Main PID:')
@@ -87,7 +87,7 @@ print('available Workers:')
 print(availableWorkers())
 
 print('available Cores:')
-print(availableCores())
+print(availableCores(methods = 'Slurm'))
 
 # base R process id
 print('Main PID:')
@@ -120,7 +120,7 @@ print('available Workers:')
 print(availableWorkers())
 
 print('available Cores:')
-print(availableCores())
+print(availableCores(methods = 'Slurm'))
 
 # base R process id
 print('Main PID:')
