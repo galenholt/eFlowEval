@@ -19,8 +19,10 @@ if (parSet == 'local') {
   plan(multisession)
 } else if (parSet == 'hpc') {
   # plan(multicore(workers = availableCores(methods = 'Slurm')))
-  plan(list(multicore(workers = availableCores(methods = 'Slurm')),
-            multicore(workers = availableCores(methods = 'Slurm'))))
+  plan(list(
+    tweak(multicore, workers = availableCores(methods = 'Slurm')),
+    tweak(multicore, workers = availableCores(methods = 'Slurm'))
+  ))
 } else {
   plan(sequential)
 }
