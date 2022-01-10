@@ -36,12 +36,19 @@ if (grepl('^petrichor', Sys.info()["nodename"]) |
   # sort out libraries for HPC
   source('renvHPC.R')
   
+  # set the future plan to actually use the CPUS
+  parSet = 'hpc'
+  
 } else if (grepl('^Windows', Sys.info()["sysname"])) {
   # myhome <- stringr::str_remove(path.expand("~"), "/Documents")
   myhome <- paste0('C:/Users/', Sys.getenv("USERNAME"))
   datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
   
   datOut <- "datOut"
+  
+  # Set up a multisession plan by default
+  # The default workers argument works locally, so no need to specify
+  parSet = 'local'
 }
 
 # Make the out directory, in case it doesn't exist
