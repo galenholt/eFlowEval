@@ -70,12 +70,13 @@ for(sfun in 1:length(filesubdirs)) {
                          # Set up loop iterations
                          thisCatch <- catchNames[i] #13 is lachlan, to keep consistent with previous checking
                          thisFile <- catchFiles[i]
-                         suffix <- str_extract(thisFile, pattern = '_[A-z]*')
+                         suffix <- str_extract(thisFile, pattern = '_[A-z 0-9]*')
                          
                          # Read in the data
                          # anfile <- file.path(anaeIn, paste0(thisCatch, 'ANAE.rdata'))
                          catchfile <- file.path(allIn, thisFile)
-                         
+          
+                                        
                          load(basinRef)
                          load(catchfile)
                          
