@@ -49,8 +49,9 @@ for(sfun in 1:length(filesubdirs)) {
   
   # List the catchments
   catchFiles <- list.files(allIn, pattern = '*.rdata')
-  catchNames <- str_extract(catchFiles, pattern = '[A-z]*_') %>%
-    str_remove('_') # I'm sure I could do this in one regex, but this is easier
+  catchNames <- str_split_fixed(catchFiles, pattern = '_', n = str_count(catchFiles[1], '_'))[,1]
+  
+    # str_remove_all('_') # I'm sure I could do this in one regex, but this is easier
   catchNames
   
   
