@@ -102,7 +102,7 @@ for(sfun in 1:length(filesubdirs)) {
                          rm(list = c(paste0(thisCatch, suffix))) 
                          
                          # the predictions are logged, but the multiplied by volume are not
-                         if (filedir == 'bimonth') {
+                         if (str_ends(filedir, 'bimonth')) {
                           thesePolys <- exp(thesePolys) 
                           names(thesePolys) <- str_remove(names(thesePolys), 'log')
                           
@@ -141,7 +141,7 @@ for(sfun in 1:length(filesubdirs)) {
                          # sum, but weight by area- this is a bit funny, since
                          # they're volumetric, but the idea is just to weight
                          # the POTENTIAL of each wetland
-                         if (filedir == 'bimonth') {
+                         if (str_ends(filedir, 'bimonth')) {
                            # use sum for total metabolic activity across the catchment
                            catchAgg <- catchAggW(strict = thesePolys, strictWeights = areas,
                                                 FUN = sum, summaryPoly = thisPoly)
