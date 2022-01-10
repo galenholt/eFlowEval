@@ -33,6 +33,8 @@ filesubdirs <- paste0(fsd, c('bimonth', 'bimonth/predictxvol', 'bimonth/predictx
 
 for(sfun in 1:length(filesubdirs)) {
   filedir <- filesubdirs[sfun]
+  # debug
+  print(paste0('sfun is ', sfun))
   # suffix <- suffixes[sfun]
   # There are some that were NOT chunked- leave them alone, and just look in the chunked folder
   allIn <- file.path(datOut, 'TempAndProduction', 'Predictions', filedir)
