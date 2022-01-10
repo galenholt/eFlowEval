@@ -13,7 +13,7 @@
 
 
 #SBATCH --time=0:05:00 # request time (walltime, not compute time)
-#SBATCH --mem=10GB # request memory
+#SBATCH --mem=20GB # request memory
 #SBATCH --nodes=1 # number of nodes
 #SBATCH --ntasks-per-node=64 # This is the cores per node # If I want 20 cpus on 2 nodes, for ex, use --nodes=2 --ntasks-per-node=10
 
