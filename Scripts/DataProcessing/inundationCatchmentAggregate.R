@@ -14,13 +14,21 @@ library(doFuture)
 
 # Set up parallel backend
 registerDoFuture()
-# plan(multisession)
-plan(sequential) # dopar doesn't work, so no sense setting up a multisession
+
+if (parSet == 'local') {
+  plan(multisession)
+} else if (parSet == 'hpc') {
+  plan(multicore(workers = availableCores(methods = 'Slurm')))
+} else {
+  plan(sequential)
+}
+
+# plan(sequential) # 
 
 # Set the crs
 whichcrs <- 3577
 # directory
-summaryFuns <- c('areaInun', 'volInun')
+summaryFuns <- c('areaInun', 'areaSpoonbillBreed', 'areaSpoonbillForage', 'volInun', 'vol10p')
 
 for(sfun in 1:length(summaryFuns)) {
   summaryFun <- summaryFuns[sfun]
@@ -28,10 +36,10 @@ for(sfun in 1:length(summaryFuns)) {
   inunIn <- paste0(datOut, '/Inundationprocessed/', summaryFun)
   anaeIn <- file.path(datOut, 'ANAEprocessed')
   
-  scriptFigOut <- file.path('strictOut', 'inundation')
+  # scriptFigOut <- file.path('strictOut', 'inundation')
   scriptDatOut <- file.path(inunIn, 'basinConcat')
   # Make the out directory, in case it doesn't exist
-  if (!dir.exists(scriptFigOut)) {dir.create(scriptFigOut, recursive = TRUE)}
+  # if (!dir.exists(scriptFigOut)) {dir.create(scriptFigOut, recursive = TRUE)}
   if (!dir.exists(scriptDatOut)) {dir.create(scriptDatOut, recursive = TRUE)}
   
   # List the catchments
@@ -42,10 +50,11 @@ for(sfun in 1:length(summaryFuns)) {
   # for (i in 1:length(catchNames)) {
   # for (i in 1:2) {
   loopstart <- proc.time()
-  inunBasin <- foreach(i = 1:length(catchNames), # length(catchNames)
+  inunBasin <- foreach(i = 1:3, # length(catchNames)
+  # inunBasin <- foreach(i = 1:length(catchNames), # length(catchNames)
                        .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
                        .multicombine=TRUE,
-                       .inorder = TRUE) %do% { # dopar will take some work; the dplyr verbs don't carry into it very well
+                       .inorder = TRUE, .packages = c('sf', 'stars', 'dplyr')) %dopar% { # dopar now seems to work with .packages
                          
                          # oneloopstart <- proc.time()
                          # Set up loop iterations
@@ -53,7 +62,7 @@ for(sfun in 1:length(summaryFuns)) {
                          thisInunfile <- catchfiles[i]
                          
                          
-                         # Read in the data
+                         # Read in the datazs
                          anfile <- file.path(anaeIn, paste0(thisCatch, 'ANAE.rdata'))
                          inunfile <- file.path(inunIn, thisInunfile)
                          
