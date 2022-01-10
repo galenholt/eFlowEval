@@ -14,8 +14,14 @@ library(doFuture)
 
 # Set up parallel backend
 registerDoFuture()
-# plan(multisession)
-plan(multisession) # dopar doesn't work, so no sense setting up a multisession
+
+if (parSet == 'local') {
+  plan(multisession)
+} else if (parSet == 'hpc') {
+  plan(multicore(workers = availableCores(methods = 'Slurm')))
+} else {
+  plan(sequential)
+}
 
 # Set the crs
 whichcrs <- 3577
@@ -55,7 +61,7 @@ for(sfun in 1:length(filesubdirs)) {
   catchmentBasin <- foreach(i = 1:length(catchNames), # length(catchNames)
                             .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
                             .multicombine=TRUE,
-                            .inorder = TRUE) %do% { # I cannot sort out why I keep getting 'task 1 failed non numeric argument to mathematical function' when I use dopar
+                            .inorder = TRUE, .packages = c('sf', 'stars', 'dplyr', 'stringr')) %dopar% { # I cannot sort out why I keep getting 'task 1 failed non numeric argument to mathematical function' when I use dopar
                               
                               # oneloopstart <- proc.time()
                               # Set up loop iterations
