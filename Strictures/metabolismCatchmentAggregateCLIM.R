@@ -30,10 +30,11 @@ fsd <- rep(c('logERdays/', 'logERdaysvalleys/', 'logGPPdays/', 'logGPPdaysvalley
 filesubdirs <- paste0(fsd, c('bimonth', 'bimonth/predictxvol', 'bimonth/predictxvol10p'))
 # These are the data name suffixes
 # suffixes <- c('PredictBimonthMean', 'PredictxVol')
-
-outtrash <- foreach(sfun = 1:length(filesubdirs)) %dopar% {
-  # for(sfun in 1:length(filesubdirs)) {
+trash <- foreach(sfun = 1:length(filesubdirs), .packages = c('sf', 'stars', 'dplyr', 'stringr')) %dopar% {
+# for(sfun in 1:length(filesubdirs)) {
   filedir <- filesubdirs[sfun]
+  # debug
+  print(paste0('sfun is ', sfun))
   # suffix <- suffixes[sfun]
   # There are some that were NOT chunked- leave them alone, and just look in the chunked folder
   allIn <- file.path(datOut, 'ClimateAndProduction', 'Predictions', filedir)
@@ -50,8 +51,9 @@ outtrash <- foreach(sfun = 1:length(filesubdirs)) %dopar% {
   
   # List the catchments
   catchFiles <- list.files(allIn, pattern = '*.rdata')
-  catchNames <- str_extract(catchFiles, pattern = '[A-z]*_') %>%
-    str_remove('_') # I'm sure I could do this in one regex, but this is easier
+  catchNames <- str_split_fixed(catchFiles, pattern = '_', n = str_count(catchFiles[1], '_'))[,1]
+  
+  # str_remove_all('_') # I'm sure I could do this in one regex, but this is easier
   catchNames
   
   
@@ -68,11 +70,12 @@ outtrash <- foreach(sfun = 1:length(filesubdirs)) %dopar% {
                               # Set up loop iterations
                               thisCatch <- catchNames[i] #13 is lachlan, to keep consistent with previous checking
                               thisFile <- catchFiles[i]
-                              suffix <- str_extract(thisFile, pattern = '_[A-z]*')
+                              suffix <- str_extract(thisFile, pattern = '_[A-z 0-9]*')
                               
                               # Read in the data
                               # anfile <- file.path(anaeIn, paste0(thisCatch, 'ANAE.rdata'))
                               catchfile <- file.path(allIn, thisFile)
+                              
                               
                               load(basinRef)
                               load(catchfile)
@@ -102,7 +105,7 @@ outtrash <- foreach(sfun = 1:length(filesubdirs)) %dopar% {
                               rm(list = c(paste0(thisCatch, suffix))) 
                               
                               # the predictions are logged, but the multiplied by volume are not
-                              if (filedir == 'bimonth') {
+                              if (str_ends(filedir, 'bimonth')) {
                                 thesePolys <- exp(thesePolys) 
                                 names(thesePolys) <- str_remove(names(thesePolys), 'log')
                                 
@@ -141,7 +144,7 @@ outtrash <- foreach(sfun = 1:length(filesubdirs)) %dopar% {
                               # sum, but weight by area- this is a bit funny, since
                               # they're volumetric, but the idea is just to weight
                               # the POTENTIAL of each wetland
-                              if (filedir == 'bimonth') {
+                              if (str_ends(filedir, 'bimonth')) {
                                 # use sum for total metabolic activity across the catchment
                                 catchAgg <- catchAggW(strict = thesePolys, strictWeights = areas,
                                                       FUN = sum, summaryPoly = thisPoly)
@@ -190,9 +193,9 @@ outtrash <- foreach(sfun = 1:length(filesubdirs)) %dopar% {
   save(catchmentBasin, 
        file = file.path(scriptDatOut, paste0('catchmentAggregated.rdata')))
   
+  # to keep the foreach small
+  trashout <- NULL
 }
-
-
 
 
 
