@@ -23,12 +23,12 @@ registerDoFuture()
 plan(multicore) # multicore on HPC
 
 # # For local testing
-# plan(multisession)
-# summaryFun <- 'volInun'
+plan(multisession)
+summaryFun <- 'volInun'
 # args <- c('blah', 'b', 'c', 'g', '3', 't', 'a', '3', 'Warrego', '8', '6', '8')
 # args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '9', 'Warrego', '8', '6', '10')
 # Does it break with one level of chunking?
-# args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '10', 'Avoca')
+args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '10', 'Avoca')
 
 # args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '96', 'Broken')
 
@@ -63,6 +63,9 @@ if (length(args) > 9) {
 # and the maximum-ish (there's a ceiling() involved, so this is approximate)
 # number of pixels to read in for any one ANAE
 maxPix <- 100000 # Seems likely to be a good balance based on local testing, but we'll see
+
+
+# INUNDATION UNITS ARE METERS ---------------------------------------------
 
 
 # Set up the function -----------------------------------------------------
@@ -110,7 +113,12 @@ if (summaryFun == 'areaInun') {
   chosenSummary <- function(x, area, limitShallow = 0.5, limitDeep = 1.5) {
     sum(ifelse(x >= limitShallow & x <= limitDeep, area, 0))
   }
-} else {
+} else if (summaryFun == 'maxInunDepth') {
+  # get the maximum depth. so far just used for testing
+  chosenSummary <- function(x, area) {
+    max(x, na.rm = TRUE)
+  }
+  } else {
   stop('need to choose a summary function')
 }
 
@@ -301,6 +309,12 @@ pixarea <- inunTifs[1] %>% # filenames
   summarize(area = mean(area, na.rm = TRUE)) %>% 
   pull()
 
+# test- what are the units?
+areaunits <- inunTifs[1] %>% # filenames
+  read_stars(RasterIO = rasterio) %>% # cut
+  st_as_sf(as_points = FALSE, merge = FALSE, na.rm = FALSE) %>% # Read in as sf polygons
+  # transform not necessary - tested in warrego8_6_3.R
+  mutate(area = st_area(.))
 
 # Do the aggregation ------------------------------------------------------
 
