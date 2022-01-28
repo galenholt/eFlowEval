@@ -54,12 +54,12 @@ inundir <- file.path(datOut, 'inundationprocessed', 'volInun')
 load(file.path(inundir, 'EdwardWakool_volInun.rdata'))
 
 # Do those line up?
-EdwardWakool_weightedMean <- st_transform(EdwardWakool_weightedMean, whichcrs)
+# EdwardWakool_weightedMean <- st_transform(EdwardWakool_weightedMean, whichcrs)
 EdwardWakool_volInun <- st_transform(EdwardWakool_volInun, whichcrs)
-
-which(!diag(st_intersects(st_as_sf(EdwardWakool_volInun[1,1:200,1]), 
-                          st_as_sf(EdwardWakool_weightedMean[1,1:200,1]), sparse = FALSE)))
-which(st_drop_geometry(EdwardWakool_volInun_index[1:200, 1]) != st_drop_geometry(EdwardWakool_weightedMean_index[1:200, 1]))
+# 
+# which(!diag(st_intersects(st_as_sf(EdwardWakool_volInun[1,1:200,1]), 
+#                           st_as_sf(EdwardWakool_weightedMean[1,1:200,1]), sparse = FALSE)))
+# which(st_drop_geometry(EdwardWakool_volInun_index[1:200, 1]) != st_drop_geometry(EdwardWakool_weightedMean_index[1:200, 1]))
 # GPP and ER predictions in ANAEs JUST for this catchment 
   # also just grab the bimonthly
 preddirER <- file.path(datOut, 'TempAndProduction', 'Predictions', 'logERdaysvalleys',
