@@ -171,6 +171,99 @@ for (i in 1:length(starobjs)) {
 }
 
 
+
+# Make yearly aggregations ------------------------------------------------
+
+# WHY DOES TEMPAGGREGATE FLIP DIMS?????
+#
+# This is super ugly. should have looped. Oh well.
+
+# Can I make simple annual reporting?
+interDates <- as.POSIXct(c("2014-06-30", "2015-06-30", "2016-06-30", "2017-06-30", "2018-06-30", "2019-06-30"))
+
+# Mean is the appropriate stat for temps
+climateannual <- tempaggregate(climate, by_t = as.Date(interDates), 
+                               FUN = mean, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+temperatureannual <- tempaggregate(temperature, by_t = as.Date(interDates), 
+                                   FUN = sum, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+
+# Sum to get the total inundation
+inundationannual <- tempaggregate(inundation, by_t = as.Date(interDates), 
+                                  FUN = sum, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+inundation10pannual <- tempaggregate(inundation10p, by_t = as.Date(interDates), 
+                                     FUN = sum, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+
+# sum to get total ER
+logERdaysannual <- tempaggregate(logERdays, by_t = as.Date(interDates), 
+                                  FUN = sum, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+
+logERdays10pannual <- tempaggregate(logERdays10p, by_t = as.Date(interDates), 
+                                  FUN = sum, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+
+logERdays10pCLIMannual <- tempaggregate(logERdays10pCLIM, by_t = as.Date(interDates), 
+                                  FUN = sum, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+
+logERdaysCLIMannual <- tempaggregate(logERdaysCLIM, by_t = as.Date(interDates), 
+                                        FUN = sum, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+
+logERdaysvalleysannual <- tempaggregate(logERdaysvalleys, by_t = as.Date(interDates), 
+                                 FUN = sum, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+
+logERdaysvalleys10pannual <- tempaggregate(logERdaysvalleys10p, by_t = as.Date(interDates), 
+                                    FUN = sum, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+
+logERdaysvalleys10pCLIMannual <- tempaggregate(logERdaysvalleys10pCLIM, by_t = as.Date(interDates), 
+                                        FUN = sum, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+
+logERdaysvalleysCLIMannual <- tempaggregate(logERdaysvalleysCLIM, by_t = as.Date(interDates), 
+                                     FUN = sum, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+
+# sum to get total ER
+logGPPdaysannual <- tempaggregate(logGPPdays, by_t = as.Date(interDates), 
+                                 FUN = sum, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+
+logGPPdays10pannual <- tempaggregate(logGPPdays10p, by_t = as.Date(interDates), 
+                                    FUN = sum, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+
+logGPPdays10pCLIMannual <- tempaggregate(logGPPdays10pCLIM, by_t = as.Date(interDates), 
+                                        FUN = sum, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+
+logGPPdaysCLIMannual <- tempaggregate(logGPPdaysCLIM, by_t = as.Date(interDates), 
+                                     FUN = sum, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+
+logGPPdaysvalleysannual <- tempaggregate(logGPPdaysvalleys, by_t = as.Date(interDates), 
+                                        FUN = sum, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+
+logGPPdaysvalleys10pannual <- tempaggregate(logGPPdaysvalleys10p, by_t = as.Date(interDates), 
+                                           FUN = sum, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+
+logGPPdaysvalleys10pCLIMannual <- tempaggregate(logGPPdaysvalleys10pCLIM, by_t = as.Date(interDates), 
+                                               FUN = sum, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+
+logGPPdaysvalleysCLIMannual <- tempaggregate(logGPPdaysvalleysCLIM, by_t = as.Date(interDates), 
+                                            FUN = sum, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time'))
+
+
 # quick plots before getting serious --------------------------------------
 
 # static plots
@@ -184,7 +277,7 @@ plotInun10pBasin
 plotTempBasin
 plotClimBasin
 
-# Just trying to hit various co,bos here
+# Just trying to hit various combos here
 
 plotGPPBasin <- catchAggPlot(logGPPdays[1,,1:9], title = 'Total GPP')
 plotGPPBasinPU <- catchAggPlot(logGPPdays[2,,1:9], title = 'GPP upper PI')
@@ -205,3 +298,46 @@ plotERBasinCLTC
 # OK, things seem to have worked. NOW, need to sort out exactly what we want to show and build that up.
 # almost wonder if this should be an Rmarkdown so we can write text as we go. Does rmd handle gifs? what about the cool tmaps?
 # suppose lets build the plots and go from there.
+
+
+
+
+# Drivers and outcomes ----------------------------------------------------
+
+# I think I'll make these with both tmap and ggplot again
+
+# does the local code just work?, maybe with adding a new argument for the stars?
+
+# make a list of the potential times- don't use inundation, it goes back too far
+availDays <- st_get_dimension_values(temperatureannual, which = 'time')
+availDays <- availDays[2:length(availDays)] # since the first temp is NA
+
+
+datewanted <- as.character(availDays[2]) # just pick something for now
+
+# let's try temp
+
+# Temp plot
+temp_sf <- temperatureannual %>% 
+  st_as_sf() %>% 
+  select(all_of(datewanted)) %>%
+  rename(Temp = 1)
+
+# core code
+temp_tm <- temp_sf %>%
+  tm_shape() + 
+  tm_fill(col = 'Temp')
+          # , palette = temppal,
+          # midpoint = midtemp,
+          # breaks = tempbreaks,
+          # title = legendlabel) 
+
+temp_tm
+
+# or
+temp_gg <- ggplot() +
+  geom_sf(data = temp_sf, mapping = aes(fill = Temp), color = NA) +
+  # geom_sf_label(data = ltimNoNorth, mapping = aes(label = ValleyName)) +
+  coord_sf() 
+
+# cool. that makes things pretty slick. NOW, need to go back and rewrite everything as functions.
