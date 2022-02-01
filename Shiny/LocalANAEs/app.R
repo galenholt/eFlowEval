@@ -12,7 +12,7 @@ setwd(here::here())
 
 # Kind of hacky check to only run if needed
 if (!('weraiCropInun' %in% ls())) {
-    source(file.path(here::here(), 'Scripts', 'Scenarios', 'plotting', 'metabolismLocalAndStatic.R'))
+    source(file.path(here::here(), 'Scripts', 'Scenarios', 'plotting', 'metabPlotSetup_Local.R'))
 }
 
 # need the plotting libraries that don't get loaded in the data script

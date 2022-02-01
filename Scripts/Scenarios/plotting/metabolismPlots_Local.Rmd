@@ -1,5 +1,5 @@
 ---
-title: "Metabolism Plots"
+title: "Local Metabolism Plots"
 output: html_notebook
 ---
 
@@ -27,7 +27,7 @@ library(colorspace)
 
 # Kind of hacky check to only run if needed
 if (!('weraiCropInun' %in% ls())) {
-    source(file.path(here::here(), 'Scripts', 'Scenarios', 'plotting', 'metabolismLocalAndStatic.R'))
+    source(file.path(here::here(), 'Scripts', 'Scenarios', 'plotting', 'metabPlotSetup_Local.R'))
 }
 
 ```

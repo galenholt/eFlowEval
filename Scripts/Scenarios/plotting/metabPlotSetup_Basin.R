@@ -15,11 +15,11 @@ library(here)
 library(tidyverse)
 library(sf)
 library(stars)
-library(tmap)
-library(transformr)
-library(gganimate)
-library(viridis)
-library(colorspace)
+# library(tmap)
+# library(transformr)
+# library(gganimate)
+# library(viridis)
+# library(colorspace)
 
 
 # Set the crs
