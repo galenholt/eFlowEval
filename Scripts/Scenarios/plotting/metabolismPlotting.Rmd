@@ -25,14 +25,17 @@ library(colorspace)
 ```{r message=FALSE}
 # source in the data management
 
-# source('directorySet.R')
-source(file.path('Scripts', 'Scenarios', 'plotting', 'metabolismLocalAndStatic.R'))
-
+# Kind of hacky check to only run if needed
+if (!('weraiCropInun' %in% ls())) {
+    source(file.path(here::here(), 'Scripts', 'Scenarios', 'plotting', 'metabolismLocalAndStatic.R'))
+}
 
 ```
 
 Purpose here is primarily to go through some plots, look at them, and make static versions for the paper.
-This is mostly a copy-paste and translate over from metabolismLocalAndStatic. I've done this to split out the data read-in, function definitions, and plotting (and particularly the plot trying-out). I've been using these notebooks for plot testing, because it's really nice to be able to scroll around and see what we've done, rathe than have to keep re-making plot objects when we forget what they look like.
+This is mostly a copy-paste and translate over from metabolismLocalAndStatic. I've done this to split out the data read-in, function definitions, and plotting (and particularly the plot trying-out). I've been using these notebooks for plot testing, because it's really nice to be able to scroll around and see what we've done, rather than have to keep re-making plot objects when we forget what they look like.
+
+*The catch with this approach is the quick and dirty prototyping isn't quite so quick, and this document ends up taking FOREVER to load.* Might switch back? But it sure is nice to actually see what each figure I made looks like, especially when we're likely to drop this for extended periods.
 
 Set the date for examples
 ```{r}
