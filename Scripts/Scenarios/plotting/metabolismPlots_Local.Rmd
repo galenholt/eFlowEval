@@ -75,7 +75,7 @@ Takes more work, but have more control (probably just because I speak ggplot)
 
 ```{r}
 gg_grid_static <- ggpubr::ggarrange(
-  tempfun(weraiCropTemp, 1, datewanted, plotPkg = 'ggplot') + 
+  tempfun(weraiCropTemp, 1, datewanted, titlePrefix = 'Two months preceding', plotPkg = 'ggplot') + 
     guides(fill = guide_legend(title.position = 'top')) +
     theme_grey(base_size = 8) + 
     theme(legend.position = 'bottom', 

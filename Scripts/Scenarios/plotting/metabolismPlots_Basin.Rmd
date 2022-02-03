@@ -1,0 +1,652 @@
+---
+title: "Basin-Scale Metabolism Plots"
+output: html_notebook
+---
+
+```{r setup}
+# set the root to the project directory, not the rmd directory
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+# default to not printing the code
+knitr::opts_chunk$set(echo = FALSE)
+
+# libraries
+library(tidyverse)
+library(sf)
+library(stars)
+library(tmap)
+library(transformr) # not needed for this doc at present?
+library(gganimate) # not needed here at present
+library(viridis)
+library(colorspace)
+library(patchwork)
+
+```
+
+```{r message=FALSE}
+# source in the data management
+
+# Kind of hacky check to only run if needed
+if (!('weraiCropInun' %in% ls())) {
+    source(file.path(here::here(), 'Scripts', 'Scenarios', 'plotting', 'metabPlotSetup_Basin.R'))
+}
+
+```
+
+## Overview
+As with the local, I'm going to develop up the plots here so I can see what I've done and what each bit of code does. The tradeoff is that this is a bit clunkier to code in, and can take a long time to load.
+
+I'm basing all of this on the annual data, I think, though the bimonthly is read in if we want to do that.
+
+Some of the scaling done by the plot functions should probably be cleaned up a bit, especially for the summed values- the breaks and whatnot are fine, but the units should probably be adjusted by several orders of magnitude.
+
+The values are also not to be trusted- this is a capacity demonstration, and things like the yearly sum of bimonthly ER estimated just for the maximum extent is not an informative unit, and the values do not say much about what's actually going on in the system with metabolism. *I really think we need to come up with better units to make the point that this is a capacity demo, and accentuates one of the meta-benefits of the model of identifying where and why the output managers really want can't be done and what needs to be done to get there.* 
+
+```{r}
+# make a list of the potential times- don't use inundation, it goes back too far
+availDays <- st_get_dimension_values(temperatureannual, which = 'time')
+availDays <- availDays[2:length(availDays)] # since the first temp is NA
+
+
+datewanted <- as.character(availDays[2]) # just pick something for now
+```
+
+## Drivers and outcomes
+
+I think I'll start out with tmap and ggplot again, but probably switch to just ggplot quickly since tmap and rmarkdown aren't friends
+
+Now that I made the functions, the local code should effectively just work.
+
+### Temperature
+```{r}
+tmap_mode('plot')
+
+# The auto-titling just stuffs "Two months preceding" on there, which is wrong
+temp_tm <- tempfun(temperatureannual, 1, datewanted, plotPkg = 'tmap', titled = TRUE, titlePrefix = 'Water year ending ')
+temp_tm
+```
+
+And a test- can I output to the Rstudio viewer? Looks like no. I'm trying this to try to be able to use tmap_view in here, since it doens't play nicely with the notebook
+
+```{r knitr::chunk_output_type: console}
+temp_tm
+```
+
+The ggplot versions
+
+I'm going to pull the titles off everything but temp, assuming they're going to be smooshed together and get titled then, but leaving a useful prefix in the call in case I change my mind.
+
+```{r}
+# The auto-titling just stuffs "Two months preceding" on there, which is wrong
+temp_gg <- tempfun(temperatureannual, 1, datewanted, plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year ending ', 
+                   forcelegend = 'Yearly mean\ntemp C')
+temp_gg
+```
+
+So, since tmap isn't adding anything useful for the static plots, I'm going to just do ggplot from now on.
+
+Forcing the min and max makes the breaks more reasonable, but does reduce resolution a bit. Not really sure what the best solution is there. It also lets datsets with different ranges match up better instead of ending up with slightly different splits
+
+### Inundation
+```{r}
+# The auto-titling just stuffs "Two months preceding" on there, which is wrong
+inun_gg <- inunfun(inundationannual/1000, 1, datewanted, units = 'Gl', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year ending ', 
+                   forcelegend = 'GL Inundation summed\nover max extents', forcemin = 0, forcemax = 100000000)
+inun_gg
+
+```
+
+### GPP
+```{r}
+# The auto-titling just stuffs "Two months preceding" on there, which is wrong
+gpp_gg <- gppfun(logGPPdaysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year ending ', 
+                   forcelegend = 'GPP (tonnes O2)\n summed over max extents', forcemin = 0, forcemax = 100000000)
+gpp_gg
+```
+
+**THESE VALUES ARE A MESS AND SO UNITS ARE STUPID**
+Maybe just tonnes O2 assuming max extents? Or ??? just lots/little somehow. IE make clear these are NOT real numbers?? IE 'Aggregated GPP' and then not even have units?
+
+### ER
+```{r}
+# The auto-titling just stuffs "Two months preceding" on there, which is wrong
+er_gg <- erfun(logERdaysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year ending ', 
+                   forcelegend = 'ER (tonnes O2)\n summed over max extents', forcemin = 0, forcemax = 100000000)
+er_gg
+```
+
+Make those a grid a la the local version
+
+```{r}
+gridIO <- ggpubr::ggarrange(
+  temp_gg +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')),
+  inun_gg +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')),
+  gpp_gg +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')),
+  er_gg +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')),
+  ncol = 2, nrow = 2
+)
+
+gridIO
+```
+
+The local worked better with a bottom legend, this seems to do better with a top. Really, might wan to shift to scientific notation or choose even bigger units.
+
+Annoying that temp doesn't get as smooshed by its legend and so is a different size.I keep hearing good things about patchwork?
+
+```{r}
+gridIO_p <- temp_gg +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) +
+  
+  inun_gg +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) +
+  
+  gpp_gg +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) +
+  
+  er_gg +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) + 
+  plot_annotation(title = paste0('Water year ending ', datewanted))
+
+gridIO_p
+```
+
+That IS nicer. Print that out
+
+```{r}
+pdf(file.path(scriptOut, 'InputOutput.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print(gridIO_p)
+dev.off()
+
+png(file.path(scriptOut, 'InputOutput.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print(gridIO_p)
+dev.off()
+```
+
+## Uncertainty in the regression
+The regression above discards a valley term in order to predict across the basin. That comes at the cost of more error. We can't really say what that error is at this scale, but we CAN say we want to be more confident and cut things down.
+
+One way to show that is simply to ignore those catchments where we can't predict, putting an asterisk on them, effectively.
+
+Need to use the forcemin and max here and above (or, I suppose could force to the max of the above) to end up with the same breaks.The nice clean factor of 10 breaks is nice though.
+
+```{r}
+gpp_gg_v <- gppfun(logGPPdaysvalleysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year ending ', 
+                   forcelegend = 'GPP (tonnes O2)\n summed over max extents', forcemin = 0, forcemax = 100000000)
+gpp_gg_v
+
+er_gg_v <- erfun(logERdaysvalleysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year ending ', 
+                   forcelegend = 'ER (tonnes O2)\n summed over max extents', forcemin = 0, forcemax = 100000000)
+er_gg_v
+
+```
+
+We could package that up as a two-panel,
+
+```{r}
+uncertain2 <- gpp_gg_v +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) +
+  er_gg_v +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) + 
+  plot_annotation(title = paste0('Water year ending ', datewanted))
+uncertain2
+```
+
+But it might be better to directly compare? either for both
+
+```{r}
+bothuncertain <- gpp_gg +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) +
+  
+  er_gg +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) +
+  gpp_gg_v +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) +
+  er_gg_v +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) + 
+  plot_annotation(title = paste0('Water year ending ', datewanted))
+
+# unfortunately there's no good way to collect common guides
+bothuncertain + plot_layout(guides = 'collect')
+  
+```
+
+Or a single outcome to keep figure sizes down
+
+```{r}
+gppuncertain <- gpp_gg +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) +
+  
+  gpp_gg_v +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) +
+  
+  plot_annotation(title = paste0('Water year ending ', datewanted)) +
+  plot_layout(guides = 'collect')
+
+gppuncertain
+  
+
+```
+
+ER is actually a better example because they're more clearly different.
+
+```{r}
+eruncertain <- er_gg +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) +
+  
+  er_gg_v +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) +
+  
+  plot_annotation(title = paste0('Water year ending ', datewanted)) +
+  plot_layout(guides = 'collect')
+
+eruncertain
+```
+
+Let's print that out as an option
+```{r}
+pdf(file.path(scriptOut, 'ValleyTermER.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print(eruncertain)
+dev.off()
+
+png(file.path(scriptOut, 'ValleyTermER.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print(eruncertain)
+dev.off()
+```
+
+But what I think probably makes the most sense is to add it to the input-output figure and do it all at once?
+
+```{r}
+# Adding gridIO_p to the new stuff works but isn't pretty. I think I can do something better with legends  
+  gridIO_p +
+  gpp_gg_v +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) +
+  er_gg_v +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) + 
+  # guides = collect almost works, but shoves them all to te side
+  plot_layout(nrow = 3, guides = 'collect')
+```
+
+Trying better legends
+
+```{r}
+tempplot <- temp_gg +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm'))
+  
+inunplot <-  inun_gg +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm'))
+  
+gppplot <- gpp_gg +
+  guides(fill = guide_legend(title.position = 'top')) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+        legend.background = element_blank(),
+        legend.key.size = unit(0.3, 'cm')) 
+  
+gpp_vplot <-  gpp_gg_v +
+  guides(fill = guide_legend(title.position = 'top')) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+        legend.background = element_blank(),
+        legend.key.size = unit(0.3, 'cm'))
+  
+erplot <- er_gg +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) 
+
+er_vplot <- er_gg_v +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm'))
+
+
+  # plot_annotation(title = paste0('Water year ending ', datewanted)) +
+  # plot_layout(nrow = 3)
+
+(tempplot + inunplot) / 
+  ((gppplot + gpp_vplot + 
+     plot_layout(nrow = 2, guides = 'collect')) |
+  (erplot + er_vplot + 
+     plot_layout(nrow = 2, guides = 'collect')) ) +
+  plot_layout(heights = c(1,2))
+# + 
+#   (erplot + er_vplot + 
+#      plot_layout(nrow = 2, guides = 'collect'))
+
+
+
+```
+That's OK, but really weirdly aligned. Maybe with some more tweaks to the way it's specified?
+
+I guess print that out so we have something,
+
+```{r}
+pdf(file.path(scriptOut, 'InputOutputValleys.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print((tempplot + inunplot) / 
+  ((gppplot + gpp_vplot + 
+     plot_layout(nrow = 2, guides = 'collect')) |
+  (erplot + er_vplot + 
+     plot_layout(nrow = 2, guides = 'collect')) ) +
+  plot_layout(heights = c(1,2)))
+dev.off()
+
+png(file.path(scriptOut, 'InputOutputValleys.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print((tempplot + inunplot) / 
+  ((gppplot + gpp_vplot + 
+     plot_layout(nrow = 2, guides = 'collect')) |
+  (erplot + er_vplot + 
+     plot_layout(nrow = 2, guides = 'collect')) ) +
+  plot_layout(heights = c(1,2)))
+dev.off()
+```
+
+That actually looks pretty OK printed. It's a bit offset, but that's fine, the columns don't mean anything relative to the top row.
+
+But maybe....
+
+```{r}
+tempplot + inunplot + gppplot + erplot + gpp_vplot + er_vplot +
+  plot_layout(ncol = 2, guides = 'collect')
+```
+
+That lines up OK, but the legends are back to being a mess.
+
+*Rebecca had the idea of sort of combining the uncertainty panels to use less saturated colours for the un-parameterised valleys. That should be possible, but would take some playing to get the plotting to work. I'm going to focus for now on getting the rest of what we need done and come back to that, maybe post-report but pre-paper.*
+
+## Multi-year panels
+
+Can I just show a few years back to back in panels?
+
+And can I do that with the functions? Will probably need a thing to accept more than one datewanted
+
+```{r}
+eryrs <- erfun(logERdaysannual/1000, 1, datewanted = as.character(availDays[2:4]), 
+               units = 'tonnes', 
+               plotPkg = 'ggplot', 
+               titled = FALSE, 
+               titlePrefix = 'Water year ending ',
+               forcelegend = 'ER (tonnes O2)\n summed over max extents', 
+               forcemin = 0, forcemax = 100000000) + 
+  guides(fill = guide_legend(title.position = 'top')) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'bottom', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+eryrs
+```
+Not sure we really care if we do it for the inputs, gpp etc?
+
+```{r}
+tempyrs <- tempfun(temperatureannual, 1, datewanted = as.character(availDays[2:4]), 
+               plotPkg = 'ggplot', 
+               titled = FALSE, 
+               titlePrefix = 'Water year ending ',
+               forcelegend = 'Yearly mean\ntemp C') + 
+  guides(fill = guide_legend(title.position = 'top')) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'bottom', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+inunyrs <- inunfun(inundationannual/1000, 1, datewanted = as.character(availDays[2:4]),
+                   units = 'Gl', 
+                   plotPkg = 'ggplot', 
+                   titled = FALSE, 
+                   titlePrefix = 'Water year ending ', 
+                   forcelegend = 'GL Inundation summed\nover max extents', 
+                   forcemin = 0, forcemax = 100000000) + 
+  guides(fill = guide_legend(title.position = 'top')) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'bottom', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+gppyrs <- gppfun(logERdaysannual/1000, 1, datewanted = as.character(availDays[2:4]), 
+               units = 'tonnes', 
+               plotPkg = 'ggplot', 
+               titled = FALSE, 
+               titlePrefix = 'Water year ending ',
+               forcelegend = 'GPP (tonnes O2)\n summed over max extents', 
+               forcemin = 0, forcemax = 100000000) + 
+  guides(fill = guide_legend(title.position = 'top')) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'bottom', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+
+tempyrs
+inunyrs
+gppyrs
+
+```
+
+I think this is overkill, but make a panel version
+It is not clear to me why the temps don't get 4 rows?
+```{r}
+(tempyrs + theme(legend.position = 'right') +
+   guides(fill = guide_legend(title.position = 'top', nrow = 4, byrow = TRUE)))/
+  (inunyrs + theme(legend.position = 'right') +
+     guides(fill = guide_legend(title.position = 'top', nrow = 4, byrow = TRUE)))/
+  (gppyrs + theme(legend.position = 'right') +
+     guides(fill = guide_legend(title.position = 'top', nrow = 4, byrow = TRUE)))/
+  (eryrs + theme(legend.position = 'right') +
+     guides(fill = guide_legend(title.position = 'top', nrow = 4, byrow = TRUE))) 
+```
+That is overkill, I think.
+
+Let's print each of the variables and the big overkill plot
+
+```{r}
+pdf(file.path(scriptOut, 'YearTemp.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print(tempyrs)
+dev.off()
+
+png(file.path(scriptOut, 'YearTemp.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print(tempyrs)
+dev.off()
+
+pdf(file.path(scriptOut, 'Yearinun.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print(inunyrs)
+dev.off()
+
+png(file.path(scriptOut, 'Yearinun.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print(inunyrs)
+dev.off()
+
+pdf(file.path(scriptOut, 'YearGPP.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print(gppyrs)
+dev.off()
+
+png(file.path(scriptOut, 'YearGPP.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print(gppyrs)
+dev.off()
+
+pdf(file.path(scriptOut, 'YearER.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print(eryrs)
+dev.off()
+
+png(file.path(scriptOut, 'YearER.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print(eryrs)
+dev.off()
+```
+
+And the big smash
+
+```{r}
+pdf(file.path(scriptOut, 'YearAll.pdf'), 
+    onefile = FALSE, height = 16/2.54, width = 16/2.54, useDingbats = FALSE)
+print((tempyrs + theme(legend.position = 'right') +
+   guides(fill = guide_legend(title.position = 'top', nrow = 4, byrow = TRUE)))/
+  (inunyrs + theme(legend.position = 'right') +
+     guides(fill = guide_legend(title.position = 'top', nrow = 4, byrow = TRUE)))/
+  (gppyrs + theme(legend.position = 'right') +
+     guides(fill = guide_legend(title.position = 'top', nrow = 4, byrow = TRUE)))/
+  (eryrs + theme(legend.position = 'right') +
+     guides(fill = guide_legend(title.position = 'top', nrow = 4, byrow = TRUE))))
+dev.off()
+
+png(file.path(scriptOut, 'YearAll.png'), 
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+print((tempyrs + theme(legend.position = 'right') +
+   guides(fill = guide_legend(title.position = 'top', nrow = 4, byrow = TRUE)))/
+  (inunyrs + theme(legend.position = 'right') +
+     guides(fill = guide_legend(title.position = 'top', nrow = 4, byrow = TRUE)))/
+  (gppyrs + theme(legend.position = 'right') +
+     guides(fill = guide_legend(title.position = 'top', nrow = 4, byrow = TRUE)))/
+  (eryrs + theme(legend.position = 'right') +
+     guides(fill = guide_legend(title.position = 'top', nrow = 4, byrow = TRUE))))
+dev.off()
+```
+
+Maybe that actually IS the way to go. Do the whole smash of the inputs and outputs and yearly aggregation using this. Then do uncertainty separately.
+
+## TODO Make a 5-year aggregation of the outputs, and a histogram of the catchments and a timeseries
+Inputs too? maybe in the timeseries?
+### maybe this is the scenario comparison too?
+
+
+## Scenario comparison
+
+
+## Extreme limits of uncertainty figure for the box using a single date
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```
+
+
+

@@ -86,7 +86,7 @@ server <- function(input, output) {
     output$temp <- tmap::renderTmap({
         # Works. the others might work, if I do something reactive?
         # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
-        tempfun(weraiCropTemp, 1, input$datewanted, titled = TRUE)
+        tempfun(weraiCropTemp, 1, input$datewanted, titled = TRUE, titlePrefix = 'Two months preceding')
         # tmap_leaflet(inputsfun(input$datewanted), in.shiny = TRUE)
         # tmap_leaflet(tempfun(input$datewanted), in.shiny = TRUE)
     })
