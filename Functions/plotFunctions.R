@@ -25,8 +25,10 @@
 # Temp
 tempsetup <- function(data, attnum = 1, forcemin = NA, forcemax = NA) {
   # if feed it a stars, use the chosen attribute. If fed an attribute directly, use that
-  if (class(data) == 'stars') {
+  if ('stars' %in% class(data)) {
     thisdata <- data[[attnum]]
+  } else if ('sf' %in% class(data)) {
+    thisdata <- pull(st_drop_geometry(data[,attnum]))
   } else if ('matrix' %in% class(data) | 'array' %in% class(data)) {
     thisdata <- data
   } else {
@@ -64,9 +66,10 @@ tempsetup <- function(data, attnum = 1, forcemin = NA, forcemax = NA) {
 # Inundation
 inunsetup <- function(data, attnum, logscale = TRUE, forcemin = NA, forcemax = NA) {
   
-  # if feed it a stars, use the chosen attribute. If fed an attribute directly, use that
-  if (class(data) == 'stars') {
+  if ('stars' %in% class(data)) {
     thisdata <- data[[attnum]]
+  } else if ('sf' %in% class(data)) {
+    thisdata <- pull(st_drop_geometry(data[,attnum]))
   } else if ('matrix' %in% class(data) | 'array' %in% class(data)) {
     thisdata <- data
   } else {
@@ -132,8 +135,10 @@ inunsetup <- function(data, attnum, logscale = TRUE, forcemin = NA, forcemax = N
 ersetup <- function(data, attnum, logscale = TRUE, forcemin = NA, forcemax = NA) {
   
   # if feed it a stars, use the chosen attribute. If fed an attribute directly, use that
-  if (class(data) == 'stars') {
+  if ('stars' %in% class(data)) {
     thisdata <- data[[attnum]]
+  } else if ('sf' %in% class(data)) {
+    thisdata <- pull(st_drop_geometry(data[,attnum]))
   } else if ('matrix' %in% class(data) | 'array' %in% class(data)) {
     thisdata <- data
   } else {
@@ -194,8 +199,10 @@ ersetup <- function(data, attnum, logscale = TRUE, forcemin = NA, forcemax = NA)
 gppsetup <- function(data, attnum, logscale = TRUE, forcemin = NA, forcemax = NA) {
   
   # if feed it a stars, use the chosen attribute. If fed an attribute directly, use that
-  if (class(data) == 'stars') {
+  if ('stars' %in% class(data)) {
     thisdata <- data[[attnum]]
+  } else if ('sf' %in% class(data)) {
+    thisdata <- pull(st_drop_geometry(data[,attnum]))
   } else if ('matrix' %in% class(data) | 'array' %in% class(data)) {
     thisdata <- data
   } else {
@@ -225,7 +232,7 @@ gppsetup <- function(data, attnum, logscale = TRUE, forcemin = NA, forcemax = NA
   gppbreaks_log <- labeling::extended(m = 10, 
                                       dmin = thismin, 
                                       # adding ceiling because this misses the actual max
-                                      dmax = ceiling(max(log10(1 + thisdata), na.rm = TRUE)))
+                                      dmax = thismax)
   
   # and those breaks might not quite yield 10, so maximise the palette differences
   gpppal_log <- sequential_hcl(length(gppbreaks_log)-1, palette = 'Emrld', rev = TRUE)
