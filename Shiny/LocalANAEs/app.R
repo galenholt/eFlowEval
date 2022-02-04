@@ -27,10 +27,10 @@ ui <- fluidPage(
     
     fluidRow(
         column(4,
-               h4("Two months preceding: ")
+               h4("Two months following: ")
                ),
         column(4,
-               selectInput("datewanted", "Bimonth end", choices = availDays)
+               selectInput("datewanted", "Bimonth start", choices = availDays)
                )
     ),
     
@@ -86,7 +86,7 @@ server <- function(input, output) {
     output$temp <- tmap::renderTmap({
         # Works. the others might work, if I do something reactive?
         # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
-        tempfun(weraiCropTemp, 1, input$datewanted, titled = TRUE, titlePrefix = 'Two months preceding')
+        tempfun(weraiCropTemp, 1, input$datewanted, titled = TRUE, titlePrefix = 'Two months following')
         # tmap_leaflet(inputsfun(input$datewanted), in.shiny = TRUE)
         # tmap_leaflet(tempfun(input$datewanted), in.shiny = TRUE)
     })

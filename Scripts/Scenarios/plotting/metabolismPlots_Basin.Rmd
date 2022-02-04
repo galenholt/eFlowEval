@@ -61,7 +61,7 @@ Now that I made the functions, the local code should effectively just work.
 tmap_mode('plot')
 
 # The auto-titling just stuffs "Two months preceding" on there, which is wrong
-temp_tm <- tempfun(temperatureannual, 1, datewanted, plotPkg = 'tmap', titled = TRUE, titlePrefix = 'Water year ending ')
+temp_tm <- tempfun(temperatureannual, 1, datewanted, plotPkg = 'tmap', titled = TRUE, titlePrefix = 'Water year beginning ')
 temp_tm
 ```
 
@@ -77,7 +77,7 @@ I'm going to pull the titles off everything but temp, assuming they're going to 
 
 ```{r}
 # The auto-titling just stuffs "Two months preceding" on there, which is wrong
-temp_gg <- tempfun(temperatureannual, 1, datewanted, plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year ending ', 
+temp_gg <- tempfun(temperatureannual, 1, datewanted, plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year beginning ', 
                    forcelegend = 'Yearly mean\ntemp C')
 temp_gg
 ```
@@ -88,8 +88,8 @@ Forcing the min and max makes the breaks more reasonable, but does reduce resolu
 
 ### Inundation
 ```{r}
-# The auto-titling just stuffs "Two months preceding" on there, which is wrong
-inun_gg <- inunfun(inundationannual/1000, 1, datewanted, units = 'Gl', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year ending ', 
+# The auto-titling just stuffs "Two months following" on there, which is wrong
+inun_gg <- inunfun(inundationannual/1000, 1, datewanted, units = 'Gl', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year beginning ', 
                    forcelegend = 'GL Inundation summed\nover max extents', forcemin = 0, forcemax = 100000000)
 inun_gg
 
@@ -98,8 +98,8 @@ inun_gg
 ### GPP
 ```{r}
 # The auto-titling just stuffs "Two months preceding" on there, which is wrong
-gpp_gg <- gppfun(logGPPdaysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year ending ', 
-                   forcelegend = 'GPP (tonnes O2)\n summed over max extents', forcemin = 0, forcemax = 100000000)
+gpp_gg <- gppfun(logGPPdaysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year beginning ', 
+                   forcelegend = 'GPP (tonnes O2)\nsummed over max extents', forcemin = 0, forcemax = 100000000)
 gpp_gg
 ```
 
@@ -109,8 +109,8 @@ Maybe just tonnes O2 assuming max extents? Or ??? just lots/little somehow. IE m
 ### ER
 ```{r}
 # The auto-titling just stuffs "Two months preceding" on there, which is wrong
-er_gg <- erfun(logERdaysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year ending ', 
-                   forcelegend = 'ER (tonnes O2)\n summed over max extents', forcemin = 0, forcemax = 100000000)
+er_gg <- erfun(logERdaysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year beginning ', 
+                   forcelegend = 'ER (tonnes O2)\nsummed over max extents', forcemin = 0, forcemax = 100000000)
 er_gg
 ```
 
@@ -180,7 +180,7 @@ gridIO_p <- temp_gg +
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) + 
-  plot_annotation(title = paste0('Water year ending ', datewanted))
+  plot_annotation(title = paste0('Water year beginning ', datewanted))
 
 gridIO_p
 ```
@@ -207,12 +207,12 @@ One way to show that is simply to ignore those catchments where we can't predict
 Need to use the forcemin and max here and above (or, I suppose could force to the max of the above) to end up with the same breaks.The nice clean factor of 10 breaks is nice though.
 
 ```{r}
-gpp_gg_v <- gppfun(logGPPdaysvalleysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year ending ', 
-                   forcelegend = 'GPP (tonnes O2)\n summed over max extents', forcemin = 0, forcemax = 100000000)
+gpp_gg_v <- gppfun(logGPPdaysvalleysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year beginning ', 
+                   forcelegend = 'GPP (tonnes O2)\nsummed over max extents', forcemin = 0, forcemax = 100000000)
 gpp_gg_v
 
-er_gg_v <- erfun(logERdaysvalleysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year ending ', 
-                   forcelegend = 'ER (tonnes O2)\n summed over max extents', forcemin = 0, forcemax = 100000000)
+er_gg_v <- erfun(logERdaysvalleysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year beginning ', 
+                   forcelegend = 'ER (tonnes O2)\nsummed over max extents', forcemin = 0, forcemax = 100000000)
 er_gg_v
 
 ```
@@ -232,7 +232,7 @@ uncertain2 <- gpp_gg_v +
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) + 
-  plot_annotation(title = paste0('Water year ending ', datewanted))
+  plot_annotation(title = paste0('Water year beginning ', datewanted))
 uncertain2
 ```
 
@@ -264,7 +264,7 @@ bothuncertain <- gpp_gg +
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) + 
-  plot_annotation(title = paste0('Water year ending ', datewanted))
+  plot_annotation(title = paste0('Water year beginning ', datewanted))
 
 # unfortunately there's no good way to collect common guides
 bothuncertain + plot_layout(guides = 'collect')
@@ -288,7 +288,7 @@ gppuncertain <- gpp_gg +
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
   
-  plot_annotation(title = paste0('Water year ending ', datewanted)) +
+  plot_annotation(title = paste0('Water year beginning ', datewanted)) +
   plot_layout(guides = 'collect')
 
 gppuncertain
@@ -313,7 +313,7 @@ eruncertain <- er_gg +
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
   
-  plot_annotation(title = paste0('Water year ending ', datewanted)) +
+  plot_annotation(title = paste0('Water year beginning ', datewanted)) +
   plot_layout(guides = 'collect')
 
 eruncertain
@@ -399,7 +399,7 @@ er_vplot <- er_gg_v +
           legend.key.size = unit(0.3, 'cm'))
 
 
-  # plot_annotation(title = paste0('Water year ending ', datewanted)) +
+  # plot_annotation(title = paste0('Water year beginning ', datewanted)) +
   # plot_layout(nrow = 3)
 
 (tempplot + inunplot) / 
@@ -465,8 +465,8 @@ eryrs <- erfun(logERdaysannual/1000, 1, datewanted = as.character(availDays[2:4]
                units = 'tonnes', 
                plotPkg = 'ggplot', 
                titled = FALSE, 
-               titlePrefix = 'Water year ending ',
-               forcelegend = 'ER (tonnes O2)\n summed over max extents', 
+               titlePrefix = 'Water year beginning ',
+               forcelegend = 'ER (tonnes O2)\nsummed over max extents', 
                forcemin = 0, forcemax = 100000000) + 
   guides(fill = guide_legend(title.position = 'top')) +
   theme_grey(base_size = 8) + 
@@ -482,7 +482,7 @@ Not sure we really care if we do it for the inputs, gpp etc?
 tempyrs <- tempfun(temperatureannual, 1, datewanted = as.character(availDays[2:4]), 
                plotPkg = 'ggplot', 
                titled = FALSE, 
-               titlePrefix = 'Water year ending ',
+               titlePrefix = 'Water year beginning ',
                forcelegend = 'Yearly mean\ntemp C') + 
   guides(fill = guide_legend(title.position = 'top')) +
   theme_grey(base_size = 8) + 
@@ -494,7 +494,7 @@ inunyrs <- inunfun(inundationannual/1000, 1, datewanted = as.character(availDays
                    units = 'Gl', 
                    plotPkg = 'ggplot', 
                    titled = FALSE, 
-                   titlePrefix = 'Water year ending ', 
+                   titlePrefix = 'Water year beginning ', 
                    forcelegend = 'GL Inundation summed\nover max extents', 
                    forcemin = 0, forcemax = 100000000) + 
   guides(fill = guide_legend(title.position = 'top')) +
@@ -507,8 +507,8 @@ gppyrs <- gppfun(logERdaysannual/1000, 1, datewanted = as.character(availDays[2:
                units = 'tonnes', 
                plotPkg = 'ggplot', 
                titled = FALSE, 
-               titlePrefix = 'Water year ending ',
-               forcelegend = 'GPP (tonnes O2)\n summed over max extents', 
+               titlePrefix = 'Water year beginning ',
+               forcelegend = 'GPP (tonnes O2)\nsummed over max extents', 
                forcemin = 0, forcemax = 100000000) + 
   guides(fill = guide_legend(title.position = 'top')) +
   theme_grey(base_size = 8) + 

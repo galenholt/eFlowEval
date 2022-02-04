@@ -193,7 +193,7 @@ meanna <- function(x, na.rm = TRUE) {
 # This is super ugly. should have looped. Oh well.
 
 # Can I make simple annual reporting?
-interDates <- as.POSIXct(c("2014-06-30", "2015-06-30", "2016-06-30", "2017-06-30", "2018-06-30", "2019-06-30"))
+interDates <- as.POSIXct(c("2014-06-30", "2015-06-30", "2016-06-30", "2017-06-30", "2018-06-30", "2019-06-30", "2020-06-30"))
 
 # Mean is the appropriate stat for temps
 climateannual <- tempaggregate(climate, by_t = as.Date(interDates), 
@@ -278,3 +278,251 @@ logGPPdaysvalleysCLIMannual <- tempaggregate(logGPPdaysvalleysCLIM, by_t = as.Da
                                             FUN = sumna, na.rm = TRUE) %>%
   aperm(c('Shape', 'time'))
 
+
+
+
+# a 5-year aggregation ----------------------------------------------------
+
+# over the dailies, not the yearlies
+
+# what are some limits?
+
+td <- st_get_dimension_values(temperature, which = 'time')
+td
+by_t <- as.Date(interDates)
+rbind(td, findInterval(td, by_t, rightmost.closed = TRUE))
+temperatureannual # so there's 8 intervals, but we only get 6 out of the aggregation- those below the lower number and above the upper are discarded
+# SO, the dates are the STARTING values of the interval, NOT the ending
+st_get_dimension_values(temperatureannual, which = 'time')
+
+# What I really want is a way to get the interval for a 5-year reporting period. 
+# Let's say that runs from 2014-06 to 2019-06. is that in inundation?
+st_get_dimension_values(inundation, which = 'time') # yes
+
+by_t <- as.Date(interDates)[c(1,6)]
+by_t
+rbind(td, findInterval(td, by_t, rightmost.closed = TRUE))
+rbind(st_get_dimension_values(inundation, which = 'time'), findInterval(td, by_t, rightmost.closed = TRUE))
+
+# now, let's test I'm right about how the intervals work. this should give 1 slice from by_t[1] to 2].
+# argh it's dropping that dimension, but shouldn't. It ignores drop = FALSE, even though I'm sure it's using aperm under the hood.
+
+# rather than re-write the stars.aggregate, or try to fix it in tempaggregate,
+# which would involce adding a dimension which is super annoying,
+# add a throwaway to by_t
+by_t <- c(as.Date("2000-06-30"), by_t)
+rbind(td, findInterval(td, by_t, rightmost.closed = TRUE))
+rbind(st_get_dimension_values(inundation, which = 'time'), findInterval(td, by_t, rightmost.closed = TRUE))
+
+# So now, that's saving from 2000-2014 and 2014-2019. We only want the latter,
+# but need to save the former to get the time dimension
+
+climate5_test <- tempaggregate(climate, by_t = by_t, # "5 years"
+                          FUN = meanna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>%
+  slice("time", 2, drop = FALSE)
+climate5_test
+plot(climate5_test)
+
+# OK, done testing. Let's make those
+
+
+# 5-year period from 2014-06 to 2019-06 -----------------------------------
+by_t_5 <- c(as.Date("2000-06-30"), as.Date(interDates)[c(1,6)])
+
+temperature5 <- tempaggregate(temperature, by_t = by_t_5, # "5 years"
+                          FUN = meanna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>%
+  slice("time", 2, drop = FALSE)
+# temperature5
+
+climate5 <- tempaggregate(climate, by_t = by_t_5, # "5 years"
+                               FUN = meanna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>%
+  slice("time", 2, drop = FALSE)
+# climate5
+
+# Sum to get the total inundation
+inundation5 <- tempaggregate(inundation, by_t = by_t_5, 
+                                  FUN = sumna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>% 
+  slice('time', 2, drop = FALSE) 
+
+inundation10p5 <- tempaggregate(inundation10p, by_t = by_t_5, 
+                                     FUN = sumna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>% 
+  slice('time', 2, drop = FALSE) 
+
+# sum to get total ER
+logERdays5 <- tempaggregate(logERdays, by_t = by_t_5, 
+                                 FUN = sumna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>% 
+  slice('time', 2, drop = FALSE) 
+
+logERdays10p5 <- tempaggregate(logERdays10p, by_t = by_t_5, 
+                                    FUN = sumna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>% 
+  slice('time', 2, drop = FALSE) 
+
+logERdays10pCLIM5 <- tempaggregate(logERdays10pCLIM, by_t = by_t_5, 
+                                        FUN = sumna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>% 
+  slice('time', 2, drop = FALSE) 
+
+logERdaysCLIM5 <- tempaggregate(logERdaysCLIM, by_t = by_t_5, 
+                                     FUN = sumna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>% 
+  slice('time', 2, drop = FALSE) 
+
+logERdaysvalleys5 <- tempaggregate(logERdaysvalleys, by_t = by_t_5, 
+                                        FUN = sumna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>% 
+  slice('time', 2, drop = FALSE) 
+
+logERdaysvalleys10p5 <- tempaggregate(logERdaysvalleys10p, by_t = by_t_5, 
+                                           FUN = sumna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>% 
+  slice('time', 2, drop = FALSE) 
+
+logERdaysvalleys10pCLIM5 <- tempaggregate(logERdaysvalleys10pCLIM, by_t = by_t_5, 
+                                               FUN = sumna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>% 
+  slice('time', 2, drop = FALSE) 
+
+logERdaysvalleysCLIM5 <- tempaggregate(logERdaysvalleysCLIM, by_t = by_t_5, 
+                                            FUN = sumna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>% 
+  slice('time', 2, drop = FALSE) 
+
+# sum to get total ER
+logGPPdays5 <- tempaggregate(logGPPdays, by_t = by_t_5, 
+                                  FUN = sumna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>% 
+  slice('time', 2, drop = FALSE) 
+
+logGPPdays10p5 <- tempaggregate(logGPPdays10p, by_t = by_t_5, 
+                                     FUN = sumna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>% 
+  slice('time', 2, drop = FALSE) 
+
+logGPPdays10pCLIM5 <- tempaggregate(logGPPdays10pCLIM, by_t = by_t_5, 
+                                         FUN = sumna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>% 
+  slice('time', 2, drop = FALSE) 
+
+logGPPdaysCLIM5 <- tempaggregate(logGPPdaysCLIM, by_t = by_t_5, 
+                                      FUN = sumna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>% 
+  slice('time', 2, drop = FALSE) 
+
+logGPPdaysvalleys5 <- tempaggregate(logGPPdaysvalleys, by_t = by_t_5, 
+                                         FUN = sumna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>% 
+  slice('time', 2, drop = FALSE) 
+
+logGPPdaysvalleys10p5 <- tempaggregate(logGPPdaysvalleys10p, by_t = by_t_5, 
+                                            FUN = sumna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>% 
+  slice('time', 2, drop = FALSE) 
+
+logGPPdaysvalleys10pCLIM5 <- tempaggregate(logGPPdaysvalleys10pCLIM, by_t = by_t_5, 
+                                                FUN = sumna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>% 
+  slice('time', 2, drop = FALSE) 
+
+logGPPdaysvalleysCLIM5 <- tempaggregate(logGPPdaysvalleysCLIM, by_t = by_t_5, 
+                                             FUN = sumna, na.rm = TRUE) %>%
+  aperm(c('Shape', 'time')) %>% 
+  slice('time', 2, drop = FALSE) 
+
+
+
+# Make 5-yearly dfs for histograms ----------------------------------------
+
+addCatchDf <- function(starsObj, catches, newname) {
+  starsObj %>%
+    st_as_sf() %>%
+    rename({{newname}} := 1) %>%
+    st_join(catches, join = st_equals_exact, par = 1)
+}
+
+# inputs
+temp5df  <- addCatchDf(temperature5, catches = ltimNoNorth, newname = 'Temp')  %>%
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2])
+
+clim5df  <- addCatchDf(climate5, catches = ltimNoNorth, newname = 'Temp')  %>% 
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2])
+
+inun5df  <- addCatchDf(inundation5, catches = ltimNoNorth, newname = 'inundation')  %>%  
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],
+         logInun = log10(inundation/1000 + 1))
+
+inun10p5df  <- addCatchDf(inundation10p5, catches = ltimNoNorth, newname = 'inundation')  %>% 
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2])
+
+# outputs
+er5df <- addCatchDf(logERdays5, catches = ltimNoNorth, newname = 'ER')  %>% 
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],
+         logER = log10(ER/1000 + 1))
+ 
+er510pdf <- addCatchDf(logERdays10p5, catches = ltimNoNorth, newname = 'ER')  %>%  
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
+         logER = log10(ER/1000 + 1))
+ 
+er510pCLIMdf <- addCatchDf(logERdays10pCLIM5, catches = ltimNoNorth, newname = 'ER')  %>%  
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
+         logER = log10(ER/1000 + 1))
+
+er5CLIMdf <- addCatchDf(logERdaysCLIM5, catches = ltimNoNorth, newname = 'ER')  %>% 
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logER = log10(ER/1000 + 1))
+
+er5_vdf <- addCatchDf(logERdaysvalleys5, catches = ltimNoNorth, newname = 'ER')  %>%  
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
+         logER = log10(ER/1000 + 1))
+
+er5_v10pdf <- addCatchDf(logERdaysvalleys10p5, catches = ltimNoNorth, newname = 'ER')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
+         logER = log10(ER/1000 + 1))
+
+er5_v10pCLIMdf <- addCatchDf(logERdaysvalleys10pCLIM5, catches = ltimNoNorth, newname = 'ER')  %>%   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          logER = log10(ER/1000 + 1))
+
+er5_vCLIMdf <- addCatchDf(logERdaysvalleysCLIM5, catches = ltimNoNorth, newname = 'ER')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logER = log10(ER/1000 + 1))
+
+gpp5df <- addCatchDf(logGPPdays5, catches = ltimNoNorth, newname = 'GPP')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logGPP = log10(GPP/1000 + 1))
+
+gpp510pdf <- addCatchDf(logGPPdays10p5, catches = ltimNoNorth, newname = 'GPP')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],        
+         logGPP = log10(GPP/1000 + 1))
+
+gpp510pCLIMdf <- addCatchDf(logGPPdays10pCLIM5, catches = ltimNoNorth, newname = 'GPP')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logGPP = log10(GPP/1000 + 1))
+
+gpp5CLIMdf <- addCatchDf(logGPPdaysCLIM5, catches = ltimNoNorth, newname = 'GPP')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logGPP = log10(GPP/1000 + 1))
+
+gpp5_vdf <- addCatchDf(logGPPdaysvalleys5, catches = ltimNoNorth, newname = 'GPP')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logGPP = log10(GPP/1000 + 1))
+
+gpp5_v10pdf <- addCatchDf(logGPPdaysvalleys10p5, catches = ltimNoNorth, newname = 'GPP')  %>%  
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
+         logGPP = log10(GPP/1000 + 1))
+
+gpp5_v10pCLIMdf <- addCatchDf(logGPPdaysvalleys10pCLIM5, catches = ltimNoNorth, newname = 'GPP')  %>% 
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logGPP = log10(GPP/1000 + 1)) 
+
+gpp5_vCLIMdf <- addCatchDf(logGPPdaysvalleysCLIM5, catches = ltimNoNorth, newname = 'GPP')  %>%  
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],       
+         logGPP = log10(GPP/1000 + 1))
+                                        
+
+
+ 
