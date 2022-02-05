@@ -438,91 +438,244 @@ logGPPdaysvalleysCLIM5 <- tempaggregate(logGPPdaysvalleysCLIM, by_t = by_t_5,
 
 
 # Make 5-yearly dfs for histograms ----------------------------------------
-
-addCatchDf <- function(starsObj, catches, newname) {
-  starsObj %>%
-    st_as_sf() %>%
-    rename({{newname}} := 1) %>%
-    st_join(catches, join = st_equals_exact, par = 1)
-}
+# sfandcatch turns a stars into sf, stacks with a date col, and attaches the catchment name
 
 # inputs
-temp5df  <- addCatchDf(temperature5, catches = ltimNoNorth, newname = 'Temp')  %>%
+temp5df  <- sfandcatch(temperature5, catches = ltimNoNorth, newname = 'Temp')  %>%
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2])
 
-clim5df  <- addCatchDf(climate5, catches = ltimNoNorth, newname = 'Temp')  %>% 
+clim5df  <- sfandcatch(climate5, catches = ltimNoNorth, newname = 'Temp')  %>% 
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2])
 
-inun5df  <- addCatchDf(inundation5, catches = ltimNoNorth, newname = 'inundation')  %>%  
+inun5df  <- sfandcatch(inundation5, catches = ltimNoNorth, newname = 'inundation')  %>%  
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],
          logInun = log10(inundation/1000 + 1))
 
-inun10p5df  <- addCatchDf(inundation10p5, catches = ltimNoNorth, newname = 'inundation')  %>% 
+inun10p5df  <- sfandcatch(inundation10p5, catches = ltimNoNorth, newname = 'inundation')  %>% 
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2])
 
-# outputs
-er5df <- addCatchDf(logERdays5, catches = ltimNoNorth, newname = 'ER')  %>% 
+# outputs- don't do the uncertainty here yet.
+er5df <- sfandcatch(logERdays5[1,,], catches = ltimNoNorth, newname = 'ER')  %>% 
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],
          logER = log10(ER/1000 + 1))
  
-er510pdf <- addCatchDf(logERdays10p5, catches = ltimNoNorth, newname = 'ER')  %>%  
+er510pdf <- sfandcatch(logERdays10p5[1,,], catches = ltimNoNorth, newname = 'ER')  %>%  
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
          logER = log10(ER/1000 + 1))
  
-er510pCLIMdf <- addCatchDf(logERdays10pCLIM5, catches = ltimNoNorth, newname = 'ER')  %>%  
+er510pCLIMdf <- sfandcatch(logERdays10pCLIM5[1,,], catches = ltimNoNorth, newname = 'ER')  %>%  
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
          logER = log10(ER/1000 + 1))
 
-er5CLIMdf <- addCatchDf(logERdaysCLIM5, catches = ltimNoNorth, newname = 'ER')  %>% 
+er5CLIMdf <- sfandcatch(logERdaysCLIM5[1,,], catches = ltimNoNorth, newname = 'ER')  %>% 
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
          logER = log10(ER/1000 + 1))
 
-er5_vdf <- addCatchDf(logERdaysvalleys5, catches = ltimNoNorth, newname = 'ER')  %>%  
+er5_vdf <- sfandcatch(logERdaysvalleys5[1,,], catches = ltimNoNorth, newname = 'ER')  %>%  
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
          logER = log10(ER/1000 + 1))
 
-er5_v10pdf <- addCatchDf(logERdaysvalleys10p5, catches = ltimNoNorth, newname = 'ER')  %>%   
+er5_v10pdf <- sfandcatch(logERdaysvalleys10p5[1,,], catches = ltimNoNorth, newname = 'ER')  %>%   
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
          logER = log10(ER/1000 + 1))
 
-er5_v10pCLIMdf <- addCatchDf(logERdaysvalleys10pCLIM5, catches = ltimNoNorth, newname = 'ER')  %>%   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          logER = log10(ER/1000 + 1))
+er5_v10pCLIMdf <- sfandcatch(logERdaysvalleys10pCLIM5[1,,], catches = ltimNoNorth, newname = 'ER')  %>%   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          logER = log10(ER/1000 + 1))
 
-er5_vCLIMdf <- addCatchDf(logERdaysvalleysCLIM5, catches = ltimNoNorth, newname = 'ER')  %>%   
+er5_vCLIMdf <- sfandcatch(logERdaysvalleysCLIM5[1,,], catches = ltimNoNorth, newname = 'ER')  %>%   
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
          logER = log10(ER/1000 + 1))
 
-gpp5df <- addCatchDf(logGPPdays5, catches = ltimNoNorth, newname = 'GPP')  %>%   
+gpp5df <- sfandcatch(logGPPdays5[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%   
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
          logGPP = log10(GPP/1000 + 1))
 
-gpp510pdf <- addCatchDf(logGPPdays10p5, catches = ltimNoNorth, newname = 'GPP')  %>%   
+gpp510pdf <- sfandcatch(logGPPdays10p5[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%   
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],        
          logGPP = log10(GPP/1000 + 1))
 
-gpp510pCLIMdf <- addCatchDf(logGPPdays10pCLIM5, catches = ltimNoNorth, newname = 'GPP')  %>%   
+gpp510pCLIMdf <- sfandcatch(logGPPdays10pCLIM5[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%   
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
          logGPP = log10(GPP/1000 + 1))
 
-gpp5CLIMdf <- addCatchDf(logGPPdaysCLIM5, catches = ltimNoNorth, newname = 'GPP')  %>%   
+gpp5CLIMdf <- sfandcatch(logGPPdaysCLIM5[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%   
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
          logGPP = log10(GPP/1000 + 1))
 
-gpp5_vdf <- addCatchDf(logGPPdaysvalleys5, catches = ltimNoNorth, newname = 'GPP')  %>%   
+gpp5_vdf <- sfandcatch(logGPPdaysvalleys5[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%   
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
          logGPP = log10(GPP/1000 + 1))
 
-gpp5_v10pdf <- addCatchDf(logGPPdaysvalleys10p5, catches = ltimNoNorth, newname = 'GPP')  %>%  
+gpp5_v10pdf <- sfandcatch(logGPPdaysvalleys10p5[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%  
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
          logGPP = log10(GPP/1000 + 1))
 
-gpp5_v10pCLIMdf <- addCatchDf(logGPPdaysvalleys10pCLIM5, catches = ltimNoNorth, newname = 'GPP')  %>% 
+gpp5_v10pCLIMdf <- sfandcatch(logGPPdaysvalleys10pCLIM5[1,,], catches = ltimNoNorth, newname = 'GPP')  %>% 
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
          logGPP = log10(GPP/1000 + 1)) 
 
-gpp5_vCLIMdf <- addCatchDf(logGPPdaysvalleysCLIM5, catches = ltimNoNorth, newname = 'GPP')  %>%  
+gpp5_vCLIMdf <- sfandcatch(logGPPdaysvalleysCLIM5[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%  
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],       
          logGPP = log10(GPP/1000 + 1))
                                         
 
+# Make bimonhtly timeseries ---------------------------------------------------------
 
- 
+
+# inputs
+tempdf  <- sfandcatch(temperature, catches = ltimNoNorth, newname = 'Temp')  %>%
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2])
+
+climdf  <- sfandcatch(climate, catches = ltimNoNorth, newname = 'Temp')  %>% 
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2])
+
+inundf  <- sfandcatch(inundation, catches = ltimNoNorth, newname = 'inundation')  %>%  
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],
+         logInun = log10(inundation/1000 + 1))
+
+inun10pdf  <- sfandcatch(inundation10p, catches = ltimNoNorth, newname = 'inundation')  %>% 
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2])
+
+# outputs- don't do the uncertainty here yet.
+erdf <- sfandcatch(logERdays[1,,], catches = ltimNoNorth, newname = 'ER')  %>% 
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],
+         logER = log10(ER/1000 + 1))
+
+er10pdf <- sfandcatch(logERdays10p[1,,], catches = ltimNoNorth, newname = 'ER')  %>%  
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
+         logER = log10(ER/1000 + 1))
+
+er10pCLIMdf <- sfandcatch(logERdays10pCLIM[1,,], catches = ltimNoNorth, newname = 'ER')  %>%  
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
+         logER = log10(ER/1000 + 1))
+
+erCLIMdf <- sfandcatch(logERdaysCLIM[1,,], catches = ltimNoNorth, newname = 'ER')  %>% 
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logER = log10(ER/1000 + 1))
+
+er_vdf <- sfandcatch(logERdaysvalleys[1,,], catches = ltimNoNorth, newname = 'ER')  %>%  
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
+         logER = log10(ER/1000 + 1))
+
+er_v10pdf <- sfandcatch(logERdaysvalleys10p[1,,], catches = ltimNoNorth, newname = 'ER')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
+         logER = log10(ER/1000 + 1))
+
+er_v10pCLIMdf <- sfandcatch(logERdaysvalleys10pCLIM[1,,], catches = ltimNoNorth, newname = 'ER')  %>%   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          logER = log10(ER/1000 + 1))
+
+er_vCLIMdf <- sfandcatch(logERdaysvalleysCLIM[1,,], catches = ltimNoNorth, newname = 'ER')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logER = log10(ER/1000 + 1))
+
+gppdf <- sfandcatch(logGPPdays[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logGPP = log10(GPP/1000 + 1))
+
+gpp10pdf <- sfandcatch(logGPPdays10p[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],        
+         logGPP = log10(GPP/1000 + 1))
+
+gpp10pCLIMdf <- sfandcatch(logGPPdays10pCLIM[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logGPP = log10(GPP/1000 + 1))
+
+gppCLIMdf <- sfandcatch(logGPPdaysCLIM[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logGPP = log10(GPP/1000 + 1))
+
+gpp_vdf <- sfandcatch(logGPPdaysvalleys[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logGPP = log10(GPP/1000 + 1))
+
+gpp_v10pdf <- sfandcatch(logGPPdaysvalleys10p[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%  
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
+         logGPP = log10(GPP/1000 + 1))
+
+gpp_v10pCLIMdf <- sfandcatch(logGPPdaysvalleys10pCLIM[1,,], catches = ltimNoNorth, newname = 'GPP')  %>% 
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logGPP = log10(GPP/1000 + 1)) 
+
+gpp_vCLIMdf <- sfandcatch(logGPPdaysvalleysCLIM[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%  
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],       
+         logGPP = log10(GPP/1000 + 1))
+
+
+# Make annual timeseries --------------------------------------------------
+
+
+# inputs
+tempannualdf  <- sfandcatch(temperatureannual, catches = ltimNoNorth, newname = 'Temp')  %>%
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2])
+
+climannualdf  <- sfandcatch(climateannual, catches = ltimNoNorth, newname = 'Temp')  %>% 
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2])
+
+inunannualdf  <- sfandcatch(inundationannual, catches = ltimNoNorth, newname = 'inundation')  %>%  
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],
+         logInun = log10(inundation/1000 + 1))
+
+inun10pannualdf  <- sfandcatch(inundation10pannual, catches = ltimNoNorth, newname = 'inundation')  %>% 
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2])
+
+# outputs- don't do the uncertainty here yet.
+erannualdf <- sfandcatch(logERdaysannual[1,,], catches = ltimNoNorth, newname = 'ER')  %>% 
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],
+         logER = log10(ER/1000 + 1))
+
+erannual10pdf <- sfandcatch(logERdays10pannual[1,,], catches = ltimNoNorth, newname = 'ER')  %>%  
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
+         logER = log10(ER/1000 + 1))
+
+erannual10pCLIMdf <- sfandcatch(logERdays10pCLIMannual[1,,], catches = ltimNoNorth, newname = 'ER')  %>%  
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
+         logER = log10(ER/1000 + 1))
+
+erannualCLIMdf <- sfandcatch(logERdaysCLIMannual[1,,], catches = ltimNoNorth, newname = 'ER')  %>% 
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logER = log10(ER/1000 + 1))
+
+erannual_vdf <- sfandcatch(logERdaysvalleysannual[1,,], catches = ltimNoNorth, newname = 'ER')  %>%  
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
+         logER = log10(ER/1000 + 1))
+
+erannual_v10pdf <- sfandcatch(logERdaysvalleys10pannual[1,,], catches = ltimNoNorth, newname = 'ER')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
+         logER = log10(ER/1000 + 1))
+
+erannual_v10pCLIMdf <- sfandcatch(logERdaysvalleys10pCLIMannual[1,,], catches = ltimNoNorth, newname = 'ER')  %>%   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          logER = log10(ER/1000 + 1))
+
+erannual_vCLIMdf <- sfandcatch(logERdaysvalleysCLIMannual[1,,], catches = ltimNoNorth, newname = 'ER')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logER = log10(ER/1000 + 1))
+
+gppannualdf <- sfandcatch(logGPPdaysannual[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logGPP = log10(GPP/1000 + 1))
+
+gppannual10pdf <- sfandcatch(logGPPdays10pannual[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],        
+         logGPP = log10(GPP/1000 + 1))
+
+gppannual10pCLIMdf <- sfandcatch(logGPPdays10pCLIMannual[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logGPP = log10(GPP/1000 + 1))
+
+gppannualCLIMdf <- sfandcatch(logGPPdaysCLIMannual[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logGPP = log10(GPP/1000 + 1))
+
+gppannual_vdf <- sfandcatch(logGPPdaysvalleysannual[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logGPP = log10(GPP/1000 + 1))
+
+gppannual_v10pdf <- sfandcatch(logGPPdaysvalleys10pannual[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%  
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],          
+         logGPP = log10(GPP/1000 + 1))
+
+gppannual_v10pCLIMdf <- sfandcatch(logGPPdaysvalleys10pCLIMannual[1,,], catches = ltimNoNorth, newname = 'GPP')  %>% 
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logGPP = log10(GPP/1000 + 1)) 
+
+gppannual_vCLIMdf <- sfandcatch(logGPPdaysvalleysCLIMannual[1,,], catches = ltimNoNorth, newname = 'GPP')  %>%  
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],       
+         logGPP = log10(GPP/1000 + 1))
+

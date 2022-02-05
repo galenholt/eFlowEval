@@ -90,7 +90,7 @@ Forcing the min and max makes the breaks more reasonable, but does reduce resolu
 ```{r}
 # The auto-titling just stuffs "Two months following" on there, which is wrong
 inun_gg <- inunfun(inundationannual/1000, 1, datewanted, units = 'Gl', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year beginning ', 
-                   forcelegend = 'GL Inundation summed\nover max extents', forcemin = 0, forcemax = 100000000)
+                   forcelegend = 'GL Inundation summed\nover max extents', forcemin = 10000, forcemax = 100000000)
 inun_gg
 
 ```
@@ -99,7 +99,7 @@ inun_gg
 ```{r}
 # The auto-titling just stuffs "Two months preceding" on there, which is wrong
 gpp_gg <- gppfun(logGPPdaysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year beginning ', 
-                   forcelegend = 'GPP (tonnes O2)\nsummed over max extents', forcemin = 0, forcemax = 100000000)
+                   forcelegend = 'GPP (tonnes O2)\nsummed over max extents', forcemin = 10000, forcemax = 100000000)
 gpp_gg
 ```
 
@@ -110,7 +110,7 @@ Maybe just tonnes O2 assuming max extents? Or ??? just lots/little somehow. IE m
 ```{r}
 # The auto-titling just stuffs "Two months preceding" on there, which is wrong
 er_gg <- erfun(logERdaysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year beginning ', 
-                   forcelegend = 'ER (tonnes O2)\nsummed over max extents', forcemin = 0, forcemax = 100000000)
+                   forcelegend = 'ER (tonnes O2)\nsummed over max extents', forcemin = 10000, forcemax = 100000000)
 er_gg
 ```
 
@@ -208,11 +208,11 @@ Need to use the forcemin and max here and above (or, I suppose could force to th
 
 ```{r}
 gpp_gg_v <- gppfun(logGPPdaysvalleysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year beginning ', 
-                   forcelegend = 'GPP (tonnes O2)\nsummed over max extents', forcemin = 0, forcemax = 100000000)
+                   forcelegend = 'GPP (tonnes O2)\nsummed over max extents', forcemin = 10000, forcemax = 100000000)
 gpp_gg_v
 
 er_gg_v <- erfun(logERdaysvalleysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year beginning ', 
-                   forcelegend = 'ER (tonnes O2)\nsummed over max extents', forcemin = 0, forcemax = 100000000)
+                   forcelegend = 'ER (tonnes O2)\nsummed over max extents', forcemin = 10000, forcemax = 100000000)
 er_gg_v
 
 ```
@@ -467,7 +467,7 @@ eryrs <- erfun(logERdaysannual/1000, 1, datewanted = as.character(availDays[2:4]
                titled = FALSE, 
                titlePrefix = 'Water year beginning ',
                forcelegend = 'ER (tonnes O2)\nsummed over max extents', 
-               forcemin = 0, forcemax = 100000000) + 
+               forcemin = 10000, forcemax = 100000000) + 
   guides(fill = guide_legend(title.position = 'top')) +
   theme_grey(base_size = 8) + 
   theme(legend.position = 'bottom', 
@@ -496,7 +496,7 @@ inunyrs <- inunfun(inundationannual/1000, 1, datewanted = as.character(availDays
                    titled = FALSE, 
                    titlePrefix = 'Water year beginning ', 
                    forcelegend = 'GL Inundation summed\nover max extents', 
-                   forcemin = 0, forcemax = 100000000) + 
+                   forcemin = 10000, forcemax = 100000000) + 
   guides(fill = guide_legend(title.position = 'top')) +
   theme_grey(base_size = 8) + 
   theme(legend.position = 'bottom', 
@@ -509,7 +509,7 @@ gppyrs <- gppfun(logERdaysannual/1000, 1, datewanted = as.character(availDays[2:
                titled = FALSE, 
                titlePrefix = 'Water year beginning ',
                forcelegend = 'GPP (tonnes O2)\nsummed over max extents', 
-               forcemin = 0, forcemax = 100000000) + 
+               forcemin = 10000, forcemax = 100000000) + 
   guides(fill = guide_legend(title.position = 'top')) +
   theme_grey(base_size = 8) + 
   theme(legend.position = 'bottom', 
@@ -613,10 +613,1067 @@ Maybe that actually IS the way to go. Do the whole smash of the inputs and outpu
 
 ## TODO Make a 5-year aggregation of the outputs, and a histogram of the catchments and a timeseries
 Inputs too? maybe in the timeseries?
-### maybe this is the scenario comparison too?
+*maybe this is the scenario comparison too?*
 
+Make the input/output plots just as above for one year
+
+Set up consistent labels
+```{r}
+inun5label <- 'GL Inundation summed\nover max extents'
+temp5label <- '2014-19 mean\ntemp C'
+gpp5label <- 'GPP (tonnes O2)\nsummed over max extents'
+er5label <- 'ER (tonnes O2)\nsummed over max extents'
+```
+
+
+```{r}
+date5 <- as.character(st_get_dimension_values(temperature5, which = 'time'))
+temp_5 <- tempfun(temperature5, 1, date5, plotPkg = 'ggplot', 
+                  titled = FALSE, titlePrefix = 'Water year beginning ', 
+                   forcelegend = temp5label)
+temp_5
+inun_5 <- inunfun(inundation5/1000, 1, date5, units = 'Gl', plotPkg = 'ggplot', 
+                  titled = FALSE, titlePrefix = 'Water year beginning ', 
+                   forcelegend = inun5label, 
+                  forcemin = 10000, forcemax = 100000000)
+inun_5
+gpp_5 <- gppfun(logGPPdays5/1000, 1, date5, units = 'tonnes', plotPkg = 'ggplot', 
+                titled = FALSE, titlePrefix = 'Water year beginning ', 
+                 forcelegend = gpp5label, 
+                forcemin = 10000, forcemax = 100000000)
+gpp_5
+er_5 <- erfun(logERdays5/1000, 1, date5, units = 'tonnes', plotPkg = 'ggplot', 
+              titled = FALSE, titlePrefix = '2014-2019 ', 
+               forcelegend = er5label, 
+              forcemin = 10000, forcemax = 100000000)
+er_5
+
+```
+
+```{r}
+gridIO_5 <- temp_5 +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) +
+  
+  inun_5 +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) +
+  
+  gpp_5 +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) +
+  
+  er_5 +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) + 
+  plot_annotation(title = paste0('2014-2019 water years'))
+
+gridIO_5
+```
+
+Print that out
+
+```{r}
+pdf(file.path(scriptOut, 'InputOutput5year.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print(gridIO_5)
+dev.off()
+
+png(file.path(scriptOut, 'InputOutput5year.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print(gridIO_5)
+dev.off()
+```
+
+### Bar charts
+
+Do these for the 5-year, then it's not just an arbitrary year
+Going to take a bit of experimentation.
+
+Which way do I want it to go? IE what do I want on the chart? Could have bars for variables within catchments? Facetted variables? only one variable?
+
+First, how do we make a bar chart from the stars? I might be able to do it directly from the stars, but I'm sure ggplot will like dealing with a df better. And we don't need geometric info for these plots.
+
+First, prep the df. Probably move this to the dataprep script.
+```{r}
+temp5dfTEST <- temperature5 %>%
+  st_as_sf() %>%
+  rename('Temp' = 1)
+```
+
+BUT, we DO need to get the catchment names
+
+Some testing of that. st_join is the way to go, but st_intersects yields 111 rows, st_equals yields NAs for the second argument's values. st_nearest_feature seems to work, but assigns multiple catchments to the same name. st_equals_exact seems to work with a par argument, but need to test. The comboplot doesn't fit here in a readable way, but can be checked in the main R console, but flipping back and forth between teh singles is enough to see they match.
+
+```{r}
+joinedT5 <- st_join(temp5dfTEST, ltimNoNorth, join = st_equals_exact, par = 1)
+
+# seems to have all the catchments
+unique(joinedT5$ValleyName)
+# plot
+joinplot <- ggplot(joinedT5, aes(color = ValleyName, label = ValleyName)) + geom_sf() + geom_sf_label(size = 3) 
+basinplot <- ggplot(ltimNoNorth, aes(color = ValleyName, label = ValleyName)) + geom_sf() + geom_sf_label(size = 3)
+joinplot
+basinplot
+# the comboplot is stupid since I can't easily resize
+# (joinplot + theme(legend.position = 'none')) / (basinplot + theme(legend.position = 'none'))
+```
+
+Now, on to actually constructing the things I need- join to get the names. I could st_drop_geometry, but not sure it's needed?
+
+```{r}
+temp5dfTEST <- temperature5 %>%
+  st_as_sf() %>%
+  rename('Temp' = 1) %>%
+  st_join(ltimNoNorth, join = st_equals_exact, par = 1)
+  
+# Q whether to use the same color ramps as before, or give the valleys unique colors or the variables unique colors. Will depend on how I combine.
+ggplot(temp5dfTEST, aes(x = ValleyName, y = Temp, color = Temp, fill = Temp)) + geom_col()
+
+# Needs some plot cleanup, but that will work
+  
+```
+
+I've gone and made a bunch of those in the Setup_basin file. Now to make some plots
+
+Option 1: Each variable separately, maybe in a grid again.
+
+Get the setups so I can match colors.
+Call by name here, because the column location moves in funny ways duruing the pivots
+```{r}
+tC <- tempsetup(temp5df, attnum = 'Temp') # don't force minmax on the temps
+iC <- inunsetup(inun5df, attnum = 'logInun', forcemin = 10000, forcemax = 100000000)
+gC <- gppsetup(gpp5df, attnum = 'logGPP', forcemin = 10000, forcemax = 100000000)
+eC <- ersetup(er5df, attnum = 'logER', forcemin = 10000, forcemax = 100000000)
+```
+
+Ordering by name is pointless. I'll order by centroid latitude, for lack of anything obviously better. Position from mouth might be better, but that gets hard to calculate.
+
+Temp
+```{r}
+
+t5bar <- ggplot(temp5df, aes(x = fct_reorder(ValleyName, latpos), y = Temp, fill = Temp), color = NA) + 
+  geom_col() +
+  scale_fill_stepsn(colors = tC$temppal,
+                    breaks = tC$tempbreaks[2:length(tC$tempbreaks)],
+                    limits = c(min(tC$tempbreaks), max(tC$tempbreaks)),
+                    labels = tC$templabels,
+                    guide = 'legend', 
+                    name = temp5label) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = NULL, y = temp5label)
+t5bar
+```
+
+Inundation
+Here we really see that position from mouth would be good; the lower Murray's centroid is actually above a lot of the others in Vic.
+
+It's also clear that the color scale could use some better breaks, but it's unclear what those would be to keep consistent.
+This can all probably be turned into functions also, but for now let's sort out what they look like and then shift this over before we do the scenarios (and if we decide these do what we want).
+
+*NEED to sort out the y-breaks and labels if we change the limits*- the y-scale needs to start at 1
+
+```{r}
+
+yiC <- 0:max(iC$inunbreaks)
+i5bar <- ggplot(inun5df, aes(x = fct_reorder(ValleyName, latpos), 
+                             y = logInun, 
+                             fill = logInun), 
+                color = NA) + 
+  geom_col() +
+  scale_fill_stepsn(colors = iC$inunpal,
+                    breaks = iC$inunbreaks[2:length(iC$inunbreaks)],
+                    limits = c(min(iC$inunbreaks), max(iC$inunbreaks)),
+                    labels = iC$inunlabels,
+                    guide = 'legend', 
+                    name = inun5label) +
+  scale_y_continuous(breaks = yiC,
+                    limits = c(0, max(iC$inunbreaks)),
+                    labels = format(10^yiC, big.mark=",",
+                                    scientific=FALSE, trim = TRUE, digits = 0))+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = NULL, y = inun5label)
+i5bar
+```
+Huh. why did I set those limits?
+
+```{r}
+giC <- 0:max(gC$gppbreaks)
+gpp5bar <- ggplot(gpp5df, aes(x = fct_reorder(ValleyName, latpos), 
+                             y = logGPP, 
+                             fill = logGPP), 
+                color = NA) + 
+  geom_col() +
+  scale_fill_stepsn(colors = gC$gpppal,
+                    breaks = gC$gppbreaks[2:length(gC$gppbreaks)],
+                    limits = c(min(gC$gppbreaks), max(gC$gppbreaks)),
+                    labels = gC$gpplabels,
+                    guide = 'legend', 
+                    name = gpp5label) +
+  scale_y_continuous(breaks = giC,
+                    limits = c(0, max(gC$gppbreaks)),
+                    labels = format(10^giC, big.mark=",",
+                                    scientific=FALSE, trim = TRUE, digits = 0))+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = NULL, y = gpp5label)
+gpp5bar
+```
+
+Lower Murray ER does go above 100,000,000, but there's still gotta be a better set of breaks.
+
+```{r}
+eiC <- 0:max(eC$erbreaks)
+er5bar <- ggplot(er5df, aes(x = fct_reorder(ValleyName, latpos), 
+                             y = logER, 
+                             fill = logER), 
+                color = NA) + 
+  geom_col() +
+  scale_fill_stepsn(colors = eC$erpal,
+                    breaks = eC$erbreaks[2:length(eC$erbreaks)],
+                    limits = c(min(eC$erbreaks), max(eC$erbreaks)),
+                    labels = eC$erlabels,
+                    guide = 'legend', 
+                    name = er5label) +
+  scale_y_continuous(breaks = eiC,
+                    # limits = c(min(eC$erbreaks), max(eC$erbreaks)),
+                    labels = format(10^eiC, big.mark=",",
+                                    scientific=FALSE, trim = TRUE, digits = 0))+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = NULL, y = er5label)
+er5bar
+```
+
+Make a multipanel. Legends blow it up, even when collected. Need to think about that.
+
+```{r}
+t5bar + i5bar + gpp5bar + er5bar + plot_layout(guides = 'collect')
+```
+If I delete the labs, does it help?
+
+```{r}
+(t5bar + theme(legend.position = 'none')) + 
+  (i5bar  + theme(legend.position = 'none')) +
+  (gpp5bar + theme(legend.position = 'none')) + 
+  (er5bar + theme(legend.position = 'none')) +
+  plot_layout(guides = 'collect')
+```
+
+I could do the upside-down histogram a la local. Or something. I don't really think plotting multiple values per catchment is a good idea, but I'll give it a quick try before moving on.
+
+First need to glue the data together. Annoyingly complicated
+
+```{r}
+gluedata <- left_join(st_drop_geometry(select(temp5df, Temp, ValleyName, latpos, Shape)),
+                      st_drop_geometry(select(inun5df, logInun, ValleyName, latpos, Shape))) %>%
+  left_join(st_drop_geometry(select(gpp5df, logGPP, ValleyName, latpos, Shape))) %>%
+  left_join(st_drop_geometry(select(er5df, logER, ValleyName, latpos, Shape))) %>%
+  pivot_longer(-c('ValleyName', 'latpos'), names_to = 'variable', values_to = 'value')
+
+```
+
+Ignore temp because it's a different scale. rather than trying to have varying colors, let's use y do do that, and just color code by variable type. Too confusing otherwise. I've just chosen some ok-looking values from the scales above.
+
+```{r}
+# ciC <- 0:max(eC$erbreaks)
+combobar <- ggplot(filter(gluedata, variable != 'Temp'), 
+       aes(x = fct_reorder(ValleyName, latpos),
+           y = value, 
+           fill = variable), 
+                color = NA) + 
+  geom_col(position = 'dodge') +
+  scale_fill_manual(values = c(eC$erpal[length(eC$erpal)-2], gC$gpppal[length(gC$gpppal)-2], iC$inunpal[8]),
+                    labels = c('ER', 'GPP', 'Inundation'),
+                    # guide = 'legend',
+                    name = NULL) +
+  scale_y_continuous(breaks = eiC,
+                    # limits = c(min(eC$erbreaks), max(eC$erbreaks)),
+                    labels = format(10^eiC, big.mark=",",
+                                    scientific=FALSE, trim = TRUE, digits = 0))+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = NULL, y = NULL)
+combobar
+```
+
+Print out a lot of those bars and move on
+
+```{r}
+pdf(file.path(scriptOut, 'temp5bar.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print(t5bar)
+dev.off()
+
+png(file.path(scriptOut, 'temp5bar.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print(t5bar)
+dev.off()
+
+pdf(file.path(scriptOut, 'inun5bar.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print(i5bar)
+dev.off()
+
+png(file.path(scriptOut, 'inun5bar.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print(i5bar)
+dev.off()
+
+pdf(file.path(scriptOut, 'gpp5bar.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print(gpp5bar)
+dev.off()
+
+png(file.path(scriptOut, 'gpp5bar.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print(gpp5bar)
+dev.off()
+
+pdf(file.path(scriptOut, 'er5bar.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print(t5bar)
+dev.off()
+
+png(file.path(scriptOut, 'er5bar.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print(er5bar)
+dev.off()
+
+
+pdf(file.path(scriptOut, 'panel5bar.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print((t5bar + theme(legend.position = 'none')) + 
+  (i5bar  + theme(legend.position = 'none')) +
+  (gpp5bar + theme(legend.position = 'none')) + 
+  (er5bar + theme(legend.position = 'none')) +
+  plot_layout(guides = 'collect'))
+dev.off()
+
+png(file.path(scriptOut, 'panel5bar.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print((t5bar + theme(legend.position = 'none')) + 
+  (i5bar  + theme(legend.position = 'none')) +
+  (gpp5bar + theme(legend.position = 'none')) + 
+  (er5bar + theme(legend.position = 'none')) +
+  plot_layout(guides = 'collect'))
+dev.off()
+
+pdf(file.path(scriptOut, 'ige5bar.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print(combobar)
+dev.off()
+
+png(file.path(scriptOut, 'ige5bar.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print(combobar)
+dev.off()
+
+```
+
+
+### Timeseries
+
+For the timeseries, I might as well use the bimonthly, rather than yearly? Maybe?.
+
+again, let's figure out how to make this here, then do it for everything in the data code.
+
+```{r}
+tempseries <- temperature %>%
+  st_as_sf() %>% 
+  pivot_longer(cols = -Shape, names_to = 'date', values_to = 'Temp') %>%
+  mutate(date = as.Date(date)) %>%
+    st_join(ltimNoNorth, join = st_equals_exact, par = 1)
+
+ggplot(tempseries, aes(x = date, y = Temp, color = ValleyName)) + geom_point() + geom_line()
+
+```
+
+That's pretty cool, but the seasonality is going to make it hard to see what's happening
+
+Does an annual version look better? Yes. tried to get fancy with labels, needs work.
+```{r}
+tempseriesA <- temperatureannual %>%
+  st_as_sf() %>% 
+  pivot_longer(cols = -Shape, names_to = 'date', values_to = 'Temp') %>%
+  mutate(date = as.Date(date)) %>%
+    st_join(ltimNoNorth, join = st_equals_exact, par = 1)
+
+ggplot(tempseriesA, aes(x = date, y = Temp, color = ValleyName)) + geom_point() + geom_line() + 
+  geom_label(data = filter(tempseriesA, date == max(date)), aes(label = ValleyName)) + 
+  theme(legend.position = 'none')
+```
+
+That annual version probably is better. Depends on what we're trying to show, I guess.
+
+Push those all over to the data script and run for everything.
+
+
+
+#### Bimonthly
+bimonhtly timeseries of everything. not going to worry too much about labelling
+```{r}
+tempbiseries <- ggplot(tempdf, aes(x = date, y = Temp, color = ValleyName)) + 
+  geom_point() + geom_line() + 
+  labs(x = NULL, y = 'Temp C') 
+inunbiseries <- ggplot(inundf, aes(x = date, y = logInun, color = ValleyName)) + 
+  geom_point() + geom_line() + scale_y_continuous(breaks = eiC,
+                    # limits = c(min(eiC), max(eiC)),
+                    labels = format(10^eiC, big.mark=",",
+                                    scientific=FALSE, trim = TRUE, digits = 0))+
+  labs(x = NULL, y = 'Inundation\n(ML at max)')
+gppbiseries <- ggplot(gppdf, aes(x = date, y = logGPP, color = ValleyName)) + 
+  geom_point() + geom_line() + scale_y_continuous(breaks = eiC,
+                    # limits = c(min(eiC), max(eiC)),
+                    labels = format(10^eiC, big.mark=",",
+                                    scientific=FALSE, trim = TRUE, digits = 0))+
+  labs(x = NULL, y = 'GPP\n(kg O2/day at max)')
+erbiseries <- ggplot(erdf, aes(x = date, y = logER, color = ValleyName)) + 
+  geom_point() + geom_line() + scale_y_continuous(breaks = eiC,
+                    # limits = c(min(eiC), max(eiC)),
+                    labels = format(10^eiC, big.mark=",",
+                                    scientific=FALSE, trim = TRUE, digits = 0))+
+  labs(x = NULL, y = 'ER\n(kg O2/day at max)')
+
+tempbiseries
+inunbiseries
+gppbiseries
+erbiseries
+
+```
+
+and a combo. labels are terrible but needed. Interesting that these are NOT obviously seasonal
+
+```{r}
+tempbiseries + inunbiseries + gppbiseries + erbiseries + plot_layout(guides = 'collect')
+```
+
+#### Annual timeseries
+```{r}
+tempAseries <- ggplot(tempannualdf, aes(x = date, y = Temp, color = ValleyName)) + 
+  geom_point() + geom_line() + 
+  labs(x = NULL, y = 'Temp C') 
+inunAseries <- ggplot(inunannualdf, aes(x = date, y = logInun, color = ValleyName)) + 
+  geom_point() + geom_line() + scale_y_continuous(breaks = eiC,
+                    # limits = c(min(eiC), max(eiC)),
+                    labels = format(10^eiC, big.mark=",",
+                                    scientific=FALSE, trim = TRUE, digits = 0))+
+  labs(x = NULL, y = 'Inundation\n(summed GL at max)')
+gppAseries <- ggplot(gppannualdf, aes(x = date, y = logGPP, color = ValleyName)) + 
+  geom_point() + geom_line() + scale_y_continuous(breaks = eiC,
+                    # limits = c(min(eiC), max(eiC)),
+                    labels = format(10^eiC, big.mark=",",
+                                    scientific=FALSE, trim = TRUE, digits = 0))+
+  labs(x = NULL, y = 'GPP\n(summed tonnes O2/day at max)')
+erAseries <- ggplot(erannualdf, aes(x = date, y = logER, color = ValleyName)) + 
+  geom_point() + geom_line() + scale_y_continuous(breaks = eiC,
+                    # limits = c(min(eiC), max(eiC)),
+                    labels = format(10^eiC, big.mark=",",
+                                    scientific=FALSE, trim = TRUE, digits = 0))+
+  labs(x = NULL, y = 'ER\n(summed tonnes O2/day at max)')
+
+tempAseries
+inunAseries
+gppAseries
+erAseries
+
+```
+
+and a combo. labels are terrible but needed.
+
+```{r}
+tempAseries + inunAseries + gppAseries + erAseries + plot_layout(guides = 'collect')
+```
+
+
+### and try to make some plots with timeseries and bars as marginal plots
+
+One option- the 5-year with a marginal histogram
+
+```{r}
+# gridIO_5 + combobar + plot_layout(nrow = 3)
+# weird combination of plotting
+ggpubr::ggarrange(gridIO_5,
+                  combobar, nrow = 2)
+```
+what does that look like printed?
+
+```{r}
+pdf(file.path(scriptOut, 'InputOutputBar5.pdf'), 
+    onefile = FALSE, height = 16/2.54, width = 16/2.54, useDingbats = FALSE)
+print(ggpubr::ggarrange(gridIO_5,
+                  combobar, nrow = 2, heights = c(2,1)))
+dev.off()
+
+png(file.path(scriptOut, 'InputOutputBar5.png'), 
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+print(ggpubr::ggarrange(gridIO_5,
+                  combobar, nrow = 2, heights = c(2,1)))
+dev.off()
+```
+That actually looks pretty good.
+
+What about a timeseries? either under that or alone?
+
+Labelling the catchments is going to be terrible though. But I just need to make it
+
+As a demo, let's just do one of the timeseries and strip the legend off.
+```{r}
+ggpubr::ggarrange(gridIO_5,
+                  gppAseries + theme(legend.position = 'none'), nrow = 2)
+```
+
+That's ugly and not very informative. What if I just give whole-basin sums for each year? IE have the bars for catchments, and a line for time for just the three variabels?
+
+Need to glue the data again, then sum over years (or vice versa)
+
+```{r}
+gluedataA <- left_join(st_drop_geometry(select(tempannualdf, date, Temp, ValleyName, latpos, Shape)),
+                      st_drop_geometry(select(inunannualdf, date, inundation, ValleyName, latpos, Shape))) %>%
+  left_join(st_drop_geometry(select(gppannualdf, date, GPP, ValleyName, latpos, Shape))) %>%
+  left_join(st_drop_geometry(select(erannualdf, date, ER, ValleyName, latpos, Shape))) %>%
+  pivot_longer(-c('ValleyName', 'latpos', 'date'), names_to = 'variable', values_to = 'value')
+
+gluedataA <- gluedataA %>%
+  filter(variable != 'Temp') %>% # Don't plot temp, and shouldn't sum
+  group_by(date, variable) %>%
+  summarise(value = sumna(value)) %>% 
+  ungroup() %>%
+  mutate(valueLog = log10(value + 1)) # Have to do this AFTER the summing
+
+# I guess let's do temp too
+gluedataT <- gluedataA %>%
+  filter(variable == 'Temp') %>% # Don't plot temp, and shouldn't sum
+  group_by(date, variable) %>%
+  summarise(value = meanna(value)) %>% 
+  ungroup()
+
+gluedataA <- bind_rows(gluedataA, gluedataT)
+
+
+```
+
+Breaks need work to cleannup
+
+```{r}
+basintime <- ggplot(filter(gluedataA, variable != 'Temp'), 
+       aes(x = date,
+           y = value, 
+           color = variable)) + 
+  geom_point() + geom_line() +
+  scale_color_manual(values = c(eC$erpal[length(eC$erpal)-2], gC$gpppal[length(gC$gpppal)-2], iC$inunpal[8]),
+                    labels = c('ER', 'GPP', 'Inundation'),
+                    # guide = 'legend',
+                    name = NULL) +
+  # scale_y_continuous(breaks = eC$erbreaks,
+  #                   # limits = c(min(eC$erbreaks), max(eC$erbreaks)),
+  #                   labels = format(10^eC$erbreaks, big.mark=",",
+  #                                   scientific=FALSE, trim = TRUE, digits = 0)) +
+  # theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = NULL, y = NULL)
+basintime
+```
+
+```{r}
+# gridIO_5 + combobar + plot_layout(nrow = 3)
+# weird combination of plotting
+ggpubr::ggarrange(gridIO_5,
+                  basintime, nrow = 2)
+```
+
+```{r}
+# gridIO_5 + combobar + plot_layout(nrow = 3)
+# weird combination of plotting
+ggpubr::ggarrange(gridIO_5,
+                  combobar,
+                  basintime, nrow = 3)
+```
+
+
+what does that look like printed?
+
+```{r}
+pdf(file.path(scriptOut, 'InputOutputTime5.pdf'), 
+    onefile = FALSE, height = 16/2.54, width = 16/2.54, useDingbats = FALSE)
+print(ggpubr::ggarrange(gridIO_5,
+                  basintime, nrow = 2, heights = c(2,1)))
+dev.off()
+
+png(file.path(scriptOut, 'InputOutputTime5.png'), 
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+print(ggpubr::ggarrange(gridIO_5,
+                  basintime, nrow = 2, heights = c(2,1)))
+dev.off()
+```
+
+what does that look like printed?
+
+```{r}
+pdf(file.path(scriptOut, 'InputOutputBarTime5.pdf'), 
+    onefile = FALSE, height = 16/2.54, width = 16/2.54, useDingbats = FALSE)
+print(ggpubr::ggarrange(gridIO_5,
+                  combobar, 
+                  basintime, 
+                  nrow = 3, heights = c(3,2,1)))
+dev.off()
+
+png(file.path(scriptOut, 'InputOutputBarTime5.png'), 
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+print(ggpubr::ggarrange(gridIO_5,
+                  combobar, 
+                  basintime, 
+                  nrow = 3, heights = c(3,2,1)))
+dev.off()
+```
+
+### Can I line up with yearly-facets? just pick a variable to demonstrate
+```{r}
+eryrsAll <- erfun(logERdaysannual/1000, 1, datewanted = as.character(availDays), 
+               units = 'tonnes', 
+               plotPkg = 'ggplot', 
+               titled = FALSE, 
+               titlePrefix = 'Water year beginning ',
+               forcelegend = 'ER (tonnes O2)\nsummed over max extents', 
+               forcemin = 10000, forcemax = 100000000) + 
+  guides(fill = guide_legend(title.position = 'top')) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'top', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))+ 
+  facet_grid(~date) # override the wrap()
+
+eryrsAll 
+```
+
+Now can we combine with timeseries? Still not sure what to do with the legend. We need one (and a better color palette), but there are too many catchments to make it very clean. Need to sort something out there.z
+
+```{r}
+ermapandtime <- eryrsAll / erAseries + 
+  xlim(c(as.Date('2015-03-01'), as.Date('2019-09-01'))) + # Cut to match the dates in the facets
+  labs(y = 'ER') + # it's just too long
+  theme(legend.position = 'none')
+# ggpubr::ggarrange(gridIO_5,
+#                   gppAseries + theme(legend.position = 'none'), nrow = 2)
+ermapandtime
+```
+
+```{r}
+pdf(file.path(scriptOut, 'AnnualERMapandTime.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print(ermapandtime)
+dev.off()
+
+png(file.path(scriptOut, 'AnnualERMapandTime.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print(ermapandtime)
+dev.off()
+```
 
 ## Scenario comparison
+*This will likely have some good options using column plots to look at the differences.*
+*I have no idea what I meant by the above sentence.*
+
+
+**TRYING NEW LIMITS- CAREFUL**
+changed forcemin = 0 to 10000 based on the bar chart. will need different limits for different aggregation levels, but that loosk like it'd work for the 5-year. tried turning forcemax down, but that was terrible
+
+The obvious thing to do is to build a 2x2 matrix- maybe with the inundation and temps as marginal explanations???
+
+Let's do it with the 5-years, since then I don't have to choose a particular year. It would all work the same with single years (or bimonths or whatever).
+
+The scale needs work. Ugh.
+```{r}
+
+gppBase_5 <- gppfun(logGPPdays5/1000, 1, 
+                 datewanted = as.character(st_get_dimension_values(logGPPdays5, which = 'time')),
+                 units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE, 
+                 titlePrefix = 'Water year beginning ', 
+                 forcelegend = 'GPP (tonnes O2)\nsummed over max extents', 
+                 forcemin = 10000, forcemax = 100000000)  +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+gppBase_5
+
+gppClim_5 <- gppfun(logGPPdaysCLIM5/1000, 1, 
+                 datewanted = as.character(st_get_dimension_values(logGPPdays5, which = 'time')),
+                 units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE, 
+                 titlePrefix = 'Water year beginning ', 
+                 forcelegend = 'GPP (tonnes O2)\nsummed over max extents', 
+                 forcemin = 10000, forcemax = 100000000)  +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+gppClim_5
+
+gpp10p_5 <- gppfun(logGPPdays10p5/1000, 1, 
+                 datewanted = as.character(st_get_dimension_values(logGPPdays5, which = 'time')),
+                 units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE, 
+                 titlePrefix = 'Water year beginning ', 
+                 forcelegend = 'GPP (tonnes O2)\nsummed over max extents', 
+                 forcemin = 10000, forcemax = 100000000)  +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+gpp10p_5
+
+gpp10pClim_5 <- gppfun(logGPPdays10pCLIM5/1000, 1, 
+                 datewanted = as.character(st_get_dimension_values(logGPPdays5, which = 'time')),
+                 units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE, 
+                 titlePrefix = 'Water year beginning ', 
+                 forcelegend = 'GPP (tonnes O2)\nsummed over max extents', 
+                 forcemin = 10000, forcemax = 100000000)  +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+gpp10pClim_5
+```
+
+```{r}
+(gppBase_5 + ggtitle('Baseline')) +
+  (gppClim_5 + ggtitle('2c warming')) +
+  (gpp10p_5 + ggtitle('110% inundation')) +
+  (gpp10pClim_5 + ggtitle('2c & 110%')) +
+  plot_layout(guides = 'collect', nrow = 2)
+```
+
+Same, but with ER
+```{r}
+
+erBase_5 <- erfun(logERdays5/1000, 1, 
+                 datewanted = as.character(st_get_dimension_values(logERdays5, which = 'time')),
+                 units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE, 
+                 titlePrefix = 'Water year beginning ', 
+                 forcelegend = 'ER (tonnes O2)\nsummed over max extents', 
+                 forcemin = 10000, forcemax = 100000000)  +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+erBase_5
+
+erClim_5 <- erfun(logERdaysCLIM5/1000, 1, 
+                 datewanted = as.character(st_get_dimension_values(logERdays5, which = 'time')),
+                 units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE, 
+                 titlePrefix = 'Water year beginning ', 
+                 forcelegend = 'ER (tonnes O2)\nsummed over max extents', 
+                 forcemin = 10000, forcemax = 100000000)  +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+erClim_5
+
+er10p_5 <- erfun(logERdays10p5/1000, 1, 
+                 datewanted = as.character(st_get_dimension_values(logERdays5, which = 'time')),
+                 units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE, 
+                 titlePrefix = 'Water year beginning ', 
+                 forcelegend = 'ER (tonnes O2)\nsummed over max extents', 
+                 forcemin = 10000, forcemax = 100000000)  +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+er10p_5
+
+er10pClim_5 <- erfun(logERdays10pCLIM5/1000, 1, 
+                 datewanted = as.character(st_get_dimension_values(logERdays5, which = 'time')),
+                 units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE, 
+                 titlePrefix = 'Water year beginning ', 
+                 forcelegend = 'ER (tonnes O2)\nsummed over max extents', 
+                 forcemin = 10000, forcemax = 100000000)  +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+er10pClim_5
+```
+
+```{r}
+(erBase_5 + ggtitle('Baseline')) +
+  (erClim_5 + ggtitle('2c warming')) +
+  (er10p_5 + ggtitle('110% inundation')) +
+  (er10pClim_5 + ggtitle('2c & 110%')) +
+  plot_layout(guides = 'collect', nrow = 2)
+```
+Even lamer scale. Really need to choose something else. what if I don't force? They'll end up different, probably, but maybe will help choose.
+
+Can I put the temp and inundations on there too?
+
+```{r}
+# temp_5 and inun_5 already exist, but the theme sizing is wrong
+tempBase_5 <- tempfun(temperature5, 1, date5, plotPkg = 'ggplot', 
+                  titled = FALSE, titlePrefix = 'Water year beginning ', 
+                   forcelegend = temp5label) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+tempBase_5
+
+tempClim_5 <- tempfun(climate5, 1, date5, plotPkg = 'ggplot', 
+                  titled = FALSE, titlePrefix = 'Water year beginning ', 
+                   forcelegend = temp5label) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+tempClim_5
+
+inunBase_5 <- inunfun(inundation5/1000, 1, date5, units = 'Gl', plotPkg = 'ggplot', 
+                  titled = FALSE, titlePrefix = 'Water year beginning ', 
+                   forcelegend = inun5label, 
+                  forcemin = 10000, forcemax = 100000000) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+inunBase_5
+
+inun10p_5 <- inunfun(inundation10p5/1000, 1, date5, units = 'Gl', plotPkg = 'ggplot', 
+                  titled = FALSE, titlePrefix = 'Water year beginning ', 
+                   forcelegend = inun5label, 
+                  forcemin = 10000, forcemax = 100000000) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+inun10p_5
+
+
+```
+
+
+Yeah, the colors for the logged stuff needs to start a LOT higher when we're summing over catchments. Bar charts still need to start at 0 on Y though.
+
+Will go back and sort that out, first, can I build the fig with the inpus?
+Took the legend off anyway, will need to add back on somehow.
+
+```{r}
+gppScene <- plot_spacer() +
+(tempBase_5 + ggtitle('Baseline temp') + theme(legend.position = 'none')) +
+  (tempClim_5 + ggtitle('2c warming') + theme(legend.position = 'none')) +
+  
+  (inunBase_5 + ggtitle('Baseline inun') + theme(legend.position = 'none')) +
+(gppBase_5 + theme(legend.position = 'none')) + # + ggtitle('Baseline') 
+  (gppClim_5 + theme(legend.position = 'none')) + #  + ggtitle('2c warming')
+  
+  (inun10p_5 + ggtitle('110% inundation') + theme(legend.position = 'none')) +
+  (gpp10p_5 + theme(legend.position = 'none')) + # + ggtitle('110% inundation') 
+  (gpp10pClim_5 + theme(legend.position = 'none')) + # + ggtitle('2c & 110%')
+  plot_layout(nrow = 3)
+gppScene
+```
+
+```{r}
+pdf(file.path(scriptOut, 'gppScene.pdf'), 
+    onefile = FALSE, height = 16/2.54, width = 16/2.54, useDingbats = FALSE)
+print(gppScene)
+dev.off()
+
+png(file.path(scriptOut, 'gppScene.png'), 
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+print(gppScene)
+dev.off()
+```
+
+Same, with ER
+
+```{r}
+erScene <- plot_spacer() +
+(tempBase_5 + ggtitle('Baseline temp') + theme(legend.position = 'none')) +
+  (tempClim_5 + ggtitle('2c warming') + theme(legend.position = 'none')) +
+  
+  (inunBase_5 + ggtitle('Baseline inun') + theme(legend.position = 'none')) +
+(erBase_5 + theme(legend.position = 'none')) + # + ggtitle('Baseline') 
+  (erClim_5 + theme(legend.position = 'none')) + #  + ggtitle('2c warming')
+  
+  (inun10p_5 + ggtitle('110% inundation') + theme(legend.position = 'none')) +
+  (er10p_5 + theme(legend.position = 'none')) + # + ggtitle('110% inundation') 
+  (er10pClim_5 + theme(legend.position = 'none')) + # + ggtitle('2c & 110%')
+  plot_layout(nrow = 3)
+erScene
+```
+```{r}
+pdf(file.path(scriptOut, 'erScene.pdf'), 
+    onefile = FALSE, height = 16/2.54, width = 16/2.54, useDingbats = FALSE)
+print(erScene)
+dev.off()
+
+png(file.path(scriptOut, 'erScene.png'), 
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+print(erScene)
+dev.off()
+```
+
+Huh. that's better but still can't see any changes with inundation. I wonder if I can force more levels in the plot functions?
+
+I think I need to make some marginal bars here too.
+
+### marginal bars
+it's tempting to try to jam the bars into the factorial panels with color for ER and GPP, but i think it actually makes more sense to have them for one outcome wit bar color for the situation (baseline, warming, inundation, both)
+
+Let's try to make that for GPP. Will first need to build a combo dataset and add names. I have the dfs already, right? Is this as easy as binding rows after appending a type col?
+
+```{r}
+
+bind5gpp <- mutate(gpp5df, scenario = 'Baseline') %>%
+  bind_rows(mutate(gpp5CLIMdf, scenario = '2C warm')) %>%
+  bind_rows(mutate(gpp510pdf, scenario = '110% inundation')) %>%
+  bind_rows(mutate(gpp510pCLIMdf, scenario = 'Both'))
+
+bind5er <- mutate(er5df, scenario = 'Baseline') %>%
+  bind_rows(mutate(er5CLIMdf, scenario = '2C warm')) %>%
+  bind_rows(mutate(er510pdf, scenario = '110% inundation')) %>%
+  bind_rows(mutate(er510pCLIMdf, scenario = 'Both'))
+  
+```
+
+Now, make a bar plot. not a huge fan that the qualitative palettes all end up looking like the colours I'm using for GPP and ER, but for now wil have to do.
+
+```{r}
+scenebar_gpp <- ggplot(bind5gpp, 
+       aes(x = fct_reorder(ValleyName, latpos),
+           y = logGPP, 
+           fill = fct_relevel(scenario, 'Baseline', '2C warm', '110% inundation', 'Both')), 
+                color = NA) + 
+  geom_col(position = 'dodge') +
+  scale_fill_discrete_qualitative(palette = 'dark3') +
+  scale_y_continuous(breaks = eiC,
+                    # limits = c(min(eC$erbreaks), max(eC$erbreaks)),
+                    labels = format(10^eiC, big.mark=",",
+                                    scientific=FALSE, trim = TRUE, digits = 0))+
+  # theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = NULL, y = NULL, fill = NULL) +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm'),
+          axis.text.x = element_text(angle = 60, hjust = 1))
+scenebar_gpp
+```
+
+Make a combo
+```{r}
+ggpubr::ggarrange(gppScene,
+                  scenebar_gpp, nrow = 2, heights = c(2,1))
+```
+
+Needs a bit of cleanup, but it's OK. Not sure why when I shift the basesize stuff on the new plot it gets wonky.
+```{r}
+pdf(file.path(scriptOut, 'gppSceneandBar.pdf'), 
+    onefile = FALSE, height = 16/2.54, width = 16/2.54, useDingbats = FALSE)
+print(ggpubr::ggarrange(gppScene,
+                  scenebar_gpp,
+    nrow = 2, heights = c(2,1)))
+dev.off()
+
+png(file.path(scriptOut, 'gppSceneandBar.png'), 
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+print(ggpubr::ggarrange(gppScene,
+                  scenebar_gpp ,
+    nrow = 2, heights = c(2,1)))
+dev.off()
+```
+
+Same, ER
+
+```{r}
+scenebar_er <- ggplot(bind5er, 
+       aes(x = fct_reorder(ValleyName, latpos),
+           y = logER, 
+           fill = fct_relevel(scenario, 'Baseline', '2C warm', '110% inundation', 'Both')), 
+                color = NA) + 
+  geom_col(position = 'dodge') +
+  scale_fill_discrete_qualitative(palette = 'dark3') +
+  scale_y_continuous(breaks = eiC,
+                    # limits = c(min(eC$erbreaks), max(eC$erbreaks)),
+                    labels = format(10^eiC, big.mark=",",
+                                    scientific=FALSE, trim = TRUE, digits = 0))+
+  # theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = NULL, y = NULL, fill = NULL) +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm'),
+          axis.text.x = element_text(angle = 60, hjust = 1))
+scenebar_er
+```
+
+Make a combo
+```{r}
+ggpubr::ggarrange(erScene,
+                  scenebar_er, nrow = 2, heights = c(2,1))
+```
+
+Needs a bit of cleanup, but it's OK. Not sure why when I shift the basesize stuff on the new plot it gets wonky.
+```{r}
+pdf(file.path(scriptOut, 'erSceneandBar.pdf'), 
+    onefile = FALSE, height = 16/2.54, width = 16/2.54, useDingbats = FALSE)
+print(ggpubr::ggarrange(erScene,
+                  scenebar_er,
+    nrow = 2, heights = c(2,1)))
+dev.off()
+
+png(file.path(scriptOut, 'erSceneandBar.png'), 
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+print(ggpubr::ggarrange(erScene,
+                  scenebar_er ,
+    nrow = 2, heights = c(2,1)))
+dev.off()
+```
+
+
+**WHY DOESN"T A 10% INCREASE IN INUN = 10% INCREASE IN GPP? IT'S JUST MULTIPLIED**
+
+
+TODO: GO through and change other forcemins, but check they make sense for other datasets
+
+figure out more levels
+
+
 
 
 ## Extreme limits of uncertainty figure for the box using a single date
