@@ -1,5 +1,11 @@
 # Script to aggregate bimonthly
 
+# SLURM call 
+
+# sbatch --array=1-4 --time=0:10:00 --mem=200GB -J 'bimProd' anyScript.sh "Strictures/bimonthProduction.R"
+
+
+
 # Header from the temperature file to retain all the directories,  --------
 source('directorySet.R')
 
@@ -286,6 +292,4 @@ trashout <- foreach(i = 1:length(predicteds)) %:%
   looptime <- endloop - startloop
   print('total time:')
   print(looptime)
-  # 950 seconds local, 230+ HPC (for the whole basin, not just a test catchment)
-# }
-
+  # 2.5 hours local, 150 SECONDS on HPC. LOTS of memory thrash locally

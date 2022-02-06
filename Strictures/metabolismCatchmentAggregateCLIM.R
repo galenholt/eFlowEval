@@ -2,6 +2,8 @@
 # Libraries and system setup
 source('directorySet.R')
 
+# sbatch -J 'aggProdClim' anyScript.sh "Strictures/metabolismCatchmentAggregateCLIM.R"
+
 # Let's get libraries here, then sort out git then sort out making this a library so we don't have to deal with all the library crap
 # library(sp)
 # library(rgeos)

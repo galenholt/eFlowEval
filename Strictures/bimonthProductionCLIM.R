@@ -1,5 +1,9 @@
 # Script to aggregate bimonthly
 
+# SLURM call 
+
+# sbatch --array=1-4 --time=0:10:00 --mem=200GB -J 'bimPClim' anyScript.sh "Strictures/bimonthProductionCLIM.R"
+
 # Header from the temperature file to retain all the directories,  --------
 source('directorySet.R')
 
@@ -38,7 +42,7 @@ predicteds <- c('logERdays', 'logERdaysvalleys', 'logGPPdays', 'logGPPdaysvalley
 # if we're using arrays on the HPC, cut to just one predicted
 # This is a bit different than I did for concatMetabolism, but allows me to
 # leave the nested foreach below if I'm NOT arraying
-predicteds <- predicteds[as.numeric(args[7])]
+# predicteds <- predicteds[as.numeric(args[7])]
 
 # To allow catchname in nested foreach, use the inundation directories because they're common to everything
 # Directory with inundation
@@ -286,6 +290,5 @@ endloop <- proc.time()
 looptime <- endloop - startloop
 print('total time:')
 print(looptime)
-# 950 seconds local, 230+ HPC (for the whole basin, not just a test catchment)
-# }
+# 2.5 hours local, 150 SECONDS on HPC. LOTS of memory thrash locally
 
