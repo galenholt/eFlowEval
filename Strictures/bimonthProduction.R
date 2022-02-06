@@ -13,7 +13,20 @@ library(stars)
 library(foreach)
 library(doFuture)
 registerDoFuture()
-plan(multisession)
+
+# new code to handle parallelisation
+if (parSet == 'local') {
+  plan(multisession)
+} else if (parSet == 'hpc') {
+  plan(multicore(workers = availableCores(methods = 'Slurm')))
+  # plan(list(
+  #   tweak(multicore, workers = availableCores(methods = 'Slurm')),
+  #   tweak(multicore, workers = availableCores(methods = 'Slurm'))
+  # ))
+} else {
+  plan(sequential)
+}
+
 
 # Setup -------------------------------------------------------------------
 predicteds <- c('logERdays', 'logERdaysvalleys', 'logGPPdays', 'logGPPdaysvalleys')
@@ -141,7 +154,7 @@ trashout <- foreach(i = 1:length(predicteds)) %:%
     predictIndices <- crscheck(predictIndices, 3577)
     catchInun <- crscheck(catchInun, 3577)
     inunIndices <- crscheck(inunIndices, 3577)
-    catchInun10p <- crscheck(catchInun, 3577)
+    catchInun10p <- crscheck(catchInun10p, 3577)
     inunIndices10p <- crscheck(inunIndices10p, 3577)
     
     # Make the ANAEs match in case they were sorted differently
