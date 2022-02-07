@@ -56,6 +56,7 @@ allfun(tempObj = weraiCropTemp, tempAtt = 1,
                    datewanted)
 
 ```
+
 Clean that up just a bit, with a grey background. probably pull the title off but it's nice to have as reference while i'm making these
 
 ```{r}
@@ -132,7 +133,8 @@ dev.off()
 
 I think now that I have the functions, there's a slicker way to do this, but I don't want to reinvent the wheel at this point. Might want to turn this into a function?
 
-ER
+### ER
+
 ```{r}
 # ER
 er_sf <- weraiCropPredER[1,,] %>% 
@@ -179,7 +181,8 @@ er_gg_uncertain
 
 ```
 
-GPP
+### GPP
+
 ```{r}
 # GPP
 # I'm sure thgppe's a slick way to select all three attributes and do this in one
@@ -227,6 +230,7 @@ gpp_gg_uncertain
 ```
 
 Combine the ER and GPP and save as figures
+
 ```{r}
 both_uncertain <- ggpubr::ggarrange(gpp_gg_uncertain + 
                                    guides(fill = guide_legend(title.position = 'top')) +
@@ -257,7 +261,7 @@ dev.off()
 ```
 
 ## Bar charts
-make a wide version of the data so I can have mins and maxes
+Make a wide version of the data so I can have mins and maxes
 OR, should I do all of them and fct_order them?
 
 Joining seems safe, but geographic joins are a mess. It doesn't work at all.
@@ -302,7 +306,7 @@ bargpp
 
 ```
 
- I assume it is a mes to just throw them all on
+ I assume it is a mess to just throw them all on
  actually, with a fair amount of monkeying with the look, that's OK
  
 ```{r}
@@ -324,6 +328,30 @@ bargppall
 ```
  
 I actually like that that encompasses an area that integrates to total production across the Werai
+
+*Aside- why do the errors look smaller when I aggregate to catchment scale in the _Basin plot doc?*
+
+I should be able to look at that by summing here- I think it has to do with the logging, but I want to make sure. 
+
+The way to do this to match is add up the non-logged, then log the outcome. That way I'm adding arithmetically, not goofing up and mulitplying
+
+```{r}
+gppsum <- gpp_sf_LMU_wide %>%
+  st_drop_geometry() %>%
+  summarise(GPP = sum(GPP, na.rm = TRUE), 
+            UGPP = sum(UGPP, na.rm = TRUE), 
+            LGPP = sum(LGPP, na.rm = TRUE))
+
+# this is going to be silly because just one bar
+ggplot(gppsum, aes(x = 'werai', y = log10(GPP + 1))) +
+  geom_col() + 
+  geom_linerange(mapping = aes(ymin = log10(LGPP + 1), ymax = log10(UGPP + 1)),
+                 color = 'black')
+  
+```
+
+So, that does look roughly like what I'm getting for the catchment aggregations. I have done the local errors correctly (ie on the linear scale, then logged), (see gpp_sPU creation above). So this is the consequence of the errors looking relatively smaller as they're combined and on the log scale.
+
 
 I can do points as below, but the integration implied above is nice
 
@@ -601,6 +629,7 @@ erControl$erbreaks
 ```
 
 I don't think I use this, but I did make a full-werai aggregation
+
 ```{r}
 # aggregate to werai
 # temp area-weighted
@@ -633,7 +662,7 @@ The units are weird, because this is added up across bimonths. It's neither the 
 
 Change the tmap_mode() depending on the purpose. DO NOT CHANGE TO VIEW AND TRY TO RUN HERE. IF YOU WANT TO VIEW, CHANGE AND RUN IN CONSOLE. The markdown will run it, but incredibly slowly.
 
-GPP
+#### GPP
 
 ```{r}
 tmap_mode('plot')
@@ -652,7 +681,7 @@ gppyrlabel <- 'Total Yearly GPP (kg 02)\nat max bimonth extents'
   gppAnnual_tm
 ```
 
-ER
+#### ER
 
 ```{r}
 eryrlabel <- 'Total Yearly ER (kg 02)\nat max bimonth extents'
@@ -672,7 +701,7 @@ eryrlabel <- 'Total Yearly ER (kg 02)\nat max bimonth extents'
 
 ### GGPLOT
 
-gpp
+#### gpp
 
 ```{r}
 gppAnnual_gg <- gppYear_sf %>%
@@ -691,7 +720,8 @@ gppAnnual_gg <- gppYear_sf %>%
   gppAnnual_gg
 ```
 
-ER
+#### ER
+
 ```{r}
 erAnnual_gg <- erYear_sf %>%
     filter(WaterYear != '2014-06-29') %>% # because a 5-panel is ugly

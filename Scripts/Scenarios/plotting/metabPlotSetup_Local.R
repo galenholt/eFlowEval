@@ -28,7 +28,7 @@ whichcrs <- 3577
 
 # Setup -------------------------------------------------------------------
 # Directory to export TO
-scriptOut <- file.path('strictOut', 'metabolism')
+scriptOut <- file.path('strictOut', 'metabolism', 'local')
 if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
 
 # Basin boundary, for clipping rasters; though likely will start with lachlan
