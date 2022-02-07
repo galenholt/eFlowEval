@@ -27,7 +27,7 @@ whichcrs <- 3577
 
 # Setup -------------------------------------------------------------------
 # Directory to export TO
-scriptOut <- file.path('strictOut', 'metabolism')
+scriptOut <- file.path('strictOut', 'metabolism', 'basin')
 if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
 
 # Catchments
@@ -679,3 +679,62 @@ gppannual_vCLIMdf <- sfandcatch(logGPPdaysvalleysCLIMannual[1,,], catches = ltim
   mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],       
          logGPP = log10(GPP/1000 + 1))
 
+
+
+
+# uncertainty dfs ---------------------------------------------------------
+
+# These assume that everything is at the limits at the same time (perfect correlation)
+gppdfUPI <- sfandcatch(logGPPdays[2,,], catches = ltimNoNorth, newname = 'GPP')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logGPP = log10(GPP/1000 + 1)) %>%
+  st_drop_geometry() %>% # because going to join
+  rename(upperPI = logGPP) %>%
+  select(date, ValleyName, upperPI)
+
+gppdfLPI <- sfandcatch(logGPPdays[3,,], catches = ltimNoNorth, newname = 'GPP')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logGPP = log10(GPP/1000 + 1)) %>%
+  st_drop_geometry() %>% # because going to join
+  rename(lowerPI = logGPP)  %>%
+  select(date, ValleyName, lowerPI)
+
+# TO make this easier to gppplot, combine the datasets
+
+gppUncertaintyLimits <- left_join(gppdf, gppdfUPI) %>% left_join(gppdfLPI)
+
+
+
+# These assume that everything is at the limits at the same time (perfect correlation)
+erdfUPI <- sfandcatch(logERdays[2,,], catches = ltimNoNorth, newname = 'ER')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logER = log10(ER/1000 + 1)) %>%
+  st_drop_geometry() %>% # because going to join
+  rename(upperPI = logER) %>%
+  select(date, ValleyName, upperPI)
+
+erdfLPI <- sfandcatch(logERdays[3,,], catches = ltimNoNorth, newname = 'ER')  %>%   
+  mutate(center = st_centroid(Shape), latpos = st_coordinates(center)[,2],         
+         logER = log10(ER/1000 + 1)) %>%
+  st_drop_geometry() %>% # because going to join
+  rename(lowerPI = logER)  %>%
+  select(date, ValleyName, lowerPI)
+
+# TO make this easier to erplot, combine the datasets
+
+erUncertaintyLimits <- left_join(erdf, erdfUPI) %>% left_join(erdfLPI)
+
+
+
+
+# Law of large numbers says that the other version (perfectly uncorrelated)
+# should match the mean. BUT I guess we should demonstrate that? How big is that
+# call going to be? and how do we do it?
+
+# We would need to read in the versions with each ANAE, then loop over each anae
+# at its limits with all others at their means and get the catchment mean. and
+# then average THOSE for each ANAE
+
+# Do we actually need to do this? we KNOW what it is in the limit, so we can just say that.
+
+# Come back to this- get the fig done first

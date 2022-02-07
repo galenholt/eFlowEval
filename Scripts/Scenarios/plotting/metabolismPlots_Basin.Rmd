@@ -26,7 +26,7 @@ library(patchwork)
 # source in the data management
 
 # Kind of hacky check to only run if needed
-if (!('weraiCropInun' %in% ls())) {
+if (!('temperatureannual' %in% ls())) {
     source(file.path(here::here(), 'Scripts', 'Scenarios', 'plotting', 'metabPlotSetup_Basin.R'))
 }
 
@@ -67,7 +67,7 @@ temp_tm
 
 And a test- can I output to the Rstudio viewer? Looks like no. I'm trying this to try to be able to use tmap_view in here, since it doens't play nicely with the notebook
 
-```{r knitr::chunk_output_type: console}
+```{r}
 temp_tm
 ```
 
@@ -412,9 +412,10 @@ er_vplot <- er_gg_v +
 #   (erplot + er_vplot + 
 #      plot_layout(nrow = 2, guides = 'collect'))
 
-
+# Why does this throw a png error when I run from the top???
 
 ```
+
 That's OK, but really weirdly aligned. Maybe with some more tweaks to the way it's specified?
 
 I guess print that out so we have something,
@@ -476,6 +477,7 @@ eryrs <- erfun(logERdaysannual/1000, 1, datewanted = as.character(availDays[2:4]
 
 eryrs
 ```
+
 Not sure we really care if we do it for the inputs, gpp etc?
 
 ```{r}
@@ -525,6 +527,7 @@ gppyrs
 
 I think this is overkill, but make a panel version
 It is not clear to me why the temps don't get 4 rows?
+
 ```{r}
 (tempyrs + theme(legend.position = 'right') +
    guides(fill = guide_legend(title.position = 'top', nrow = 4, byrow = TRUE)))/
@@ -535,6 +538,7 @@ It is not clear to me why the temps don't get 4 rows?
   (eryrs + theme(legend.position = 'right') +
      guides(fill = guide_legend(title.position = 'top', nrow = 4, byrow = TRUE))) 
 ```
+
 That is overkill, I think.
 
 Let's print each of the variables and the big overkill plot
@@ -807,6 +811,7 @@ i5bar <- ggplot(inun5df, aes(x = fct_reorder(ValleyName, latpos),
   labs(x = NULL, y = inun5label)
 i5bar
 ```
+
 Huh. why did I set those limits?
 
 ```{r}
@@ -1105,6 +1110,7 @@ One option- the 5-year with a marginal histogram
 ggpubr::ggarrange(gridIO_5,
                   combobar, nrow = 2)
 ```
+
 what does that look like printed?
 
 ```{r}
@@ -1363,6 +1369,7 @@ gpp10pClim_5
 ```
 
 Same, but with ER
+
 ```{r}
 
 erBase_5 <- erfun(logERdays5/1000, 1, 
@@ -1433,6 +1440,7 @@ er10pClim_5
   (er10pClim_5 + ggtitle('2c & 110%')) +
   plot_layout(guides = 'collect', nrow = 2)
 ```
+
 Even lamer scale. Really need to choose something else. what if I don't force? They'll end up different, probably, but maybe will help choose.
 
 Can I put the temp and inundations on there too?
@@ -1595,6 +1603,7 @@ scenebar_gpp
 ```
 
 Make a combo
+
 ```{r}
 ggpubr::ggarrange(gppScene,
                   scenebar_gpp, nrow = 2, heights = c(2,1))
@@ -1643,6 +1652,7 @@ scenebar_er
 ```
 
 Make a combo
+
 ```{r}
 ggpubr::ggarrange(erScene,
                   scenebar_er, nrow = 2, heights = c(2,1))
@@ -1666,44 +1676,208 @@ dev.off()
 ```
 
 
-**WHY DOESN"T A 10% INCREASE IN INUN = 10% INCREASE IN GPP? IT'S JUST MULTIPLIED**
-
-
 TODO: GO through and change other forcemins, but check they make sense for other datasets
 
 figure out more levels
 
 
 
-
 ## Extreme limits of uncertainty figure for the box using a single date
 
+What do I want to show here? for a single date, the bars and PI for the catchments with either completely correlated or uncorrelated errors.
+
+The idea here is to make somethign for the box- say these are wrong, but they show the endmembers. With the bar being both the point estimates and the situation where the errors are uncorrelated (because there are so many ANAEs in each catchment, they end up law-of-large-numbering to the mean), and the bars are the situation where errors are perfectly correlated.
+
+First, plot the bars- following what I did above for the 5-year but for a single bimonhtly unit (I think we can make the point wiht one snapshot just fine, and that isolates the explanation to a spatial issue. We should avoid getting into the issue of then how to do it over time, since aggregating bimonthly maxes is a bit nonsensical).
+
+gppdf is the bimonthly, but I need to get something similar for the upper and lower and glue together. Do that in the data script.
+
+```{r}
+# datewanted set above is base on annual, so just grab something here. maybe if we want to get fancy line it up with what we choose in t elocal version? if so, the index here should match the index used there.
+availDaysB <- unique(gppdf$date)
+datewantedB <- availDaysB[17]
+
+giC <- 0:max(gC$gppbreaks)
+
+gppSingle <- ggplot(filter(gppUncertaintyLimits, date == datewantedB), 
+                    aes(x = fct_reorder(ValleyName, latpos), 
+                             y = logGPP, 
+                             fill = logGPP), 
+                color = NA) + 
+  geom_col() +
+  geom_linerange(mapping = aes(ymin = lowerPI, ymax = upperPI), 
+                 color = 'grey50') + 
+  scale_fill_stepsn(colors = gC$gpppal,
+                    breaks = gC$gppbreaks[2:length(gC$gppbreaks)],
+                    limits = c(min(gC$gppbreaks), max(gC$gppbreaks)),
+                    labels = gC$gpplabels,
+                    guide = 'legend', 
+                    name = gpp5label) +
+  scale_y_continuous(breaks = giC,
+                    # limits = c(0, max(gC$gppbreaks)),
+                    labels = format(10^giC, big.mark=",",
+                                    scientific=FALSE, trim = TRUE, digits = 0))+
+  
+   
+  
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = NULL, y = 'GPP\n(tonnes O2 at max)')
+gppSingle
+```
+
+How is that so tight? The ranges are huge, since logged. But is it because only some of the wetlands are ever wet, so even if they have a wide range, the overall fluctuation relative to the mean isn't super huge? Maybe? seems like they should be roughly equivalent to those in the Werai in terms of bar height to error ratio?
 
 
 
+```{r}
+# datewanted set above is base on annual, so just grab something here. maybe if we want to get fancy line it up with what we choose in t elocal version? if so, the index here should match the index used there.
+availDaysB <- unique(erdf$date)
+datewantedB <- availDaysB[17]
 
+eiC <- 0:max(eC$erbreaks)
 
+erSingle <- ggplot(filter(erUncertaintyLimits, date == datewantedB), 
+                    aes(x = fct_reorder(ValleyName, latpos), 
+                             y = logER, 
+                             fill = logER), 
+                color = NA) + 
+  geom_col() +
+  geom_linerange(mapping = aes(ymin = lowerPI, ymax = upperPI), 
+                 color = 'grey50') + 
+  scale_fill_stepsn(colors = eC$erpal,
+                    breaks = eC$erbreaks[2:length(eC$erbreaks)],
+                    limits = c(min(eC$erbreaks), max(eC$erbreaks)),
+                    labels = eC$erlabels,
+                    guide = 'legend', 
+                    name = er5label) +
+  scale_y_continuous(breaks = eiC,
+                    # limits = c(0, max(eC$erbreaks)),
+                    labels = format(10^eiC, big.mark=",",
+                                    scientific=FALSE, trim = TRUE, digits = 0))+
+  
+   
+  
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = NULL, y = 'ER\n(tonnes O2 at max)')
+erSingle
+```
 
+Plots
 
+```{r}
+gppUnc <- gppSingle +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm'),
+          axis.text.x = element_text(angle = 60, hjust = 1))
+erUnc <- erSingle +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm'),
+          axis.text.x = element_text(angle = 60, hjust = 1))
 
+gppUnc
+erUnc
+```
 
+Glue together into a combo
 
+```{r}
+gppUnc/erUnc
+```
 
+Does that actually look better as matched bars?
 
+```{r}
+erunclean <- erUncertaintyLimits %>%
+  st_drop_geometry() %>%
+  select(date, ValleyName, latpos, value = logER, upperPI, lowerPI) %>%
+  mutate(mettype = 'ER')
 
+gppunclean <- gppUncertaintyLimits %>%
+  st_drop_geometry() %>%
+  select(date, ValleyName, latpos, value = logGPP, upperPI, lowerPI) %>%
+  mutate(mettype = 'GPP')
 
-
-
-
-
-
-
-
-
-
-
+bothuncertain <- bind_rows(erunclean, gppunclean)
 
 ```
 
 
+```{r}
+# ciC <- 0:max(eC$erbreaks)
+combobar_U <- ggplot(filter(bothuncertain, date == datewantedB), 
+       aes(x = fct_reorder(ValleyName, latpos),
+           y = value, 
+           fill = mettype), 
+                color = NA) + 
+  geom_col(position = 'dodge')  +
+  geom_linerange(mapping = aes(ymin = lowerPI, ymax = upperPI, group = mettype),
+                 color = 'grey50', position = position_dodge(width = 1)) +
+  
+  scale_fill_manual(values = c(eC$erpal[length(eC$erpal)-2], gC$gpppal[length(gC$gpppal)-2]),
+                    labels = c('ER', 'GPP'),
+                    # guide = 'legend',
+                    name = NULL) +
+  scale_y_continuous(breaks = eiC,
+                    # limits = c(min(eC$erbreaks), max(eC$erbreaks)),
+                    labels = format(10^eiC, big.mark=",",
+                                    scientific=FALSE, trim = TRUE, digits = 0))+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = NULL, y = NULL)
+combobar_U
+```
 
+Should I just toss inundation on there too? like in comboplot? Maybe this should just replace comboplot?
+
+Could make one with the scenarios as well?
+
+Print those
+```{r}
+pdf(file.path(scriptOut, 'GPPuncertain.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print(gppUnc)
+dev.off()
+
+png(file.path(scriptOut, 'GPPuncertain.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print(gppUnc)
+dev.off()
+
+
+pdf(file.path(scriptOut, 'ERuncertain.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print(erUnc)
+dev.off()
+
+png(file.path(scriptOut, 'ERuncertain.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print(erUnc)
+dev.off()
+
+
+pdf(file.path(scriptOut, 'GPPERuncertain.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print(gppUnc/erUnc)
+dev.off()
+
+png(file.path(scriptOut, 'GPPERuncertain.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print(gppUnc/erUnc)
+dev.off()
+
+pdf(file.path(scriptOut, 'GPPERuncertain2.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print(combobar_U)
+dev.off()
+
+png(file.path(scriptOut, 'GPPERuncertain2.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print(combobar_U)
+dev.off()
+
+```
