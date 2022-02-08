@@ -64,7 +64,8 @@ tempsetup <- function(data, attnum = 1, forcemin = NA, forcemax = NA) {
 }
 
 # Inundation
-inunsetup <- function(data, attnum, logscale = TRUE, forcemin = NA, forcemax = NA) {
+inunsetup <- function(data, attnum, logscale = TRUE, 
+                      forcemin = NA, forcemax = NA) {
   
   if ('stars' %in% class(data)) {
     thisdata <- data[[attnum]]
@@ -264,7 +265,7 @@ gppsetup <- function(data, attnum, logscale = TRUE, forcemin = NA, forcemax = NA
 
 ## TEMP
 tempfun <- function(starsObj, attributeNum = 1, datewanted, 
-                    forcelegend = NULL,
+                    forcelegend = NULL, colorchoice = NA,
                     titled = TRUE, titlePrefix = NULL, titleSuffix = NULL, 
                     plotPkg = 'tmap', ...) {
   
@@ -310,7 +311,7 @@ tempfun <- function(starsObj, attributeNum = 1, datewanted,
   
   if (plotPkg == 'ggplot') {
     temp_gg <- ggplot() +
-      geom_sf(data = temp_sf, mapping = aes(fill = Temp), color = NA) +
+      geom_sf(data = temp_sf, mapping = aes(fill = Temp), color = colorchoice, size = 0.1) +
       # geom_sf_label(data = ltimNoNorth, mapping = aes(label = ValleyName)) +
       coord_sf() +
       # Closest to the tmap
@@ -345,6 +346,7 @@ tempfun <- function(starsObj, attributeNum = 1, datewanted,
 # Inundation
 inunfun <- function(starsObj, attributeNum = 1, datewanted, units = 'Ml',
                     forcelegend = NULL,
+                    colorchoice = NA,
                     titled = TRUE, titlePrefix = NULL, titleSuffix = NULL, 
                     plotPkg = 'tmap', ...) {
   
@@ -390,7 +392,8 @@ inunfun <- function(starsObj, attributeNum = 1, datewanted, units = 'Ml',
   
   if (plotPkg == 'ggplot') {
     inun_gg <- ggplot() +
-      geom_sf(data = inun_sf, mapping = aes(fill = logVolume), color = NA) +
+      geom_sf(data = inun_sf, mapping = aes(fill = logVolume), 
+              color = colorchoice, size = 0.1) +
       # geom_sf_label(data = ltimNoNorth, mapping = aes(label = ValleyName)) +
       coord_sf() +
       # Closest to the tmap
@@ -418,7 +421,7 @@ inunfun <- function(starsObj, attributeNum = 1, datewanted, units = 'Ml',
 # GPP
 # I guess for the moment without uncertainty
 gppfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
-                   forcelegend = NULL,
+                   forcelegend = NULL, colorchoice = NA,
                    titled = TRUE, titlePrefix = NULL, titleSuffix = NULL, 
                    plotPkg = 'tmap', ...) {
   
@@ -467,7 +470,7 @@ gppfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
   
   if (plotPkg == 'ggplot') {
     gpp_gg <- ggplot() +
-      geom_sf(data = gpp_sf, mapping = aes(fill = logGPP), color = NA) +
+      geom_sf(data = gpp_sf, mapping = aes(fill = logGPP), color = colorchoice, size = 0.1) +
       # geom_sf_label(data = ltimNoNorth, mapping = aes(label = ValleyName)) +
       coord_sf() +
       # Closest to the tmap
@@ -493,7 +496,7 @@ gppfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
 
 # ER plot
 erfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
-                  forcelegend = NULL, 
+                  forcelegend = NULL, colorchoice = NA,
                   titled = TRUE, titlePrefix = NULL, titleSuffix = NULL, 
                   plotPkg = 'tmap', ...) {
   
@@ -545,7 +548,7 @@ erfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
   
   if (plotPkg == 'ggplot') {
     er_gg <- ggplot() +
-      geom_sf(data = er_sf, mapping = aes(fill = logER), color = NA) +
+      geom_sf(data = er_sf, mapping = aes(fill = logER), color = colorchoice, size = 0.1) +
       # geom_sf_label(data = ltimNoNorth, mapping = aes(label = ValleyName)) +
       coord_sf() +
       # Closest to the tmap

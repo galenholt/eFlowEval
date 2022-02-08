@@ -76,7 +76,8 @@ Takes more work, but have more control (probably just because I speak ggplot)
 
 ```{r}
 gg_grid_static <- ggpubr::ggarrange(
-  tempfun(weraiCropTemp, 1, datewanted, titlePrefix = 'Two months preceding', plotPkg = 'ggplot') + 
+  tempfun(weraiCropTemp, 1, datewanted, 
+          titlePrefix = 'Two months preceding ', plotPkg = 'ggplot') + 
     guides(fill = guide_legend(title.position = 'top')) +
     theme_grey(base_size = 8) + 
     theme(legend.position = 'bottom', 
@@ -184,8 +185,10 @@ er_gg_uncertain
 ### GPP
 
 ```{r}
+
+
 # GPP
-# I'm sure thgppe's a slick way to select all three attributes and do this in one
+# I'm sure there's a slick way to select all three attributes and do this in one
 # go, but I just need to get this done
 gpp_sf <- weraiCropPredGPP[1,,] %>% 
   st_as_sf() %>% 
@@ -270,13 +273,22 @@ binding cols is actually safer and works
 ### GPP
 
 ```{r}
+# Get the inundation to glue on too
+inun_sf <- weraiCropInun[1,,] %>% 
+  st_as_sf() %>% 
+  select(all_of(datewanted)) %>%
+  rename(inun = 1) %>%
+  mutate(logInun = log10(1+inun))
+
 gpp_sf_LMU_wide <- bind_cols(gpp_sf[,-4], 
                            st_drop_geometry(rename(gpp_sfPU[,-c(4)], 
                                   UGPP = GPP, 
                                   upper_logGPP = logGPP)),
                            st_drop_geometry(rename(gpp_sfPL[,-4], 
                                   LGPP = GPP,
-                                  lower_logGPP = logGPP))) %>%
+                                  lower_logGPP = logGPP)),
+                           st_drop_geometry(inun_sf)) %>%
+  
   mutate(wetlandID = row_number())
 ```
 
@@ -305,13 +317,31 @@ bargpp <- ggplot(gpp_sf_LMU_wide[exampleWets, ],
 bargpp
 
 ```
+```{r}
+pdf(file.path(scriptOut, 'FewGPPbars.pdf'), 
+    onefile = FALSE, height = 8/2.54, width = 12/2.54, useDingbats = FALSE)
+print(bargpp)
+dev.off()
+
+png(file.path(scriptOut, 'FewGPPbars.png'), 
+    height = 8/2.54, width = 12/2.54, units = 'in', res = 300)
+print(bargpp)
+dev.off()
+```
 
  I assume it is a mess to just throw them all on
  actually, with a fair amount of monkeying with the look, that's OK
  
 ```{r}
+# Get x breaks that exist when discretized
+breakswanted <- c(0, 1, 10, 100, 1000)
+xbreaks <- foreach(b = breakswanted, .combine = c) %dopar% {
+    gpp_sf_LMU_wide$inun[which.min(abs(gpp_sf_LMU_wide$inun - b))]
+} 
+
 bargppall <- ggplot(gpp_sf_LMU_wide, 
-                 aes(x = fct_reorder(as.factor(wetlandID), logGPP, .desc = TRUE), y = logGPP, fill = logGPP)) +
+                 aes(x = fct_rev(as.factor(inun)), # fct_reorder(as.factor(wetlandID), inun, .desc = TRUE), 
+                     y = logGPP, fill = logGPP)) +
   geom_col() + # the geom_bar equivalent when it's not counting cases.
   geom_linerange(mapping = aes(ymin = lower_logGPP, ymax = upper_logGPP),
                  color = 'grey50', alpha = 0.2) +
@@ -323,10 +353,14 @@ bargppall <- ggplot(gpp_sf_LMU_wide,
                     name = gpplabel) +
   scale_y_continuous(breaks = gppControl$gppbreaks[2:length(gppControl$gppbreaks)],
                      labels = round(10^(gppControl$gppbreaks[2:length(gppControl$gppbreaks)]))) +
-  labs(x = 'Wetland', y = gpplabel)
+  scale_x_discrete(breaks = as.character(xbreaks), labels = as.character(round(xbreaks))) +
+  labs(y = gpplabel, x = 'Inundation volume (Ml at max extent)')
 bargppall
 ```
  
+ 
+Those breaks are really tough to sort out.
+
 I actually like that that encompasses an area that integrates to total production across the Werai
 
 *Aside- why do the errors look smaller when I aggregate to catchment scale in the _Basin plot doc?*
@@ -353,11 +387,13 @@ ggplot(gppsum, aes(x = 'werai', y = log10(GPP + 1))) +
 So, that does look roughly like what I'm getting for the catchment aggregations. I have done the local errors correctly (ie on the linear scale, then logged), (see gpp_sPU creation above). So this is the consequence of the errors looking relatively smaller as they're combined and on the log scale.
 
 
-I can do points as below, but the integration implied above is nice
+I can do points as below, but the integration implied above is nice.
+
+This actually looks better if I plot it against inundation (or log inundation) as a continuous variable
 
 ```{r}
 bargppallpoint <- ggplot(gpp_sf_LMU_wide, 
-                         aes(x = fct_reorder(as.factor(wetlandID), logGPP), 
+                         aes(x = fct_rev(as.factor(inun)), 
                              y = logGPP, color = logGPP)) +
   geom_linerange(mapping = aes(ymin = lower_logGPP, ymax = upper_logGPP), color = 'grey50') +
   geom_point() + # the geom_bar equivalent when it's not counting cases.
@@ -369,8 +405,28 @@ bargppallpoint <- ggplot(gpp_sf_LMU_wide,
                      name = gpplabel) +
   scale_y_continuous(breaks = gppControl$gppbreaks[2:length(gppControl$gppbreaks)],
                      labels = round(10^(gppControl$gppbreaks[2:length(gppControl$gppbreaks)]))) +
-  labs(x = 'Wetland', y = gpplabel)
+  labs(x = 'Inundation volume (Ml at max extent)', y = gpplabel)
 bargppallpoint
+```
+
+This actually might look better if I plot it against inundation (or log inundation) as a continuous variable. Well, but that just recapitulates the multiplication, so pretty boring. I guess it shows that small deviations are due to temp? Still, kind of lame.
+
+```{r}
+bargppallpointC <- ggplot(gpp_sf_LMU_wide, 
+                         aes(x = logInun, 
+                             y = logGPP, color = logGPP)) +
+  geom_linerange(mapping = aes(ymin = lower_logGPP, ymax = upper_logGPP), color = 'grey50') +
+  geom_point() + # the geom_bar equivalent when it's not counting cases.
+  scale_color_stepsn(colors = gppControl$gpppal,
+                     breaks = gppControl$gppbreaks[2:length(gppControl$gppbreaks)],
+                     limits = c(min(gppControl$gppbreaks), max(gppControl$gppbreaks)),
+                     labels = gppControl$gpplabels,
+                     guide = 'legend',
+                     name = gpplabel) +
+  scale_y_continuous(breaks = gppControl$gppbreaks[2:length(gppControl$gppbreaks)],
+                     labels = round(10^(gppControl$gppbreaks[2:length(gppControl$gppbreaks)]))) +
+  labs(x = 'log Inundation volume (Ml at max extent)', y = gpplabel)
+bargppallpointC
 ```
 
 ### ER
@@ -386,14 +442,17 @@ er_sf_LMU_wide <- bind_cols(er_sf[,-4],
                                                      upper_logER = logER)),
                              st_drop_geometry(rename(er_sfPL[,-4], 
                                                      LER = ER,
-                                                     lower_logER = logER))) %>%
+                                                     lower_logER = logER)),
+                            st_drop_geometry(inun_sf)) %>%
   mutate(wetlandID = row_number())
 ```
 
 Barplot
+
 ```{r}
 barerall <- ggplot(er_sf_LMU_wide, 
-                    aes(x = fct_reorder(as.factor(wetlandID), logER, .desc = TRUE), y = logER, fill = logER)) +
+                    aes(x = fct_rev(as.factor(inun)), 
+                   y = logER, fill = logER)) +
   geom_col() + # the geom_bar equivalent when it's not counting cases.
   geom_linerange(mapping = aes(ymin = lower_logER, ymax = upper_logER),
                  color = 'grey50', alpha = 0.2) +
@@ -405,7 +464,8 @@ barerall <- ggplot(er_sf_LMU_wide,
                     name = erlabel) +
   scale_y_continuous(breaks = erControl$erbreaks[2:length(erControl$erbreaks)],
                      labels = round(10^(erControl$erbreaks[2:length(erControl$erbreaks)]))) +
-  labs(x = 'Wetland', y = erlabel)
+  scale_x_discrete(breaks = as.character(xbreaks), labels = as.character(round(xbreaks))) +
+  labs(x = 'Inundation volume (Ml at max extent)', y = erlabel)
 barerall
 ```
 
@@ -415,7 +475,7 @@ Setup
 ```{r}
 # Can I make one with them both there going opposite direction?
 both_sf_LMU_wide <- bind_cols(mutate(gpp_sf_LMU_wide), 
-                              mutate(st_drop_geometry(er_sf_LMU_wide[,-c(8)])))
+                              mutate(st_drop_geometry(er_sf_LMU_wide[,-(7:10)])))
 
 # Need new labels and breaks. Could cobble, but getting confusing and misaligned
 # bothbreaks_log <- c(-rev(erbreaks_log[2:length(erbreaks_log)]), gppbreaks_log)
@@ -452,12 +512,10 @@ reordx <- fct_reorder(as.factor(both_sf_LMU_wide$wetlandID),
 Try a plot
 
 ```{r}
-barboth <- ggplot(both_sf_LMU_wide) +
-  geom_col(mapping = aes(x = fct_reorder(as.factor(wetlandID), 
-                                         logER, .desc = TRUE), 
+barbothQ <- ggplot(both_sf_LMU_wide) +
+  geom_col(mapping = aes(x = fct_rev(as.factor(inun)), 
                          y = -logER, fill = -logER)) + # the geom_bar equivalent when it's not counting cases.
-  geom_linerange(mapping = aes(x = fct_reorder(as.factor(wetlandID), 
-                                               logER, .desc = TRUE),
+  geom_linerange(mapping = aes(x = fct_rev(as.factor(inun)),
                                ymin = -lower_logER, ymax = -upper_logER),
                  color = 'grey50', alpha = 0.2) +
   # scale_fill_stepsn(colors = erpal_log,
@@ -474,15 +532,12 @@ barboth <- ggplot(both_sf_LMU_wide) +
   #            # labels = c(erlabels_log, gpplabels_log),
   #            guide = 'legend',
   #            name = 'kg O2\nat max extent') +
-  geom_col(mapping = aes(x = fct_reorder(as.factor(wetlandID), 
-                                         logGPP, .desc = TRUE), 
+  geom_col(mapping = aes(x = fct_rev(as.factor(inun)), 
                          y = logGPP, fill = logGPP)) +
-  geom_linerange(mapping = aes(x = fct_reorder(as.factor(wetlandID), 
-                                               logGPP, .desc = TRUE),
+  geom_linerange(mapping = aes(x = fct_rev(as.factor(inun)),
                                ymin = lower_logGPP, ymax = upper_logGPP),
                  color = 'grey50', alpha = 0.2) +
-  geom_line(mapping = aes(x = fct_reorder(as.factor(wetlandID), 
-                                           logGPP, .desc = TRUE), 
+  geom_line(mapping = aes(x = fct_rev(as.factor(inun)), 
                            y = logGPP-logER, group = NA)) +
   
   # This palette is very slightly different because it's not binned and GPP above uses Emerald instead of green, but it's sure close and way easier
@@ -497,40 +552,39 @@ barboth <- ggplot(both_sf_LMU_wide) +
   #                               gppbreaks_log[2:length(gppbreaks_log)]),
   #                    labels = c(-round(10^(erbreaks_log[2:length(erbreaks_log)])), 
   #                               round(10^(gppbreaks_log[2:length(gppbreaks_log)])))) +
-  labs(x = 'Wetland (ordered by GPP)', y = 'kg O2', fill = 'kg O2') +
+  labs(x = 'Inundation volume (Ml at max extent)', y = 'kg O2', fill = 'kg O2') +
   # argh doesn't work because has been reordered
-  # scale_x_discrete(breaks = as.character(c(1, 250, 500, 750, 1000))) +
-  theme(legend.position = c(0.75, 0.54)) +
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        legend.position = c(0.75, 0.55))
-barboth
+  scale_x_discrete(breaks = as.character(xbreaks), labels = as.character(round(xbreaks))) +
+  theme_bw(base_size = 8) + theme(legend.position = c(0.75, 0.53),
+                                  panel.grid.major = element_blank(),
+                                  panel.grid.minor = element_blank())
+barbothQ
 ```
 
-The inability to label x in a reasonable way is infuriating. Can I do it differently? Try making a labelled dataset that's arranged how I was doing fct_reorder.
+The ranked x might make more sense? Easier to read, anyway.
 
 ```{r}
 both_sf_LMU_wide2 <- both_sf_LMU_wide %>% 
-  arrange(desc(logGPP)) %>% 
-  mutate(GPPrank = row_number())
+  arrange(desc(inun)) %>% 
+  mutate(inunrank = row_number())
 ```
 
 Make the plot. Interesting that the notebook plotter does a worse job than the plots panel for a script. The funny gaps aren't really there- to see, run barboth in the console.
 
 ```{r}
 barboth <- ggplot(both_sf_LMU_wide2) +
-  geom_col(mapping = aes(x = GPPrank, 
+  geom_col(mapping = aes(x = inunrank, 
                          y = -logER, fill = -logER)) + # the geom_bar equivalent when it's not counting cases.
-  geom_linerange(mapping = aes(x = GPPrank,
+  geom_linerange(mapping = aes(x = inunrank,
                                ymin = -lower_logER, ymax = -upper_logER),
                  color = 'grey50', alpha = 0.2) +
 
-geom_col(mapping = aes(x = GPPrank, 
+geom_col(mapping = aes(x = inunrank, 
                        y = logGPP, fill = logGPP)) +
-  geom_linerange(mapping = aes(x = GPPrank,
+  geom_linerange(mapping = aes(x = inunrank,
                                ymin = lower_logGPP, ymax = upper_logGPP),
                  color = 'grey50', alpha = 0.2) +
-  geom_line(mapping = aes(x = GPPrank, 
+  geom_line(mapping = aes(x = inunrank, 
                           y = logGPP-logER, group = NA)) +
   
   # This palette is very slightly different because it's not binned and GPP above uses Emerald instead of green, but it's sure close and way easier
@@ -541,7 +595,7 @@ geom_col(mapping = aes(x = GPPrank,
   scale_y_continuous(limits = c(-4, 4),
                      breaks = -4:4,
                      labels = bothlabels_log) +
-  labs(x = 'Wetland (ordered by GPP)', y = 'kg O2', fill = 'kg O2') +
+  labs(x = 'Ranked inundation', y = 'kg O2', fill = 'kg O2') +
   # scale_x_discrete(breaks = c(1, 250, 500, 750, 1000)) +
   theme_bw(base_size = 8) + theme(legend.position = c(0.75, 0.53),
                                   panel.grid.major = element_blank(),
@@ -549,9 +603,21 @@ geom_col(mapping = aes(x = GPPrank,
 barboth
 ```
 
-Save that as a figure
+Save those as figures
 
 ```{r}
+
+pdf(file.path(scriptOut, 'Werai_mirrorgramQ.pdf'), 
+    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+print(barbothQ)
+dev.off()
+
+png(file.path(scriptOut, 'Werai_mirrorgramQ.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+print(barbothQ)
+dev.off()
+
+
 pdf(file.path(scriptOut, 'Werai_mirrorgram.pdf'), 
     onefile = FALSE, height = 8/2.54, width = 12/2.54, useDingbats = FALSE)
 print(barboth)
@@ -585,15 +651,22 @@ but we'd need more info about their variance relative to each other
 
 What about making some examples to illustrate annual (or arbitrary time period) reporting?
 
-First, establish the time periods and do the aggregations and other data organisation
+First, establish the time periods and do the aggregations and other data organisation.
+
+USE MAX ACROSS TIME FOR THE BIMONTHLY MAX EXTENTS- THAT GIVES A YEARLY MAX SINCE THE MEAN IS MEANINGLESS
 
 ```{r}
 interDates <- as.POSIXct(c("2014-06-30", "2015-06-30", "2016-06-30", "2017-06-30", "2018-06-30", "2019-06-30"))
 
-tempannual <- tempaggregate(weraiCropTemp, by_t = as.Date(interDates), FUN = mean, na.rm = TRUE)
-inunannual <- tempaggregate(weraiCropInun, by_t = as.Date(interDates), FUN = sum, na.rm = TRUE)
-gppannual <- tempaggregate(weraiCropPredGPP[1,,], by_t = as.Date(interDates), FUN = sum, na.rm = TRUE)
-erannual <- tempaggregate(weraiCropPredER[1,,], by_t = as.Date(interDates), FUN = sum, na.rm = TRUE)
+
+tempannual <- tempaggregate(weraiCropTemp, by_t = as.Date(interDates), 
+                            FUN = mean, na.rm = TRUE)
+inunannual <- tempaggregate(weraiCropInun, by_t = as.Date(interDates), 
+                            FUN = max, na.rm = TRUE)
+gppannual <- tempaggregate(weraiCropPredGPP[1,,], by_t = as.Date(interDates), 
+                           FUN = max, na.rm = TRUE)
+erannual <- tempaggregate(weraiCropPredER[1,,], by_t = as.Date(interDates), 
+                          FUN = max, na.rm = TRUE)
 
 # Data organisation
 # AHHH the flopped dims
@@ -628,7 +701,7 @@ max(erYear_sf$logER) # is within
 erControl$erbreaks
 ```
 
-I don't think I use this, but I did make a full-werai aggregation
+I don't think I use this, but I did make a full-werai aggregation. SUM across space is fine.
 
 ```{r}
 # aggregate to werai
@@ -639,7 +712,7 @@ areas <- tempannual %>%
   as.numeric()
 tempW <- catchAgg <- catchAggW(strict = tempannual, strictWeights = areas,
                                FUN = mean, summaryPoly = ramsarW1)
-  
+  # sum across space
 inunW <- aggregate(inunannual, 
                       by = ramsarW1, 
                       FUN = sum, na.rm = TRUE)
@@ -667,7 +740,7 @@ Change the tmap_mode() depending on the purpose. DO NOT CHANGE TO VIEW AND TRY T
 ```{r}
 tmap_mode('plot')
 
-gppyrlabel <- 'Total Yearly GPP (kg 02)\nat max bimonth extents'
+gppyrlabel <- 'Yearly GPP maximum\n(kg 02)'
 
   gppAnnual_tm <- gppYear_sf %>%
     filter(WaterYear != '2014-06-29') %>% # because a 5-panel is ugly
@@ -684,7 +757,7 @@ gppyrlabel <- 'Total Yearly GPP (kg 02)\nat max bimonth extents'
 #### ER
 
 ```{r}
-eryrlabel <- 'Total Yearly ER (kg 02)\nat max bimonth extents'
+eryrlabel <- 'Yearly ER maximum\n(kg 02)'
   
   erAnnual_tm <- erYear_sf %>%
     filter(WaterYear != '2014-06-29') %>% # because a 5-panel is ugly
