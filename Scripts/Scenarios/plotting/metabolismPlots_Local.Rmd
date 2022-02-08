@@ -304,7 +304,7 @@ exampleWets <- c(1:100)
 bargpp <- ggplot(gpp_sf_LMU_wide[exampleWets, ], 
                  aes(x = wetlandID, y = logGPP, fill = logGPP)) +
   geom_col() + # the geom_bar equivalent when it's not counting cases.
-  geom_errorbar(mapping = aes(ymin = lower_logGPP, ymax = upper_logGPP)) +
+  geom_linerange(mapping = aes(ymin = lower_logGPP, ymax = upper_logGPP), color = 'grey50') +
   scale_fill_stepsn(colors = gppControl$gpppal,
                     breaks = gppControl$gppbreaks[2:length(gppControl$gppbreaks)],
                     limits = c(min(gppControl$gppbreaks), max(gppControl$gppbreaks)),

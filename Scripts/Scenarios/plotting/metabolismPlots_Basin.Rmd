@@ -1917,6 +1917,61 @@ print(sceneandpoints)
 dev.off()
 ```
 
+Can I make a super scenario map that looks at GPP and ER?
+
+```{r}
+superScene <- plot_spacer() +
+(tempBase_5 + ggtitle('Baseline temp') + theme(legend.position = 'none')) +
+  (tempClim_5 + ggtitle('2c warming') + theme(legend.position = 'none')) +
+  (tempBase_5 + ggtitle('Baseline temp') + theme(legend.position = 'none')) +
+  (tempClim_5 + ggtitle('2c warming') + theme(legend.position = 'none')) +
+  
+  (inunBase_5 + ggtitle('Baseline inun') + theme(legend.position = 'none')) +
+  (gppBase_5 + theme(legend.position = 'none')) + # + ggtitle('Baseline') 
+  (gppClim_5 + theme(legend.position = 'none')) + #  + ggtitle('2c warming')
+  (erBase_5 + theme(legend.position = 'none')) + # + ggtitle('Baseline') 
+  (erClim_5 + theme(legend.position = 'none')) + #  + ggtitle('2c warming')
+  
+  (inun10p_5 + ggtitle('110% inundation') + theme(legend.position = 'none')) +
+  (gpp10p_5 + theme(legend.position = 'none')) + # + ggtitle('110% inundation') 
+  (gpp10pClim_5 + theme(legend.position = 'none')) + # + ggtitle('2c & 110%')
+  (er10p_5 + theme(legend.position = 'none')) + # + ggtitle('110% inundation') 
+  (er10pClim_5 + theme(legend.position = 'none')) + # + ggtitle('2c & 110%')
+  plot_layout(nrow = 3)
+superScene
+
+```
+
+```{r}
+supersceneandpoints <- ggpubr::ggarrange(superScene,
+                  scenebar_basin, nrow = 2, heights = c(4,1))
+supersceneandpoints
+```
+
+Plot the superscenes
+
+```{r}
+pdf(file.path(scriptOut, 'superScene.pdf'), 
+    onefile = FALSE, height = 16/2.54, width = 16/2.54, useDingbats = FALSE)
+print(superScene)
+dev.off()
+
+png(file.path(scriptOut, 'superScene.png'), 
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+print(superScene)
+dev.off()
+
+pdf(file.path(scriptOut, 'superScene_points.pdf'), 
+    onefile = FALSE, height = 16/2.54, width = 16/2.54, useDingbats = FALSE)
+print(supersceneandpoints)
+dev.off()
+
+png(file.path(scriptOut, 'superScene_points.png'), 
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+print(supersceneandpoints)
+dev.off()
+```
+
 
 TODO: GO through and change other forcemins, but check they make sense for other datasets
 
