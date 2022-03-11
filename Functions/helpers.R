@@ -276,3 +276,17 @@ sfandcatch <- function(starsObj, catches, newname) {
     mutate(date = as.Date(date)) %>%
     st_join(ltimNoNorth, join = st_equals_exact, par = 1)
 }
+
+
+# rename objects on read-in with an appended name to avoid stomping
+loadappend <- function(filename, append) {
+  load(filename)
+  objnames <- ls()[!ls() %in% c("filename", "append")]
+  
+  renamelist <- mget(objnames)
+  
+  names(renamelist) <- paste0(objnames, '_', append)
+
+   return(renamelist)
+
+}

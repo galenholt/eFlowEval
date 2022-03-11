@@ -100,36 +100,40 @@ inunsetup <- function(data, attnum, logscale = TRUE,
                                    dmax = thismax)
   inunpal <- colorspace::divergingx_hcl(length(inunbreaks)-1, palette = 'Earth',
                             rev = FALSE)
-  midinun <- median(thisdata, na.rm = TRUE)
   
-  inunbreaks_log <- labeling::extended(m = 10,
-                                       dmin = thismin,
-                                       dmax = thismax)
+  midinun <- if(logscale) median(log10(1+thisdata), na.rm = TRUE) else median(thisdata, na.rm = TRUE)
   
-  inunpal_log <- colorspace::divergingx_hcl(length(inunbreaks_log)-1, palette = 'Earth',
-                                rev = FALSE)
-  midinun_log <- median(log10(1+thisdata), na.rm = TRUE)
+  # midinun <- median(thisdata, na.rm = TRUE)
+  
+  # inunbreaks_log <- labeling::extended(m = 10,
+  #                                      dmin = thismin,
+  #                                      dmax = thismax)
+  # 
+  # inunpal_log <- colorspace::divergingx_hcl(length(inunbreaks_log)-1, palette = 'Earth',
+  #                               rev = FALSE)
+  # midinun_log <- median(log10(1+thisdata), na.rm = TRUE)
   
   # Make pretty labels. Breaks CONTAIN the endpoints
-  inunlabels_log <- 10^inunbreaks_log
-  inunlabels_log <- format(inunlabels_log, big.mark=",", 
-                           scientific=FALSE, trim = TRUE, digits = 0)
-  inunstart <- inunlabels_log[1:(length(inunlabels_log)-1)]
-  inunstart[1] <- "0" # instead of 1
-  inunlabels_log <- paste0(inunstart, ' to ', inunlabels_log[2:length(inunlabels_log)])
-  inunlabels_log
+  inunlabels <- if(logscale)  10^inunbreaks else  inunbreaks
   
-  if (logscale) {
-    return(lst(inunbreaks = inunbreaks_log, 
-               inunpal = inunpal_log,
-               midinun = midinun_log, 
-               inunlabels = inunlabels_log))
-  } else {
-    return(lst(inunbreaks,
-               inunpal,
-               midinun, 
-               inunlabels))
-  }
+  inunlabels <- format(inunlabels, big.mark=",", 
+                           scientific=FALSE, trim = TRUE, digits = 0)
+  inunstart <- inunlabels[1:(length(inunlabels)-1)]
+  # inunstart[1] <- "0" # instead of 1
+  inunlabels <- paste0(inunstart, ' to ', inunlabels[2:length(inunlabels)])
+  inunlabels
+  
+  # if (logscale) {
+    return(lst(inunbreaks = inunbreaks, 
+               inunpal = inunpal,
+               midinun = midinun, 
+               inunlabels = inunlabels))
+  # } else {
+  #   return(lst(inunbreaks,
+  #              inunpal,
+  #              midinun, 
+  #              inunlabels))
+  # }
 }
 
 # ER
@@ -168,31 +172,32 @@ ersetup <- function(data, attnum, logscale = TRUE, forcemin = NA, forcemax = NA)
   erbreaks <- labeling::extended(m = 10,
                                  dmin = thismin,
                                  dmax = thismax)
-  erbreaks_log <- labeling::extended(m = 10, 
-                                     dmin = thismin, 
-                                     dmax = thismax)
+  # erbreaks <- labeling::extended(m = 10, 
+  #                                    dmin = thismin, 
+  #                                    dmax = thismax)
   
   # and those breaks might not quite yield 10, so maximise the palette differences
-  erpal_log <- sequential_hcl(length(erbreaks_log)-1, palette = 'Purples', rev = TRUE)
+  erpal <- sequential_hcl(length(erbreaks)-1, palette = 'Purples', rev = TRUE)
   
   # Make pretty labels. Breaks CONTAIN the endpoints
-  erlabels_log <- 10^erbreaks_log
-  erlabels_log <- format(erlabels_log, big.mark=",", 
-                         scientific=FALSE, trim = TRUE, digits = 0)
-  erstart <- erlabels_log[1:(length(erlabels_log)-1)]
-  erstart[1] <- "0" # instead of 1
-  erlabels_log <- paste0(erstart, ' to ', erlabels_log[2:length(erlabels_log)])
-  erlabels_log
+  erlabels <- if(logscale)  10^erbreaks else  erbreaks
   
-  if (logscale) {
-    return(lst(erbreaks = erbreaks_log, 
-               erpal = erpal_log, 
-               erlabels = erlabels_log))
-  } else {
-    return(lst(erbreaks, 
-               mider, 
-               erlabels))
-  }
+  erlabels <- format(erlabels, big.mark=",", 
+                         scientific=FALSE, trim = TRUE, digits = 0)
+  erstart <- erlabels[1:(length(erlabels)-1)]
+  # erstart[1] <- "0" # instead of 1
+  erlabels <- paste0(erstart, ' to ', erlabels[2:length(erlabels)])
+  erlabels
+  
+  # if (logscale) {
+    return(lst(erbreaks = erbreaks, 
+               erpal = erpal, 
+               erlabels = erlabels))
+  # } else {
+  #   return(lst(erbreaks, 
+  #              mider, 
+  #              erlabels))
+  # }
   
 }
 
@@ -230,33 +235,33 @@ gppsetup <- function(data, attnum, logscale = TRUE, forcemin = NA, forcemax = NA
   gppbreaks <- labeling::extended(m = 10,
                                   dmin = thismin,
                                   dmax = thismax)
-  gppbreaks_log <- labeling::extended(m = 10, 
-                                      dmin = thismin, 
-                                      # adding ceiling because this misses the actual max
-                                      dmax = thismax)
+  # gppbreaks_log <- labeling::extended(m = 10, 
+  #                                     dmin = thismin, 
+  #                                     # adding ceiling because this misses the actual max
+  #                                     dmax = thismax)
   
   # and those breaks might not quite yield 10, so maximise the palette differences
-  gpppal_log <- sequential_hcl(length(gppbreaks_log)-1, palette = 'Emrld', rev = TRUE)
+  gpppal <- sequential_hcl(length(gppbreaks)-1, palette = 'Emrld', rev = TRUE)
   
   # Make pretty labels. Breaks CONTAIN the endpoints
-  gpplabels_log <- 10^gppbreaks_log
-  gpplabels_log <- format(gpplabels_log, big.mark=",", 
-                          scientific=FALSE, trim = TRUE, digits = 0)
-  gppstart <- gpplabels_log[1:(length(gpplabels_log)-1)]
-  gppstart[1] <- "0" # instead of 1
-  gpplabels_log <- paste0(gppstart, ' to ', gpplabels_log[2:length(gpplabels_log)])
-  gpplabels_log
+  gpplabels <- if(logscale)  10^gppbreaks else  gppbreaks
   
-  if (logscale) {
-    return(lst(gppbreaks = gppbreaks_log, 
-               gpppal = gpppal_log,
-               gpplabels = gpplabels_log))
-  } else {
-    return(lst(gppbreaks,
-               gpppal,
-               midgpp, 
-               gpplabels))
-  }
+  gpplabels <- format(gpplabels, big.mark=",", 
+                          scientific=FALSE, trim = TRUE, digits = 0)
+  gppstart <- gpplabels[1:(length(gpplabels)-1)]
+  # gppstart[1] <- "0" # instead of 1
+  gpplabels <- paste0(gppstart, ' to ', gpplabels[2:length(gpplabels)])
+  gpplabels
+  
+  # if (logscale) {
+    return(lst(gppbreaks = gppbreaks, 
+               gpppal = gpppal,
+               gpplabels = gpplabels))
+  # } else {
+  #   return(lst(gppbreaks,
+  #              gpppal = gpppal,
+  #              gpplabels))
+  # }
 }
 
 
@@ -348,7 +353,7 @@ inunfun <- function(starsObj, attributeNum = 1, datewanted, units = 'Ml',
                     forcelegend = NULL,
                     colorchoice = NA,
                     titled = TRUE, titlePrefix = NULL, titleSuffix = NULL, 
-                    plotPkg = 'tmap', ...) {
+                    plotPkg = 'tmap', logscale = TRUE, ...) {
   
   # Title prefix and suffix lets us add bits around the date
   if (titled) {
@@ -358,11 +363,15 @@ inunfun <- function(starsObj, attributeNum = 1, datewanted, units = 'Ml',
   inun_sf <- starsObj[attributeNum,,] %>%
     st_as_sf() %>%
     select(all_of(datewanted)) %>%
-    pivot_longer(cols = all_of(datewanted), names_to = 'date', values_to = 'InundationVolume') %>%
-    mutate(logVolume = log10(1+InundationVolume))
+    pivot_longer(cols = all_of(datewanted), names_to = 'date', values_to = 'plotValues') 
+  
+  if (logscale) {
+    inun_sf <- inun_sf %>%
+      mutate(plotValues = log10(1+plotValues))
+  }
   
   # get plot controls
-  inunControl <- inunsetup(starsObj, attributeNum, ...)
+  inunControl <- inunsetup(starsObj, attributeNum, logscale, ...)
   
   legendlabel <- ifelse(is.null(forcelegend), 
                         paste0(units, ' Inundation\nat max extent'),
@@ -371,7 +380,7 @@ inunfun <- function(starsObj, attributeNum = 1, datewanted, units = 'Ml',
   if (plotPkg == 'tmap') {
     inun_tm <- inun_sf %>%
       tm_shape() + 
-      tm_fill(col = 'logVolume', 
+      tm_fill(col = 'plotValues', 
               palette = inunControl$inunpal,
               midpoint = inunControl$midinun, 
               breaks = inunControl$inunbreaks,
@@ -392,7 +401,7 @@ inunfun <- function(starsObj, attributeNum = 1, datewanted, units = 'Ml',
   
   if (plotPkg == 'ggplot') {
     inun_gg <- ggplot() +
-      geom_sf(data = inun_sf, mapping = aes(fill = logVolume), 
+      geom_sf(data = inun_sf, mapping = aes(fill = plotValues), 
               color = colorchoice, size = 0.1) +
       # geom_sf_label(data = ltimNoNorth, mapping = aes(label = ValleyName)) +
       coord_sf() +
@@ -423,7 +432,7 @@ inunfun <- function(starsObj, attributeNum = 1, datewanted, units = 'Ml',
 gppfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
                    forcelegend = NULL, colorchoice = NA,
                    titled = TRUE, titlePrefix = NULL, titleSuffix = NULL, 
-                   plotPkg = 'tmap', ...) {
+                   plotPkg = 'tmap', logscale = TRUE, ...) {
   
   # Title prefix and suffix lets us add bits around the date
   if (titled) {
@@ -434,11 +443,16 @@ gppfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
   gpp_sf <- starsObj[attributeNum,,] %>%
     st_as_sf() %>%
     select(all_of(datewanted)) %>%
-    pivot_longer(cols = all_of(datewanted), names_to = 'date', values_to = 'GPP') %>%
-    mutate(logGPP = log10(1+GPP))
+    pivot_longer(cols = all_of(datewanted), names_to = 'date', values_to = 'plotValues')
+  
+  if (logscale) {
+    gpp_sf <- gpp_sf %>%
+      mutate(plotValues = log10(1+plotValues))
+  }
+    
   
   # get plot controls
-  gppControl <- gppsetup(starsObj, attributeNum, ...)
+  gppControl <- gppsetup(starsObj, attributeNum, logscale, ...)
   
   
   
@@ -451,7 +465,7 @@ gppfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
   if (plotPkg == 'tmap') {
     gpp_tm <- gpp_sf %>%
       tm_shape() +
-      tm_fill(col = 'logGPP', palette = gppControl$gpppal,
+      tm_fill(col = 'plotValues', palette = gppControl$gpppal,
               breaks = gppControl$gppbreaks,
               labels = gppControl$gpplabels,
               title = legendlabel) 
@@ -467,12 +481,16 @@ gppfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
     return(gpp_tm)
   }
   
+  # plotvar <- ifelse(logscale, 'logGPP', 'GPP')
+  # plotvar <- rlang::data_sym(plotvar)
+  
   
   if (plotPkg == 'ggplot') {
     gpp_gg <- ggplot() +
-      geom_sf(data = gpp_sf, mapping = aes(fill = logGPP), color = colorchoice, size = 0.1) +
+    geom_sf(data = gpp_sf, mapping = aes(fill = plotValues), color = colorchoice, size = 0.1) +
       # geom_sf_label(data = ltimNoNorth, mapping = aes(label = ValleyName)) +
       coord_sf() +
+      # scale_fill_stepsn(colors = gppControl$gpppal)
       # Closest to the tmap
       scale_fill_stepsn(colors = gppControl$gpppal,
                         breaks = gppControl$gppbreaks[2:length(gppControl$gppbreaks)],
@@ -498,7 +516,7 @@ gppfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
 erfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
                   forcelegend = NULL, colorchoice = NA,
                   titled = TRUE, titlePrefix = NULL, titleSuffix = NULL, 
-                  plotPkg = 'tmap', ...) {
+                  plotPkg = 'tmap', logscale = TRUE, ...) {
   
   # Title prefix and suffix lets us add bits around the date
   if (titled) {
@@ -509,8 +527,12 @@ erfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
   er_sf <- starsObj[attributeNum,,] %>%
     st_as_sf() %>%
     select(all_of(datewanted)) %>%
-    pivot_longer(cols = all_of(datewanted), names_to = 'date', values_to = 'ER') %>%
-    mutate(logER = log10(1+ER))
+    pivot_longer(cols = all_of(datewanted), names_to = 'date', values_to = 'plotValues') 
+  
+  if (logscale) {
+    er_sf <- er_sf %>%
+      mutate(plotValues = log10(1+plotValues))
+  }
   
   # er_sf <- starsObj[attributeNum,,] %>% 
   #   st_as_sf() %>% 
@@ -519,7 +541,7 @@ erfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
   #   mutate(logER = log10(1+ER))
   
   # get plot controls
-  erControl <- ersetup(starsObj, attributeNum, ...)
+  erControl <- ersetup(starsObj, attributeNum, logscale, ...)
   
   legendlabel <- ifelse(is.null(forcelegend), 
                         paste0('ER (', units, ' 02/day)\nat max extent'),
@@ -529,7 +551,7 @@ erfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
   if (plotPkg == 'tmap') {
     er_tm <- er_sf %>%
       tm_shape() +
-      tm_fill(col = 'logER', palette = erControl$erpal,
+      tm_fill(col = 'plotValues', palette = erControl$erpal,
               breaks = erControl$erbreaks,
               labels = erControl$erlabels,
               title = legendlabel)
@@ -548,7 +570,7 @@ erfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
   
   if (plotPkg == 'ggplot') {
     er_gg <- ggplot() +
-      geom_sf(data = er_sf, mapping = aes(fill = logER), color = colorchoice, size = 0.1) +
+      geom_sf(data = er_sf, mapping = aes(fill = plotValues), color = colorchoice, size = 0.1) +
       # geom_sf_label(data = ltimNoNorth, mapping = aes(label = ValleyName)) +
       coord_sf() +
       # Closest to the tmap
