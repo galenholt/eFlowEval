@@ -52,13 +52,21 @@ load(basinRef)
 tempdir <- file.path(datOut, 'Tempprocessed', 'weightedMean', 'bimonth')
 load(file.path(tempdir, 'EdwardWakool_TempBimonthMean.rdata'))
 
+# the climate change version
+climdir <- file.path(datOut, 'Climateprocessed', 'weightedMeanCLIM', 'bimonth')
+load(file.path(climdir, 'EdwardWakool_ClimateBimonthMean.rdata'))
+
 # Inundation data in ANAEs JUST for this catchment
-inundir <- file.path(datOut, 'inundationprocessed', 'volInun')
+inundir <- file.path(datOut, 'Inundationprocessed', 'volInun')
 load(file.path(inundir, 'EdwardWakool_volInun.rdata'))
+
+# 10p inundation
+inun10pdir <- file.path(datOut, 'Inundationprocessed', 'vol10p')
+load(file.path(inun10pdir, 'EdwardWakool_vol10p.rdata'))
 
 # Do those line up?
 # EdwardWakool_weightedMean <- st_transform(EdwardWakool_weightedMean, whichcrs)
-EdwardWakool_volInun <- st_transform(EdwardWakool_volInun, whichcrs)
+# EdwardWakool_volInun <- st_transform(EdwardWakool_volInun, whichcrs)
 # 
 # which(!diag(st_intersects(st_as_sf(EdwardWakool_volInun[1,1:200,1]), 
 #                           st_as_sf(EdwardWakool_weightedMean[1,1:200,1]), sparse = FALSE)))
@@ -72,6 +80,60 @@ preddirGPP <- file.path(datOut, 'TempAndProduction', 'Predictions', 'logGPPdaysv
 
 load(file.path(preddirER, 'EdwardWakool_logERdaysvalleys_PredictxVol.rdata'))
 load(file.path(preddirGPP, 'EdwardWakool_logGPPdaysvalleys_PredictxVol.rdata'))
+
+# the plus 10p inundation
+preddirER_10p <- file.path(datOut, 'TempAndProduction', 'Predictions', 'logERdaysvalleys',
+                       'bimonth', 'predictxvol10p')
+preddirGPP_10p <- file.path(datOut, 'TempAndProduction', 'Predictions', 'logGPPdaysvalleys',
+                        'bimonth', 'predictxvol10p')
+
+load(file.path(preddirER_10p, 'EdwardWakool_logERdaysvalleys_PredictxVol10p.rdata'))
+load(file.path(preddirGPP_10p, 'EdwardWakool_logGPPdaysvalleys_PredictxVol10p.rdata'))
+
+# climate plus 2C
+preddirER_clim <- file.path(datOut, 'ClimateAndProduction', 'Predictions', 'logERdaysvalleys',
+                       'bimonth', 'predictxvol')
+preddirGPP_clim <- file.path(datOut, 'ClimateAndProduction', 'Predictions', 'logGPPdaysvalleys',
+                        'bimonth', 'predictxvol')
+
+
+# the wetland (local)-level data doesn't have a climate indicator on its names, and so overwrites the baseline values. Need to do an annoying workaround
+
+climpredlistER <- loadappend(file.path(preddirER_clim, 'EdwardWakool_logERdaysvalleys_PredictxVol.rdata'), append = 'clim')
+climpredlistGPP <- loadappend(file.path(preddirGPP_clim, 'EdwardWakool_logGPPdaysvalleys_PredictxVol.rdata'), append = 'clim')
+
+# Now I need to unpack the lists- this is overkill, but safer to not assume single objects
+for (i in 1:length(climpredlistER)) {
+  assign(names(climpredlistER)[i], climpredlistER[[i]])
+  assign(names(climpredlistGPP)[i], climpredlistGPP[[i]])
+}
+
+rm(climpredlistER, climpredlistGPP)
+
+# climate plus 2C AND the 10p inundation
+preddirER_clim10p <- file.path(datOut, 'ClimateAndProduction', 'Predictions', 'logERdaysvalleys',
+                            'bimonth', 'predictxvol10p')
+preddirGPP_clim10p <- file.path(datOut, 'ClimateAndProduction', 'Predictions', 'logGPPdaysvalleys',
+                             'bimonth', 'predictxvol10p')
+
+
+# the wetland (local)-level data doesn't have a climate indicator on its names, and so overwrites the baseline values. Need to do an annoying workaround
+
+climpredlistER10p <- loadappend(file.path(preddirER_clim10p, 'EdwardWakool_logERdaysvalleys_PredictxVol10p.rdata'), append = 'clim')
+climpredlistGPP10p <- loadappend(file.path(preddirGPP_clim10p, 'EdwardWakool_logGPPdaysvalleys_PredictxVol10p.rdata'), append = 'clim')
+
+# Now I need to unpack the lists- this is overkill, but safer to not assume single objects
+for (i in 1:length(climpredlistER10p)) {
+  assign(names(climpredlistER10p)[i], climpredlistER10p[[i]])
+  assign(names(climpredlistGPP10p)[i], climpredlistGPP10p[[i]])
+}
+
+rm(climpredlistER10p, climpredlistGPP10p)
+
+
+
+
+
 
 # Read in Ramsar sites as an example
 ramin <- file.path(datOut, 'WetlandBoundaries', 'ramsarMDB.rdata')
@@ -114,6 +176,11 @@ for (i in 1:length(allobj)) {
 EdwardWakool_volInunML <- EdwardWakool_volInun * 0.001
 names(EdwardWakool_volInunML) <- 'volumeML'
 
+EdwardWakool_vol10pML <- EdwardWakool_vol10p * 0.001
+names(EdwardWakool_vol10pML) <- 'volumeML'
+
+
+# BASELINE
 EdwardWakool_logERdaysvalleys_PredictxVolUnits <- EdwardWakool_logERdaysvalleys_PredictxVol *
   1000 * # because it had multiplied per L estimates by m3, and there are 1,000 L. Now we're in mg02/day
   0.000001 # convert from mg to kg. If convert to g would be 0.001 and effectively reverse the above
@@ -132,8 +199,68 @@ names(EdwardWakool_logGPPdaysvalleys_PredictxVolUnits) <-
               pattern = 'predict_x_vol_GPPdaysvalleys', 
               replacement = 'predicted_GPP_kg02perday_at_max_inun')
 
+# 2C warming
+EdwardWakool_logERdaysvalleys_PredictxVol_climUnits <- EdwardWakool_logERdaysvalleys_PredictxVol_clim *
+  1000 * # because it had multiplied per L estimates by m3, and there are 1,000 L. Now we're in mg02/day
+  0.000001 # convert from mg to kg. If convert to g would be 0.001 and effectively reverse the above
+
+names(EdwardWakool_logERdaysvalleys_PredictxVol_climUnits) <- 
+  str_replace(names(EdwardWakool_logERdaysvalleys_PredictxVol_climUnits),
+              pattern = 'predict_x_vol_ERdaysvalleys', 
+              replacement = 'predicted_ER_kg02perday_at_max_inun')
+
+EdwardWakool_logGPPdaysvalleys_PredictxVol_climUnits <- EdwardWakool_logGPPdaysvalleys_PredictxVol_clim *
+  1000 * # because it had multiplied per L estimates by m3, and there are 1,000 L. Now we're in mg02/day
+  0.000001 # convert from mg to kg. If convert to g would be 0.001 and effectively reverse the above
+
+names(EdwardWakool_logGPPdaysvalleys_PredictxVol_climUnits) <- 
+  str_replace(names(EdwardWakool_logGPPdaysvalleys_PredictxVol_climUnits),
+              pattern = 'predict_x_vol_GPPdaysvalleys', 
+              replacement = 'predicted_GPP_kg02perday_at_max_inun')
+
+# PLUS 10 PERCENT
+EdwardWakool_logERdaysvalleys_PredictxVol10pUnits <- EdwardWakool_logERdaysvalleys_PredictxVol10p *
+  1000 * # because it had multiplied per L estimates by m3, and there are 1,000 L. Now we're in mg02/day
+  0.000001 # convert from mg to kg. If convert to g would be 0.001 and effectively reverse the above
+
+names(EdwardWakool_logERdaysvalleys_PredictxVol10pUnits) <- 
+  str_replace(names(EdwardWakool_logERdaysvalleys_PredictxVol10pUnits),
+              pattern = 'predict_x_vol_ERdaysvalleys', 
+              replacement = 'predicted_ER_kg02perday_at_max_inun')
+
+EdwardWakool_logGPPdaysvalleys_PredictxVol10pUnits <- EdwardWakool_logGPPdaysvalleys_PredictxVol10p *
+  1000 * # because it had multiplied per L estimates by m3, and there are 1,000 L. Now we're in mg02/day
+  0.000001 # convert from mg to kg. If convert to g would be 0.001 and effectively reverse the above
+
+names(EdwardWakool_logGPPdaysvalleys_PredictxVol10pUnits) <- 
+  str_replace(names(EdwardWakool_logGPPdaysvalleys_PredictxVol10pUnits),
+              pattern = 'predict_x_vol_GPPdaysvalleys', 
+              replacement = 'predicted_GPP_kg02perday_at_max_inun')
+
+# 2C and 10p
+EdwardWakool_logERdaysvalleys_PredictxVol10p_climUnits <- EdwardWakool_logERdaysvalleys_PredictxVol10p_clim *
+  1000 * # because it had multiplied per L estimates by m3, and there are 1,000 L. Now we're in mg02/day
+  0.000001 # convert from mg to kg. If convert to g would be 0.001 and effectively reverse the above
+
+names(EdwardWakool_logERdaysvalleys_PredictxVol10p_climUnits) <- 
+  str_replace(names(EdwardWakool_logERdaysvalleys_PredictxVol10p_climUnits),
+              pattern = 'predict_x_vol_ERdaysvalleys', 
+              replacement = 'predicted_ER_kg02perday_at_max_inun')
+
+EdwardWakool_logGPPdaysvalleys_PredictxVol10p_climUnits <- EdwardWakool_logGPPdaysvalleys_PredictxVol10p_clim *
+  1000 * # because it had multiplied per L estimates by m3, and there are 1,000 L. Now we're in mg02/day
+  0.000001 # convert from mg to kg. If convert to g would be 0.001 and effectively reverse the above
+
+names(EdwardWakool_logGPPdaysvalleys_PredictxVol10p_climUnits) <- 
+  str_replace(names(EdwardWakool_logGPPdaysvalleys_PredictxVol10p_climUnits),
+              pattern = 'predict_x_vol_GPPdaysvalleys', 
+              replacement = 'predicted_GPP_kg02perday_at_max_inun')
+
 # remove the old units versions to avoid confustion
-rm(EdwardWakool_volInun, EdwardWakool_logGPPdaysvalleys_PredictxVol, EdwardWakool_logERdaysvalleys_PredictxVol)
+rm(EdwardWakool_volInun, EdwardWakool_logGPPdaysvalleys_PredictxVol, EdwardWakool_logERdaysvalleys_PredictxVol,
+   EdwardWakool_logGPPdaysvalleys_PredictxVol10p, EdwardWakool_logERdaysvalleys_PredictxVol10p,
+   EdwardWakool_logGPPdaysvalleys_PredictxVol_clim, EdwardWakool_logERdaysvalleys_PredictxVol_clim,
+   EdwardWakool_logGPPdaysvalleys_PredictxVol10p_clim, EdwardWakool_logERdaysvalleys_PredictxVol10p_clim)
 
 # cumbung <- st_bbox(c(xmin = 143.85, ymin = -34.35, xmax = 144.4, ymax = -34.05), crs = whichcrs)
 
@@ -152,6 +279,7 @@ ramsarW <- filter(ramsarMDB, WNAME == 'Werai Forest')
 # Single ramsar polygon
 # TURN ON ESRI WORLD TOPO MAP TO SEE WHERE WE ARE IN THE LAYERS MENU THING.
 ramsarW1 <- summarise(ramsarW)
+rm(ramsarW, ramsarMDB)
 # tm_shape(ramsarW1) + tm_borders() + tm_shape(werai) + tm_borders()
 # Cool. and the box does a better job hitting the state forest, Ramsar is bigger
 
@@ -166,8 +294,13 @@ weraiCropTemp <- EdwardWakool_TempBimonthMean[ramsarW1]
 # plot(weraiCropTemp[,,10])
 
 # keep looking at what's outside ramsar
-werbb <- st_as_sfc(st_bbox(ramsarW1))
-weraiCropTempBox <- EdwardWakool_TempBimonthMean[werbb]
+# werbb <- st_as_sfc(st_bbox(ramsarW1))
+# weraiCropTempBox <- EdwardWakool_TempBimonthMean[werbb]
+
+weraiCropClim <- EdwardWakool_ClimateBimonthMean[ramsarW1]
+
+
+
 # plot(weraiCropTempBox[,,10])
 # # There's some, but it's mostly in the ramsar, and the ramsar view is sure cleaner
 #
@@ -181,7 +314,7 @@ weraiCropTempBox <- EdwardWakool_TempBimonthMean[werbb]
 # Let's do the same for the inundation and the outputs, and we might be almost
 # there. Will need to do something temporal too, but a "last two months (or x period) summary dashboard" might actually be really good
 weraiCropInun <- EdwardWakool_volInunML[ramsarW1]
-
+weraiCropInun10p <- EdwardWakool_vol10pML[ramsarW1]
 # # MAKE INUNDATION IN something other than liters
 # # weraiCropInun <- weraiCropInun/1000000
 # # names(weraiCropInun) <- 'megalitersInundation'
@@ -208,6 +341,17 @@ weraiCropInun <- EdwardWakool_volInunML[ramsarW1]
 weraiCropPredER <- EdwardWakool_logERdaysvalleys_PredictxVolUnits[ramsarW1]
 weraiCropPredGPP <- EdwardWakool_logGPPdaysvalleys_PredictxVolUnits[ramsarW1]
 
+
+# all the scenarios
+weraiCropPredER_clim <- EdwardWakool_logERdaysvalleys_PredictxVol_climUnits[ramsarW1]
+weraiCropPredGPP_clim <- EdwardWakool_logGPPdaysvalleys_PredictxVol_climUnits[ramsarW1]
+
+weraiCropPredER10p <- EdwardWakool_logERdaysvalleys_PredictxVol10pUnits[ramsarW1]
+weraiCropPredGPP10p <- EdwardWakool_logGPPdaysvalleys_PredictxVol10pUnits[ramsarW1]
+
+weraiCropPredER10p_clim <- EdwardWakool_logERdaysvalleys_PredictxVol10p_climUnits[ramsarW1]
+weraiCropPredGPP10p_clim <- EdwardWakool_logGPPdaysvalleys_PredictxVol10p_climUnits[ramsarW1]
+
 # gpppal <- sequential_hcl(9, palette = 'Emrld', rev = TRUE)
 # erpal <- sequential_hcl(9, palette = 'Purples', rev = TRUE)
 # # there might be an advantage of some transformations here, but need to sort out
@@ -220,18 +364,83 @@ weraiCropPredGPP <- EdwardWakool_logGPPdaysvalleys_PredictxVolUnits[ramsarW1]
 # tm_shape(weraiCropPred[3,,10]) +
 #   tm_fill(palette = erpal)
 
+
+# Get super aggressive with memory management by removing everything for the whole catchment and just leave the werai bits
+rm(list = ls()[str_which(ls(), '^Edward')])
+
+
 # Then what?
 
 # a few timeslices grabbed by time,
 # to make this easier, cut the hours off the times
-weraiCropInun <- st_set_dimensions(weraiCropInun, which = 'time',
-                                values = as.Date(st_get_dimension_values(weraiCropInun, which = 'time')))
-weraiCropTemp <- st_set_dimensions(weraiCropTemp, which = 'time',
-                                   values = as.Date(st_get_dimension_values(weraiCropTemp, which = 'time')))
-weraiCropPredER <- st_set_dimensions(weraiCropPredER, which = 'time',
-                                   values = as.Date(st_get_dimension_values(weraiCropPredER, which = 'time')))
-weraiCropPredGPP <- st_set_dimensions(weraiCropPredGPP, which = 'time',
-                                   values = as.Date(st_get_dimension_values(weraiCropPredGPP, which = 'time')))
+# weraiCropInun <- st_set_dimensions(weraiCropInun, which = 'time',
+#                                 values = as.Date(st_get_dimension_values(weraiCropInun, which = 'time')))
+# weraiCropTemp <- st_set_dimensions(weraiCropTemp, which = 'time',
+#                                    values = as.Date(st_get_dimension_values(weraiCropTemp, which = 'time')))
+# weraiCropPredER <- st_set_dimensions(weraiCropPredER, which = 'time',
+#                                    values = as.Date(st_get_dimension_values(weraiCropPredER, which = 'time')))
+# weraiCropPredGPP <- st_set_dimensions(weraiCropPredGPP, which = 'time',
+#                                    values = as.Date(st_get_dimension_values(weraiCropPredGPP, which = 'time')))
+
+# Change to date
+# Originally done one at a time, but there are so many
+# which will be easier to loop over, though I'll have to use assign() and get() on the name vector
+weraiObjs <- ls()[str_which(ls(), '^weraiCrop')]
+
+for (i in 1:length(weraiObjs)) {
+  assign(weraiObjs[i], 
+         st_set_dimensions(get(weraiObjs[i]), which = 'time',
+                           values = as.Date(st_get_dimension_values(get(weraiObjs[i]), which = 'time'))))
+}
+
+
+
+
+
+# annual reporting --------------------------------------------------------
+
+interDates <- as.POSIXct(c("2014-06-30", "2015-06-30", "2016-06-30", "2017-06-30", "2018-06-30", "2019-06-30"))
+
+# Need aperms to get geometry and time badk in the right order
+
+tempannual <- tempaggregate(weraiCropTemp, by_t = as.Date(interDates), 
+                            FUN = mean, na.rm = TRUE) %>%
+  aperm(c(2,1))
+inunannual <- tempaggregate(weraiCropInun, by_t = as.Date(interDates), 
+                            FUN = max, na.rm = TRUE)  %>%   aperm(c(2,1))
+climannual <- tempaggregate(weraiCropClim, by_t = as.Date(interDates), 
+                            FUN = mean, na.rm = TRUE)  %>%   aperm(c(2,1))
+inun10pannual <- tempaggregate(weraiCropInun10p, by_t = as.Date(interDates), 
+                            FUN = max, na.rm = TRUE)  %>%   aperm(c(2,1))
+
+# Baseline predictions
+gppannual <- tempaggregate(weraiCropPredGPP[1,,], by_t = as.Date(interDates), 
+                           FUN = max, na.rm = TRUE)  %>%   aperm(c(2,1))
+erannual <- tempaggregate(weraiCropPredER[1,,], by_t = as.Date(interDates), 
+                          FUN = max, na.rm = TRUE)  %>%   aperm(c(2,1))
+
+# 2C
+gppannual_clim <- tempaggregate(weraiCropPredGPP_clim[1,,], by_t = as.Date(interDates), 
+                           FUN = max, na.rm = TRUE)  %>%   aperm(c(2,1))
+erannual_clim <- tempaggregate(weraiCropPredER_clim[1,,], by_t = as.Date(interDates), 
+                          FUN = max, na.rm = TRUE)  %>%   aperm(c(2,1))
+
+# 10% inundation
+gppannual10p <- tempaggregate(weraiCropPredGPP10p[1,,], by_t = as.Date(interDates), 
+                                FUN = max, na.rm = TRUE)  %>%   aperm(c(2,1))
+erannual10p <- tempaggregate(weraiCropPredER10p[1,,], by_t = as.Date(interDates), 
+                               FUN = max, na.rm = TRUE)  %>%   aperm(c(2,1))
+
+# both
+gppannual10p_clim <- tempaggregate(weraiCropPredGPP10p_clim[1,,], by_t = as.Date(interDates), 
+                              FUN = max, na.rm = TRUE)  %>%   aperm(c(2,1))
+erannual10p_clim <- tempaggregate(weraiCropPredER10p_clim[1,,], by_t = as.Date(interDates), 
+                             FUN = max, na.rm = TRUE)  %>%   aperm(c(2,1))
+
+
+
+# OLD ---------------------------------------------------------------------
+
 
 
 # # Now let's have a consistent way to make the plots

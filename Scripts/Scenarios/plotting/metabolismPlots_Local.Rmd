@@ -19,6 +19,7 @@ library(transformr) # not needed for this doc at present?
 library(gganimate) # not needed here at present
 library(viridis)
 library(colorspace)
+library(patchwork)
 
 ```
 
@@ -40,7 +41,7 @@ This is mostly a copy-paste and translate over from metabolismLocalAndStatic. I'
 Set the date for examples
 ```{r}
 availDays <- st_get_dimension_values(weraiCropTemp, which = 'time')
-datewanted <- as.character(availDays[17])
+datewanted <- as.character(availDays[18])
 ```
 
 
@@ -49,11 +50,11 @@ Make a static version using the tmap functions
 ```{r}
 suppressMessages(tmap_mode('plot'))
 
-allfun(tempObj = weraiCropTemp, tempAtt = 1,
-                   inunObj = weraiCropInun, inunAtt = 1,
-                   gppObj = weraiCropPredGPP, gppAtt = 1,
-                   erObj = weraiCropPredER, erAtt = 1,
-                   datewanted)
+# allfun(tempObj = weraiCropTemp, tempAtt = 1,
+#                    inunObj = weraiCropInun, inunAtt = 1,
+#                    gppObj = weraiCropPredGPP, gppAtt = 1,
+#                    erObj = weraiCropPredER, erAtt = 1,
+#                    datewanted)
 
 ```
 
@@ -76,7 +77,7 @@ Takes more work, but have more control (probably just because I speak ggplot)
 
 ```{r}
 gg_grid_static <- ggpubr::ggarrange(
-  tempfun(weraiCropTemp, 1, datewanted, 
+  tempfun(weraiCropTemp, 1, datewanted, titled = FALSE,
           titlePrefix = 'Two months preceding ', plotPkg = 'ggplot') + 
     guides(fill = guide_legend(title.position = 'top')) +
     theme_grey(base_size = 8) + 
@@ -655,28 +656,11 @@ First, establish the time periods and do the aggregations and other data organis
 
 USE MAX ACROSS TIME FOR THE BIMONTHLY MAX EXTENTS- THAT GIVES A YEARLY MAX SINCE THE MEAN IS MEANINGLESS
 
+This is all done in the metabPlotSetup_Local.
+
 ```{r}
-interDates <- as.POSIXct(c("2014-06-30", "2015-06-30", "2016-06-30", "2017-06-30", "2018-06-30", "2019-06-30"))
 
-
-tempannual <- tempaggregate(weraiCropTemp, by_t = as.Date(interDates), 
-                            FUN = mean, na.rm = TRUE)
-inunannual <- tempaggregate(weraiCropInun, by_t = as.Date(interDates), 
-                            FUN = max, na.rm = TRUE)
-gppannual <- tempaggregate(weraiCropPredGPP[1,,], by_t = as.Date(interDates), 
-                           FUN = max, na.rm = TRUE)
-erannual <- tempaggregate(weraiCropPredER[1,,], by_t = as.Date(interDates), 
-                          FUN = max, na.rm = TRUE)
-
-# Data organisation
-# AHHH the flopped dims
-if (attributes(st_dimensions(gppannual))$name[1] != 'geometry') {
-  gppannual <- aperm(gppannual, c(2,1))
-}
-if (attributes(st_dimensions(erannual))$name[1] != 'geometry') {
-  erannual <- aperm(erannual, c(2,1))
-}
-
+# I THINK I SHOULD BE ABLE TO SKIP THIS and use the functions. BUT not time right now to switch
 # GPP
 gppYear_sf <- gppannual %>% 
   st_as_sf() %>% 
@@ -699,6 +683,21 @@ erYear_sf
 # the range should still work for tthe colors
 max(erYear_sf$logER) # is within 
 erControl$erbreaks
+
+# Temp
+tempYear_sf <- tempannual %>% 
+  st_as_sf() %>% 
+  pivot_longer(cols = -geometry, names_to = 'WaterYear', values_to = names(tempannual)) %>%
+  st_as_sf() # REALLY???
+
+
+# Inundation
+inunYear_sf <- inunannual %>% 
+  st_as_sf() %>% 
+  pivot_longer(cols = -geometry, names_to = 'WaterYear', values_to = names(inunannual)) %>%
+  mutate(logInun =  log10(1+volumeML)) %>%
+  st_as_sf() # REALLY???
+
 ```
 
 I don't think I use this, but I did make a full-werai aggregation. SUM across space is fine.
@@ -812,11 +811,58 @@ erAnnual_gg <- erYear_sf %>%
   erAnnual_gg
 ```
 
+What do the drivers look like for those years?
+
+#### Temp
+
+```{r}
+tempyrlabel <- 'Yearly mean\ntemp (C)'
+
+tempControl <- tempsetup(data = weraiCropTemp, attnum = 1)
+tempAnnual_gg <- tempYear_sf %>%
+    filter(WaterYear != '2014-06-29') %>% # because a 5-panel is ugly
+    ggplot() +
+    geom_sf(mapping = aes(fill = bimonth_tempC), color = NA) +
+    coord_sf() +
+    # Closest to the tmap
+    scale_fill_stepsn(colors = tempControl$temppal,
+                      breaks = tempControl$tempbreaks[2:length(tempControl$tempbreaks)],
+                      limits = c(min(tempControl$tempbreaks), max(tempControl$tempbreaks)),
+                      labels = tempControl$templabels,
+                      guide = 'legend',
+                      name = tempyrlabel) +
+    facet_wrap(vars(WaterYear))
+ tempAnnual_gg
+```
+
+#### Inundation
+
+```{r}
+inunyrlabel <- 'Yearly inundation\nmaximum (ML)'
+
+inunControl <- inunsetup(data = weraiCropInun, attnum = 1)
+inunAnnual_gg <- inunYear_sf %>%
+    filter(WaterYear != '2014-06-29') %>% # because a 5-panel is ugly
+    ggplot() +
+    geom_sf(mapping = aes(fill = volumeML), color = NA) +
+    coord_sf() +
+    # Closest to the tmap
+    scale_fill_stepsn(colors = inunControl$inunpal,
+                      breaks = inunControl$inunbreaks[2:length(inunControl$inunbreaks)],
+                      limits = c(min(inunControl$inunbreaks), max(inunControl$inunbreaks)),
+                      labels = inunControl$inunlabels,
+                      guide = 'legend',
+                      name = inunyrlabel) +
+    facet_wrap(vars(WaterYear))
+ inunAnnual_gg
+```
+
 Stack 3 years of gpp and ER together for the document
 
 ```{r}
 gppAnnual_gg3 <- gppYear_sf %>%
     filter(WaterYear != '2014-06-29' & WaterYear != '2018-06-29') %>% # because a 5-panel is ugly
+  mutate(WaterYear = str_remove(WaterYear, '-06-29')) %>% # because these are water years, don't clutter up wit months
     ggplot() +
     geom_sf(mapping = aes(fill = logGPP), color = NA) +
     coord_sf() +
@@ -833,6 +879,7 @@ gppAnnual_gg3 <- gppYear_sf %>%
   
   erAnnual_gg3 <- erYear_sf %>%
     filter(WaterYear != '2014-06-29' & WaterYear != '2018-06-29') %>% # because a 5-panel is ugly
+      mutate(WaterYear = str_remove(WaterYear, '-06-29')) %>% # because these are water years, don't clutter up wit months
     ggplot() +
     geom_sf(mapping = aes(fill = logER), color = NA) +
     coord_sf() +
@@ -880,4 +927,373 @@ Print out the ggplots for the doc
   
 
 ```
+
+Same, but for the drivers (to go in appendix, probably)
+
+
+```{r}
+tempAnnual_gg3 <- tempYear_sf %>%
+    filter(WaterYear != '2014-06-29' & WaterYear != '2018-06-29') %>% # because a 5-panel is ugly
+  mutate(WaterYear = str_remove(WaterYear, '-06-29')) %>% # because these are water years, don't clutter up wit months
+    ggplot() +
+    geom_sf(mapping = aes(fill = bimonth_tempC), color = NA) +
+    coord_sf() +
+    # Closest to the tmap
+    scale_fill_stepsn(colors = tempControl$temppal,
+                      breaks = tempControl$tempbreaks[2:length(tempControl$tempbreaks)],
+                      limits = c(min(tempControl$tempbreaks), max(tempControl$tempbreaks)),
+                      labels = tempControl$templabels,
+                      guide = 'legend',
+                      name = tempyrlabel) +
+    facet_grid(WaterYear~.) + 
+    theme(legend.position = 'bottom')
+
+  inunAnnual_gg3 <- inunYear_sf %>%
+    filter(WaterYear != '2014-06-29' & WaterYear != '2018-06-29') %>% # because a 5-panel is ugly
+  mutate(WaterYear = str_remove(WaterYear, '-06-29')) %>% # because these are water years, don't clutter up wit months
+    ggplot() +
+    geom_sf(mapping = aes(fill = logInun), color = NA) +
+    coord_sf() +
+    # Closest to the tmap
+    scale_fill_stepsn(colors = inunControl$inunpal,
+                      breaks = inunControl$inunbreaks[2:length(inunControl$inunbreaks)],
+                      limits = c(min(inunControl$inunbreaks), max(inunControl$inunbreaks)),
+                      labels = inunControl$inunlabels,
+                      guide = 'legend',
+                      name = inunyrlabel) +
+    facet_grid(WaterYear~.) + 
+    theme(legend.position = 'bottom')
+  
+  
+  annualTI <- ggpubr::ggarrange(tempAnnual_gg3 + 
+                                     guides(fill = guide_legend(title.position = 'top')) +
+                                     theme_grey(base_size = 8) + 
+                                     theme(legend.position = 'bottom', 
+                                           legend.background = element_blank(),
+                                           legend.key.size = unit(0.3, 'cm')), 
+                    inunAnnual_gg3 + 
+                      guides(fill = guide_legend(title.position = 'top')) +
+                      theme_grey(base_size = 8) + 
+                      theme(legend.position = 'bottom', 
+                            legend.background = element_blank(),
+                            legend.key.size = unit(0.3, 'cm')),
+                    ncol = 2, nrow = 1)
+  annualTI
+```
+
+Print out the ggplots for the doc
+
+```{r}
+ # Just print the ggplots
+  # Can I print those?
+  pdf(file.path(scriptOut, 'Werai_gg_Annual_DRIVERS.pdf'), 
+      onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+  print(annualTI)
+  dev.off()
+  
+  png(file.path(scriptOut, 'Werai_gg_Annual_DRIVERS.png'), 
+      height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+  print(annualTI)
+  dev.off()
+  
+
+```
+
+
+## Scenarios
+Want to base this pretty closely on the basin-scale scenarios. But it would be nice if I came up with some plots that actually measure the change, too. Maybe just change from baseline? ie scene x - baseline? On absolute or relative scale? as maps? As barplots with baseline @ 0?
+
+Make all the plots. Ah, but the basin-scale (where this is sorted out) uses annual stars created in the setup file, while here I've used xxxYear_sf created in this rmd.The way I do it for the basin is better, but do I have the memory to do it that way here, or will I need to delete all the Years_sf objects and change how all that is done?
+
+Well, wait. I already have erannual and gppannual and inunannual and tempannual here as stars. so I think I don't need to go wholly remake things. Instead, how do I get to those (and why didn't I use them above???- I then go make the sfs with them, but that's what gets made inside the plotting functions, so not sure why I needed them.
+
+
+*scaling that works for all years fails to show what's happenign because years are so different*
+```{r}
+yrwanted <- '2016-06-29'
+
+# Sort out the scales
+yrdex <- which(st_get_dimension_values(tempannual, which = 'time') == yrwanted)
+
+tempannual[,,yrdex]
+climannual[,,yrdex]
+
+inunannual[,,yrdex]
+inun10pannual[,,yrdex]
+
+# Need to capture the endmembers
+gppannual[1,,yrdex]
+gppannual10p_clim[,,yrdex]
+
+erannual[1,,yrdex]
+erannual10p_clim[,,yrdex]
+
+# This is hacky, but I'm going to just force those
+
+tempmin <- 25
+tempmax <- 35
+
+inunmin <- 0
+inunmax <- 2500
+
+gppmin <- 500
+gppmax <- 2500
+
+ermin <- 500
+ermax <- 5500
+
+
+```
+
+### GPP
+```{r}
+
+gppBase <- gppfun(gppannual, 1, 
+                 datewanted = yrwanted,
+                 # units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE,  
+                 colorchoice = NA,
+                 logscale = FALSE, 
+                 forcemin = gppmin, forcemax = gppmax)  +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+# gppBase
+
+gppClim <- gppfun(gppannual_clim, 1, 
+                 datewanted = yrwanted,
+                 # units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE,  
+                 colorchoice = NA,
+                 logscale = FALSE, 
+                 forcemin = gppmin, forcemax = gppmax)  +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+# gppClim
+
+gpp10p <- gppfun(gppannual10p, 1, 
+                 datewanted = yrwanted,
+                 # units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE,  
+                 colorchoice = NA,
+                 logscale = FALSE, 
+                 forcemin = gppmin, forcemax = gppmax) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+# gpp10p
+
+gpp10p_clim <- gppfun(gppannual10p_clim, 1, 
+                 datewanted = yrwanted,
+                 # units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE,  
+                 colorchoice = NA,
+                 logscale = FALSE, 
+                 forcemin = gppmin, forcemax = gppmax) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+# gpp10p_clim
+```
+
+### ER
+```{r}
+erBase <- erfun(erannual, 1, 
+                 datewanted = yrwanted,
+                 # units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE,  
+                 colorchoice = NA,
+                 logscale = FALSE, 
+                 forcemin = ermin, forcemax = ermax)  +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+# erBase
+
+erClim <- erfun(erannual_clim, 1, 
+                 datewanted = yrwanted,
+                 # units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE,  
+                 colorchoice = NA,
+                 logscale = FALSE, 
+                 forcemin = ermin, forcemax = ermax) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+# erClim
+
+er10p <- erfun(erannual10p, 1, 
+                 datewanted = yrwanted,
+                 # units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE,  
+                 colorchoice = NA,
+                 logscale = FALSE, 
+                 forcemin = ermin, forcemax = ermax) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+# er10p
+
+er10p_clim <- erfun(erannual10p_clim, 1, 
+                 datewanted = yrwanted,
+                 # units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE,  
+                 colorchoice = NA,
+                 logscale = FALSE, 
+                 forcemin = ermin, forcemax = ermax) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+# er10p_clim
+```
+
+### Inputs
+```{r}
+
+tempyr <- tempfun(tempannual, 1, 
+                 datewanted = yrwanted,
+                 # units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE,  
+                 colorchoice = NA,
+                 forcemin = tempmin, forcemax = tempmax) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+# tempyr
+
+climyr <- tempfun(climannual, 1, 
+                 datewanted = yrwanted,
+                 # units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE,  
+                 colorchoice = NA,
+                 forcemin = tempmin, forcemax = tempmax)  +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+# climyr
+
+inunyr <- inunfun(inunannual, 1, 
+                 datewanted = yrwanted,
+                 # units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE,  
+                 colorchoice = NA,
+                 logscale = FALSE, 
+                 forcemin = inunmin, forcemax = inunmax) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+# inunyr
+
+inun10pyr <- inunfun(inun10pannual, 1, 
+                 datewanted = yrwanted,
+                 # units = 'tonnes', 
+                 plotPkg = 'ggplot', 
+                 titled = FALSE,  
+                 colorchoice = NA,
+                 logscale = FALSE, 
+                 forcemin = inunmin, forcemax = inunmax) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+       legend.background = element_blank(),
+       legend.key.size = unit(0.3, 'cm'))
+
+# inun10pyr
+```
+
+
+### Make the plots
+
+```{r}
+gppScene <- plot_spacer() +
+(tempyr + ggtitle('Baseline temperature') + theme(legend.position = 'none')) +
+  (climyr + ggtitle('2c warming') + theme(legend.position = 'none')) +
+  
+  (inunyr + ggtitle('Baseline inundation') + theme(legend.position = 'none')) +
+(gppBase + theme(legend.position = 'none')) + # + ggtitle('Baseline') 
+  (gppClim + theme(legend.position = 'none')) + #  + ggtitle('2c warming')
+  
+  (inun10pyr + ggtitle('110% inundation') + theme(legend.position = 'none')) +
+  (gpp10p + theme(legend.position = 'none')) + # + ggtitle('110% inundation') 
+  (gpp10p_clim + theme(legend.position = 'none')) + # + ggtitle('2c & 110%')
+  plot_layout(nrow = 3)
+gppScene
+```
+
+```{r}
+pdf(file.path(scriptOut, 'gppScene.pdf'), 
+    onefile = FALSE, height = 16/2.54, width = 16/2.54, useDingbats = FALSE)
+print(gppScene)
+dev.off()
+
+png(file.path(scriptOut, 'gppScene.png'), 
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+print(gppScene)
+dev.off()
+```
+
+Same, with ER
+
+```{r}
+erScene <- plot_spacer() +
+(tempyr + ggtitle('Baseline temperature') + theme(legend.position = 'none')) +
+  (climyr + ggtitle('2c warming') + theme(legend.position = 'none')) +
+  
+  (inunyr + ggtitle('Baseline inundation') + theme(legend.position = 'none')) +
+(erBase + theme(legend.position = 'none')) + # + ggtitle('Baseline') 
+  (erClim + theme(legend.position = 'none')) + #  + ggtitle('2c warming')
+  
+  (inun10pyr + ggtitle('110% inundation') + theme(legend.position = 'none')) +
+  (er10p + theme(legend.position = 'none')) + # + ggtitle('110% inundation') 
+  (er10p_clim + theme(legend.position = 'none')) + # + ggtitle('2c & 110%')
+  plot_layout(nrow = 3)
+erScene
+```
+
+```{r}
+pdf(file.path(scriptOut, 'erScene.pdf'), 
+    onefile = FALSE, height = 16/2.54, width = 16/2.54, useDingbats = FALSE)
+print(erScene)
+dev.off()
+
+png(file.path(scriptOut, 'erScene.png'), 
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+print(erScene)
+dev.off()
+```
+
+
 
