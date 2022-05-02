@@ -1,5 +1,11 @@
 # Script to aggregate bimonthly
 
+# SLURM call 
+
+# sbatch --array=1-4 --time=0:10:00 --mem=200GB -J 'bimProd' anyScript.sh "Strictures/bimonthProduction.R"
+
+
+
 # Header from the temperature file to retain all the directories,  --------
 source('directorySet.R')
 
@@ -13,7 +19,20 @@ library(stars)
 library(foreach)
 library(doFuture)
 registerDoFuture()
-plan(multisession)
+
+# new code to handle parallelisation
+if (parSet == 'local') {
+  plan(multisession)
+} else if (parSet == 'hpc') {
+  plan(multicore(workers = availableCores(methods = 'Slurm')))
+  # plan(list(
+  #   tweak(multicore, workers = availableCores(methods = 'Slurm')),
+  #   tweak(multicore, workers = availableCores(methods = 'Slurm'))
+  # ))
+} else {
+  plan(sequential)
+}
+
 
 # Setup -------------------------------------------------------------------
 predicteds <- c('logERdays', 'logERdaysvalleys', 'logGPPdays', 'logGPPdaysvalleys')
@@ -141,7 +160,7 @@ trashout <- foreach(i = 1:length(predicteds)) %:%
     predictIndices <- crscheck(predictIndices, 3577)
     catchInun <- crscheck(catchInun, 3577)
     inunIndices <- crscheck(inunIndices, 3577)
-    catchInun10p <- crscheck(catchInun, 3577)
+    catchInun10p <- crscheck(catchInun10p, 3577)
     inunIndices10p <- crscheck(inunIndices10p, 3577)
     
     # Make the ANAEs match in case they were sorted differently
@@ -273,6 +292,4 @@ trashout <- foreach(i = 1:length(predicteds)) %:%
   looptime <- endloop - startloop
   print('total time:')
   print(looptime)
-  # 950 seconds local, 230+ HPC (for the whole basin, not just a test catchment)
-# }
-
+  # 2.5 hours local, 150 SECONDS on HPC. LOTS of memory thrash locally

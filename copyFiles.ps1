@@ -9,6 +9,9 @@
 # I think I can probably cd "\\Client\C$\Users\Galen\Dropbox\Australia\MER\GalenGits\CC2"
 # and then ./copyFiles.ps1
 
+# I *think* this only copies if it's not already there. will test. 
+# YES
+
 # The temperature version
 robocopy "\\fs1-cbr.nexus.csiro.au\{lw-mer}\work\galen_holt\datOut\TempAndProduction\Predictions" `
 "\\Client\C$\Users\Galen\Dropbox\Australia\MER\GalenGits\CC2\datOut\TempAndProduction\Predictions" `

@@ -9,7 +9,16 @@
 
 library(shiny)
 setwd(here::here())
-# source(file.path(here::here(), 'Scripts', 'Scenarios', 'plotting', 'metabolismLocalAndStatic.R'))
+
+# Kind of hacky check to only run if needed
+if (!('weraiCropInun' %in% ls())) {
+    source(file.path(here::here(), 'Scripts', 'Scenarios', 'plotting', 'metabPlotSetup_Local.R'))
+}
+
+# need the plotting libraries that don't get loaded in the data script
+library(tmap)
+library(colorspace)
+availDays <- st_get_dimension_values(weraiCropTemp, which = 'time')
 
 # Can I make a UI with columns?
 ui <- fluidPage(
@@ -18,10 +27,10 @@ ui <- fluidPage(
     
     fluidRow(
         column(4,
-               h4("Two months preceding: ")
+               h4("Two months following: ")
                ),
         column(4,
-               selectInput("datewanted", "Bimonth end", choices = availDays)
+               selectInput("datewanted", "Bimonth start", choices = availDays)
                )
     ),
     
@@ -29,10 +38,10 @@ ui <- fluidPage(
     
     fluidRow(
         column(6,
-               tmapOutput("temp")
+               tmap::tmapOutput("temp")
                ),
         column(6,
-               tmapOutput("inun")
+               tmap::tmapOutput("inun")
                )
     ),
     
@@ -40,10 +49,10 @@ ui <- fluidPage(
     
     fluidRow(
         column(6,
-               tmapOutput("gpp")
+               tmap::tmapOutput("gpp")
         ),
         column(6,
-               tmapOutput("er")
+               tmap::tmapOutput("er")
         )
     )
 )
@@ -62,11 +71,11 @@ ui <- fluidPage(
 #         
 #         # Show a plot of the generated distribution
 #         mainPanel(
-#             # tmapOutput("invars"),
-#             tmapOutput("temp"),
-#             tmapOutput("inun"),
-#             tmapOutput("gpp"),
-#             tmapOutput("er"),
+#             # tmap::tmapOutput("invars"),
+#             tmap::tmapOutput("temp"),
+#             tmap::tmapOutput("inun"),
+#             tmap::tmapOutput("gpp"),
+#             tmap::tmapOutput("er"),
 #         )
 #     )
 # )
@@ -74,36 +83,36 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
 
-    output$temp <- renderTmap({
+    output$temp <- tmap::renderTmap({
         # Works. the others might work, if I do something reactive?
         # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
-        tempfun(input$datewanted, titled = TRUE)
+        tempfun(weraiCropTemp, 1, input$datewanted, titled = TRUE, titlePrefix = 'Two months following')
         # tmap_leaflet(inputsfun(input$datewanted), in.shiny = TRUE)
         # tmap_leaflet(tempfun(input$datewanted), in.shiny = TRUE)
     })
     
-    output$inun <- renderTmap({
+    output$inun <- tmap::renderTmap({
         # Works. the others might work, if I do something reactive?
         # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
-        inunfun(input$datewanted, titled = FALSE)
+        inunfun(weraiCropTemp, 1, input$datewanted, titled = FALSE)
         # fastgrab(input$datewanted)
         # tmap_leaflet(inputsfun(input$datewanted), in.shiny = TRUE)
         # tmap_leaflet(tempfun(input$datewanted), in.shiny = TRUE)
     })
     
-    output$gpp <- renderTmap({
+    output$gpp <- tmap::renderTmap({
         # Works. the others might work, if I do something reactive?
         # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
-        gppfun(input$datewanted, titled = FALSE)
+        gppfun(weraiCropPredGPP, 1, input$datewanted, titled = FALSE)
         # fastgrab(input$datewanted)
         # tmap_leaflet(inputsfun(input$datewanted), in.shiny = TRUE)
         # tmap_leaflet(tempfun(input$datewanted), in.shiny = TRUE)
     })
     
-    output$er <- renderTmap({
+    output$er <- tmap::renderTmap({
         # Works. the others might work, if I do something reactive?
         # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
-        erfun(input$datewanted, titled = FALSE)
+        erfun(weraiCropPredER, 1, input$datewanted, titled = FALSE)
         # fastgrab(input$datewanted)
         # tmap_leaflet(inputsfun(input$datewanted), in.shiny = TRUE)
         # tmap_leaflet(tempfun(input$datewanted), in.shiny = TRUE)

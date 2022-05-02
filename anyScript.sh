@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # # Working on setting up for Petrichor
-# # Resources still set as for Pearcey, need to update for Petrichor. Pearcey had Each node has 10 cores. 325 nodes have 128GB memory and 500GB disk, 16 have 512GB mem and 100GB disk. Petrichor has 64 or 32? core nodes and more memory. See confluence
+# # Resources still set as for Pearcey, need to update for Petrichor. 
+# # Pearcey had Each node has 10 cores. 325 nodes have 128GB memory and 500GB disk, 16 have 512GB mem and 100GB disk. 
+# # Petrichor has 64 or 32? core nodes and more memory (512). See confluence
 
 # # Trying to set this up so it can run arbitrary scripts as arguments.
 # # e.g. sbatch -J 'jobname' anyScript.sh "Scripts/DataProcessing/testingandscratch/metabolismSpeed.R"
