@@ -111,9 +111,11 @@ lapply(breedWetlandsInd, sum)
 
 breedWetlands <- (st_intersects(st_geometry(ANAEstrict), st_geometry(ramsarBoundsMDB)))
 # also a list but with additional attributes
+# can use sparse = false arg to st_intersects to get a logical instead of sgbp
 
 breedWetlandsTF <- lengths(breedWetlands)>0
 # logical vector.  Can I assume this hasn't been shuffled?!! 
+
 
 
 # Set non breeding wetland to zero
@@ -237,4 +239,15 @@ breedStrict <- breedDepth3bimos*seasonStrict #max area of inundation across 3 bi
 
 # --- sum up areas to wetland complex scale
 
-# how can I shortcut 
+# there are only 16 Ramsar wetlands in the basin so I can go one by one if necessary
+
+# check 
+
+
+
+f <- function(x){sum(x, na.rm = TRUE)}
+breedAreaByWetland <- aggregate(breedStrict, ramsarBoundEdwa,f )
+
+breedAreaByWetland1 <- aggregate(breedStrict, ramsarBoundsMDB,f ) #stars obj, 202 polys
+dim(breedAreaByWetland)==dim(breedAreaByWetland1)
+# 

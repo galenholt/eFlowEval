@@ -9,6 +9,8 @@ library(tidyverse)
 library(sf)
 library(stars)
 library(ggrepel)
+library(tmap)
+
 
 # Directory to export TO
 scriptOut <- file.path(datOut, 'WetlandBoundaries')
@@ -16,8 +18,8 @@ if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
 
 # optional load of previous script outputs
 
-load(file.path(scriptOut, "ramsarMDB.rdata"))  # ramsar polygons
-load(file.path(scriptOut,"ramsarBoundsMDB.rdata")) # boundary of each set of polygons in each wetland complex``
+load(file.path(file.path(datOut, 'WetlandBoundaries', "ramsarMDB.rdata")))  # ramsar polygons
+load(file.path(file.path(datOut, 'WetlandBoundaries',"ramsarBoundsMDB.rdata"))) # boundary of each set of polygons in each wetland complex``
 
 
 
@@ -26,7 +28,7 @@ load(file.path(scriptOut,"ramsarBoundsMDB.rdata")) # boundary of each set of pol
 Ramsar <- read_sf(dsn = file.path(datDir, "RAMSARwetlandBoundaries/important_wetlands.shp")) %>%
   st_cast("MULTIPOLYGON") %>% # cleans up an issue with multi-surfaces
   st_make_valid()
-
+# there is one fewer unique WNAME values (202) than REFCODE values??
 
 # read in ANAEv3 
 
@@ -77,6 +79,7 @@ plot(st_geometry(M_D), add = TRUE, col = "light blue", lwd = 2)
 
 
 # filter into wetland complexes and combine each into single polygon
+# ALERT this cuts down from 8819 to 202 but there are only 16 Ramsar sites. 
 
 ramsarBoundsMDB <- ramsarMDB %>%
   group_by(WNAME)%>%
@@ -166,6 +169,9 @@ save(AvocaMarshBB, file = "C:/Users/amacq/Deakin University/QAEL - MER/Model/dat
 AvocaMarshPolys <- st_crop(ramsarMDB, AvocaMarshBB)
 
 AvocaMarshPolysPlus <- Avoca
+
+
+
 
 ggMarshes <- ggplot()+
   # geom_sf(data = AvocaMarshesBounds, 
@@ -314,9 +320,341 @@ st_crop(ramsarCentroids,AvocaMarshBB)
 # there doesn't appear to be any ramsar sites within avoca marsh BBox
 
 
-#---- plot max extent area of inundaition across years (facet)
-# try avoca
+# ---- plot ramsar centroids and buffer on ANAE and Ramsar bounds
 
+
+ggplot()+
+  geom_sf(data = ramsarMDB, aes(colour = "polygon"))+
+  geom_sf(data = ramsarBoundsMDB, aes(colour = "boundary"))+
+  geom_sf(data = basin, fill = NA)+
+  geom_sf(data = LTIM_Valleys, fill = NA)+
+  geom_sf(data = ramsarCentroids)+
+  geom_sf_label(aes())
+
+
+# p <- ggplot(nc3) +
+#   geom_sf(aes(fill = AREA))
+# p + geom_sf_text(aes(label = NAME), colour = "white")
+# p + geom_sf_label(aes(label = NAME))
+
+
+
+#check what this does
+# ramsarBoundsMDB <- ramsarMDB %>%
+#   group_by(WNAME)%>%
+#   summarise()
+
+Edwa <- filter(LTIM_Valleys, ValleyName =="Edward Wakool")
+ramsarEdwa <- st_intersection(ramsarMDB, Edwa)
+ramsarBoundEdwa <- st_intersection(ramsarBoundsMDB, Edwa)
+
+ggplot()+
+  geom_sf(data = Edwa, fill = NA)+
+  geom_sf(data = ramsarEdwa, aes(fill = SPECIFIC_N))+
+  ggtitle("Edward Wakool Ramsar 'SPECIFIC_N'")
+  
+ggplot()+
+  geom_sf(data = Edwa, fill = NA)+
+  geom_sf(data = ramsarEdwa, aes(fill = WNAME))+
+  ggtitle("Edward Wakool Ramsar 'WNAME'")
+
+
+ggplot()+
+  geom_sf(data = Edwa, fill = NA)+
+  geom_sf(data = ramsarBoundEdwa, aes(fill = Wetland))+
+  ggtitle("Edward Wakool Ramsar summarised to 'WNAME'")
+
+# Okay so this suggests that there are some spots where Ramsar poly do go across a bunch of ANAE polys
+# i.e. Could use them to sum up
+# Also SPECIFIC_N has only a few extra names = polys than WNAME. For EddyWak 1662/1667 are the same.
+# In contrast in Avoca catchment ramsar dataset has different names for first, second and third marsh 
+# Rather than them being group together with Kerang wetlands, some of which are in Loddon(?)
+# Leave Avoca for now but will need addressing to go basin-scale
+# TODO: Check all catchments   
+  
+
+
+
+#quick plot for valley names
+tm_shape(LTIM_Valleys)+tm_borders()+tm_text("ValleyName")
+
+# So... for eddyWak current polys will be okay.  Intersect with ANAE to create grouping variable
+# Make a separate 'UID | Wetland complex'   table for each catchment that can be read in. 
+
+# https://stackoverflow.com/questions/47600466/using-r-intersections-to-create-a-polygons-inside-a-polygon-key-using-two-shapef
+
+# ramsarTF <- st_covered_by(((breedANAEstrict)), 
+#                           (st_buffer(ramsarBoundsMDB,250)))
+
+wetlands <- read_sf(dsn = file.path(datDir,
+                                    'ANAE/ANAE_Wetlands_v3_24mar2021/Wetlands_ANAE_v3_24mar2021/Wetlands_ANAE_v3_24mar2021.shp')) %>%
+  st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
+  st_make_valid()
+
+
+ramsarLabels <- EdwardWakool_areaSpoonbillBreed_index
+# ramsarLabels$ramsar <- if{}
+
+a <- st_covered_by(ramsarLabels, ramsarBoundsMDB)
+a <- a %>% lengths >0
+head(a)
+sum(a)
+which(a>0)
+# in Avoca 47 ANAE within ramsar (without buffer)
+# EddyWak 1472 of 14158
+
+b <- st_covered_by(ramsarBoundsMDB, EdwardWakool_areaSpoonbillBreed_index)
+length(b)#202 
+print(b[[1]])
+
+
+c <- st_intersects(ramsarBoundsMDB, EdwardWakool_areaSpoonbillBreed_index)
+c[[1]]
+
+# Which of elements of ramsar bounds have ANAE inside? 
+cInd <- which(lengths(c)>0)  #  77 125 183 190
+ramsarBoundsMDB$Wetland[cInd] # names of the wetland complexes containing ANAE
+# [1] "Koondrook and Perricoota Forests"    "Millewa Forest"                      "Wakool-Tullakool Evaporation Basins"
+# [4] "Werai Forest"
+
+# what are the indices of the ANAE contained with each Ramsar polygon?
+# there are many. 
+
+# first 5 contained in Koondrock 
+d <- (c[[cInd[[1]]]])
+d[1:5]
+# And their UID | geometry
+EdwardWakool_areaSpoonbillBreed_index[d[1:5],]
+
+ramsarLabels$wetland <- NA
+
+ramsarLabels$wetland[d] <- ramsarBoundsMDB$Wetland[cInd[1]]
+ramsarLabels$wetland[c[[cInd[[2]]]]] <- ramsarBoundsMDB$Wetland[cInd[2]]
+ramsarLabels$wetland[c[[cInd[[3]]]]] <- ramsarBoundsMDB$Wetland[cInd[3]]
+ramsarLabels$wetland[c[[cInd[[4]]]]] <- ramsarBoundsMDB$Wetland[cInd[4]]
+
+
+sum( !is.na(ramsarLabels$wetland)) # 2831
+
+unique(ramsarLabels$wetland)
+
+EdwardWakoolRamsarLabels <- ramsarLabels
+
+save(EdwardWakoolRamsarLabels, file = "C:/Users/amacq/Source/datOut/WetlandBoundaries/EdwardWakoolRamsarLabels.rdata")
+# ~70MB 
+# TODO store more cheaply by using a ramsar ID number and join with a smaller ramsar ID | wetland name table for plotting
+
+#TODO turn above into a function and run on either ind'l valleys or entire basin. 
+
+#  could just use the indexes directly e.g. sum( ANAE)
+# but risk of shuffling?
+
+#aggregate according to st_intersects call? could that work? 
+
+# ---- try aggregate to ramsar wetland complex
+
+f <- function(x){sum(x, na.rm = TRUE)}
+breedAreaByWetland <- aggregate(breedStrict, ramsarBoundEdwa,f )
+# I think this worked! That is for each timestep it summed area values across
+# polygons that are contained in ramsar wetland complex polys
+# however, it is now a list, NOT stars... however the geometry of original polys is there...
+# shoudl be 4 values (1 each wetland complex) per time = slice
+
+summary(breedAreaByWetland$Area) # we have non-zero Areas!
+
+# is it going to be pain working with this list?
+
+dim(breedAreaByWetland) # 4, 197 
+names(breedAreaByWetland)
+dim(breedStrict)
+# can I force it to stars?
+breedAreaByWetland <-  st_as_stars(breedAreaByWetland)
+#yes. No? still 
+class(breedAreaByWetland) #stars
+#still list in environment. list of 4 stars objects?
+# seems to act life a stars object unless I'm missing something. 
+ggplot()+
+  geom_stars(data = breedAreaByWetland[,,194])
+
+#TODO test whether adding a buffer changes number of ANAE included. 
+# also plot to check that it is behaving. 
+
+#---- test against minimum total area stricture ---- 
+
+# create stand-in value of, say, 75% total wetland area. see what happens
+
+# total area of polys in each ramsar wetland
+# ~ size of ramsar wetland poly
+
+totalWetlandAreas <- st_area(st_geometry(breedAreaByWetland))
+# [1] 281978748.9  21193552.4    647395.8 367070235.7   m^2
+
+# times with non-zero Areas: c(8, 20, 14, 32, 38, 44, 50, 56, 62, 68, 74, 80, 86, 92, 98, 
+# 104,  110, 116, 122, 128, 134, 140, 146, 152, 158, 164, 170,176, 182, 188, 194)
+
+# f <- function(x){sum(st_area(x))}
+# totalANAEareaByWetland <- aggregate(st_geometry(breedStrict), st_geometry(ramsarBoundEdwa),f )
+# doesn't work. Wrong approach anyhow. 
+
+# use totalWetlandArea for now
+
+areaPC <- 0.1
+wetlandAreaThreholds <- areaPC*totalWetlandAreas
+# [1] 197385124.3  14835486.7    453177.1 256949165.0
+
+areaStricture <- breedAreaByWetland
+areaStricture[,,194][[1]]
+#            [,1]
+# [1,] 1161290.69
+# [2,]   78925.46
+# [3,]       0.00
+# [4,] 1296191.49
+
+
+
+areaStricture[[1]] <- ifelse(breedAreaByWetland[[1]] > (areaPC* as.numeric(st_area(st_geometry(breedAreaByWetland)))),1,0)
+# need as.numeric() to cancel units (m^2) from st_area() 
+
+areaStricture[,,194][[1]] #0,0,0,0 
+# So either less than threshold or error...
+# Lower.  Maybe thresholds are too. High. Try max of actual areas?
+
+
+
+aggregate(breedAreaByWetland, by = "year", max)
+# gets max for each year. I want max across all times. 
+a <- aggregate(breedAreaByWetland, by = time, max)
+dim(a) #geometry 197, geometry 4?? What is it doing?
+tim <- st_get_dimension_values(breedAreaByWetland, "time")
+tim <- last(tim) #tim[length(tim)]
+f <- function(x){max(x, na.rm = TRUE)}
+a <- aggregate(breedAreaByWetland, by = tim, f )
+a[[1]] # NA NA NA NA??
+# TODO figure out why not working. or do a workaround. or do the analysis of actual breed events
+a <- aggregate(breedAreaByWetland, by = tim, max, na.rm = TRUE ) # nppe
+
+a <- aggregate(breedAreaByWetland, by = "394 months", max, na.rm = TRUE ) #
+by_t <- dim(breedAreaByWetland)["time"]*2 #number of months in dataset
+a <- aggregate(breedAreaByWetland, by = paste(by_t,"months"), max, na.rm = TRUE ) # hooray!
+# This gives one Area per ramsar wetland
+
+
+
+ggplot()+
+  geom_stars(data = areaStricture[,,194])
+
+
+
+areaStricture <- aggregate(areaStricture, by = "year", sum)
+dim(areaStricture)
+t <- st_get_dimension_values(areaStricture,"time")
+head(t)
+# [1] "1988-01-01 AEDT" "1989-01-01 AEDT" "1990-01-01 AEDT" "1991-01-01 AEDT" "1992-01-01 AEDT" "1993-01-01 AEDT"
+
+areaStricture <- aggregate(areaStricture, basin, sum)
+
+areaStricture[[1]]
+
+
+# ---- test why not working
+# try on a small subset
+areaStricture[[1]] <- ifelse(breedAreaByWetland[[1]][1,] > (areaPC* as.numeric(st_area(st_geometry(breedAreaByWetland[[1]][1,194])))),1,0)
+# need as.numeric() to cancel units (m^2) from st_area() 
+areaPC* as.numeric(st_area(st_geometry(breedAreaByWetland)))
+
+
+max(breedAreaByWetland[[1]][1,]) # [1] 2002358
+max(breedAreaByWetland[[1]][2,]) # [1] 93221.95
+max(breedAreaByWetland[[1]][3,]) # [1] 0
+max(breedAreaByWetland[[1]][4,]) # [1] 1573478
+
+# try directly summarise max Area for each wetland
+
+by_t <- dim(breedAreaByWetland)["time"]*2 #number of months in dataset
+maxWetlandInunArea <- aggregate(breedAreaByWetland, by = paste(by_t,"months"), max, na.rm = TRUE )
+
+
+areaPC <- 0.7
+
+areaStricture <- breedAreaByWetland
+areaStricture[[1]] <- ifelse(breedAreaByWetland[[1]] > 
+                               (areaPC*aggregate(breedAreaByWetland[[1]], by = paste(by_t,"months"), max, na.rm = TRUE )) ,1,0)
+# doesn't work.
+areaStricture[[1]] <- ifelse(breedAreaByWetland[[1]] > 
+                               (areaPC*maxWetlandInunArea[[1]]) ,1,0)
+
+areaStricture[[1]] <- breedAreaByWetland > 
+                               areaPC*maxWetlandInunArea
+
+ggplot()+
+  geom_stars(data = areaStricture[,,194])
+
+# Calculate total number and proportion of breeding events in a year. 
+
+
+numBreedEvents <- aggregate(areaStricture, ramsarBoundEdwa, sum, na.rm = TRUE )
+# not working as expected 
+
+numBreedEvents$Area 
+
+
+numBreedEvents$Area[194]
+
+#all zeros so something is not working. 
+
+# stuff it switch to sf is fine. 
+areaStrictureSF <- st_as_sf(areaStricture)
+
+taxa2subB <- taxa2sub %>% st_apply(., MARGIN = 1, sum )  # across time ()
+# If MARGIN=1, the function accepts each row of X as a vector argument, and returns a vector of the results
+
+# numBreedEvents <- areaStrictureSF %>% st_apply(., MARGIN = 2, sum) # only for arrays
+
+# -- get sum of 
+#stack columns
+# a %>%
+#   pivot_longer(cols = everything())
+
+numBreedEvents <- areaStrictureSF 
+numBreedEvents <- numBreedEvents %>% st_drop_geometry()
+numBreedEvents <- numBreedEvents %>% pivot_longer(names_to = "Date", values_to = "Breed", cols = everything())
+numBreedEvents <- numBreedEvents %>%  group_by(Date)%>% summarise(NumBreed = sum(Breed)) %>% ungroup()
+
+sum(numBreedEvents$NumBreed)
+
+y <- c("2014", "2015", "2016", "2017", "2018")
+
+subDates <- st_get_dimension_values(areaStricture, "time")
+subDates <- which(lubridate::year(subDates) %in% y )
+
+# lubridate::month(times)== 03)
+plotDat <- numBreedEvents %>% filter( lubridate::month(Date)== 03)
+
+
+ggplot(data = filter(numBreedEvents, lubridate::year(Date)%in% y))+
+  geom_line(aes(Date, NumBreed))
+
+ggplot(data = filter(numBreedEvents[subDates,]), aes(Date, NumBreed))+
+  geom_point()
+
+ggplot(data = plotDat, aes(Date, NumBreed))+
+  geom_point()+
+  labs(y = "Number of potential breeding events", x = "Year")+
+  scale_x_discrete(labels = lubridate::year(plotDat$Date))+
+  theme(axis.text.x = element_text(angle = 90))
+  
+
+#histogram
+ggplot(data = numBreedEvents, aes(x= NumBreed))+
+  geom_bar()
+
+ggplot(data = ungroup(numBreedEvents), aes(x= Date, y = NumBreed))+
+  geom_step()
+
+
+table(numBreedEvents$NumBreed)
+# 0   1   2   3 
+# 172   1  17   7 
 
 
 
