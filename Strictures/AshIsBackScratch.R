@@ -42,9 +42,20 @@ myhome <- paste0('C:/Users/', Sys.getenv("USERNAME"))
 
 # read in Ramsar boundaries -----------------
 
-Ramsar <- read_sf(dsn = file.path(datDir, "RAMSARwetlandBoundaries/important_wetlands.shp")) %>%
-  st_cast("MULTIPOLYGON") %>% # cleans up an issue with multi-surfaces
-  st_make_valid()
+# load(file.path(scriptOut, "ramsarMDB.rdata"))
+load(file.path(scriptOut, "ramsarBoundsMDB.rdata"))
+
+# read in point observations for breeding
+breedObsRSB <- scan(
+  file.path(myhome, "Deakin University/QAEL - MER/Model/dataStrict/BreedingObservationsRoyalSpoonbill.txt"), 
+  skip = 2)
+# breedObsRSB <- unlist(breedObsRSB)
+
+# a <- data.frame("Lat" = breedObsRSB[breedObsRSB<0], "Long" =breedObsRSB[breedObsRSB>0])
+breedObsRSB <- matrix(data = breedObsRSB, ncol = 2, nrow = length(breedObsRSB)/2, byrow = TRUE)
+breedObsRSB <- as.data.frame(breedObsRSB)
+names(breedObsRSB) <- c("Lat", "Long")
+#subset wetland boundaries to those with breeding observations
 
 
 # read in ANAEv3 
@@ -66,10 +77,6 @@ basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), 
   select(LEVEL2NAME) # no need for other info
 
 
-#crop Ramsar to basin 
-
-RamsarMDB <- Ramsar[basin]
-ramsarMDB <- st_intersection(Ramsar, basin)
 
 
 load(file.path(datOut, 'ANAEprocessed/AvocaANAE.rdata')) #GDA94   4283
@@ -116,6 +123,12 @@ st_area(geo[1])
 
 st_area(st_geometry(breed_Sbill[1,1,1]))
 breed_Sbill[[1]][1]
+
+## ---- Breeding strictures -------
+# duration min 6 months = >3 bimos 
+# - Southern basin (below Macquarie Marshes): October- March
+# - Northern Basin: September-(early) May
+
 
 
 # As a test do we want area of polygon non-zero or proportion or absolute value?
@@ -165,7 +178,7 @@ breedANAE <- read.table(
 # abundant density of small fish, crustaceans or aquatic inverts... No implemented
 #     Could be a link to productivity?
 
-# ANAEs : area meeting forage + strictures
+# ANAEs : area meeting forage strictures, currently includes other activities but Heather sending me alternative 
 load(file.path("C:/Users/amacq/Source/datOut/Inundationprocessed/areaSpoonbillForage", "Avoca_areaSpoonbillForage.rdata"))
 
 # ANAE 'preferences' ranked from most to least times observed
@@ -205,9 +218,6 @@ forage_SbillANAE <- forage_Sbill*forageANAE  # keeps all polys turns passed stri
 sum(forage_Sbill$passedStricts) #4961
 sum(forage_SbillANAE$passedStricts)  #3716
 length(forage_Sbill$passedStricts)  #448569
-
-
-
 
 
 
