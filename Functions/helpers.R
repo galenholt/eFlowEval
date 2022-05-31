@@ -169,10 +169,17 @@ checklevels <- function(newdata, mod) {
   faclevs[!(names(faclevs) %in% fixedvars)] <- NULL
   
   # get the levels available in the data
-  datalevs <- newdata %>% 
-    st_drop_geometry() %>% # only relevant if sf
-    select(any_of(names(faclevs))) %>% 
-    map(unique)
+  if ('sf' %in% class(newdata)) {
+    datalevs <- newdata %>% 
+      st_drop_geometry() %>% # only relevant if sf
+      select(any_of(names(faclevs))) %>% 
+      map(unique)
+  } else {
+    datalevs <- newdata %>% 
+      select(any_of(names(faclevs))) %>% 
+      map(unique)
+  }
+  
   
   # if no factors are needed, just short-circuit
   if (length(faclevs) == 0 & length(datalevs) == 0) {
@@ -187,7 +194,7 @@ checklevels <- function(newdata, mod) {
   # use map-reduce to ask if all levels are available for all factors across
   # what might be an uneven list.
   facsinmodel <- map2(datalevs, faclevs, checkin) %>% reduce(all)
-  return(facsinmodel)
+  return(all(facsinmodel))
 }
 
 # a new function to allow prediction over new levels of RANDOM effects
