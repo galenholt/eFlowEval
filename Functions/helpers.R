@@ -297,3 +297,12 @@ loadappend <- function(filename, append) {
    return(renamelist)
 
 }
+
+
+# Plot helpers (themes) ---------------------------------------------------
+pubtheme <- ggplot2::theme_bw(base_size = 11) + 
+  ggplot2::theme(strip.background = ggplot2::element_blank(),
+        plot.background = ggplot2::element_blank(),
+        panel.grid.major = ggplot2::element_blank(),
+        panel.grid.minor = ggplot2::element_blank())
+
