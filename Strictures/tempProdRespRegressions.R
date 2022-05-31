@@ -11,6 +11,7 @@ library(sf)
 library(stars)
 library(foreach)
 library(doFuture)
+library(patchwork)
 
 # Set up directory --------------------------------------------------------
 
@@ -237,9 +238,6 @@ dev.off()
 # Check notes from Darren, make sure I'm not missing anything NOPE- just temp
 # and season. Once I figure out how to do season...
 
-# TRY EVERYTHING CUT TO THE meetsusecriteria
-
-# Basically though, this needs to be done by midday thursday so we can make the results
 
 
 # Let's see if we can pick apart a decent way to do season --------
@@ -375,7 +373,7 @@ tempBimonth + viridis::scale_color_viridis()
 
 
 # GPP MODELS --------------------------------------------------------------
-# Some of these are throwing errors because ther are 9 0 gpps that yield inf log(gpp)
+# Some of these are throwing errors because there are 9 0 gpps that yield inf log(gpp)
 # sum(joinedTempPasses$gpp == 0)
 min(joinedTempPasses$gpp[joinedTempPasses$gpp > 0])
 min(joinedTempPasses$gpp[joinedTempPasses$gpp > 0])
@@ -734,6 +732,373 @@ erBimonth <- lme4::lmer(logER ~ tempC + bimonthFactor +
                            tempC*bimonthFactor +
                            (1|wateryear),
                          data = jtpER)
+
+
+# Create stats tables -----------------------------------------------------
+  # don't use the more-precise ps, they crash computer
+sjPlot::tab_model(gppDaysValleys, wrap.labels = 500) # , p.val = "kr", show.df = TRUE
+sjPlot::tab_model(erDaysValleys, wrap.labels = 500) # , p.val = "kr", show.df = TRUE
+# huge wrap_labels values put everything on one line helps prevent breaking wehn
+# pasting into word tables
+
+# I could generate the plots myself from predict(), but if sjPlot::plot_model()
+# does it for me, that'd sure be easier. Though I *have* already written
+# add_preds()- would just need to feed it newdata
+
+# plots each at the mean of the others. Guess I need to do this myself.
+predplot <- sjPlot::plot_model(gppDaysValleys, type = 'pred')
+predplot
+# Why does it only allow two colors?
+predcolorplot <- sjPlot::plot_model(gppDaysValleys, type = 'int') # showing data doesn't really work well , show.data = TRUE
+predcolorplot
+
+
+eachvalley <- unique(jtp$ValleyName)
+temps <- seq(from = min(jtp$tempC)-1, to = max(jtp$tempC)+1, length.out = 100)
+dwy <- range(jtp$daysAwayFromWaterYear) # Get the end and middle of water year. It's just linear between. and the middle (day 184) is the end of the range because it's folded
+
+predgrid <- expand_grid(ValleyName = eachvalley, tempC = temps, daysAwayFromWaterYear = dwy) %>%
+  mutate(wateryear = 'WY')
+
+predsGPP <- predgrid %>%
+  add_preds(gppDaysValleys, predname = 'logGPPdaysvalleys', interval = 'confidence')
+
+# quick test
+ggplot(predsGPP, aes(x = logGPPdaysvalleys, y = logGPPdaysvalleys_cfit)) + geom_point()
+
+# plot with data
+
+# Days away is tricky to visualize
+
+rawplot0 <- ggplot() +
+  geom_point(data = jtp, aes(x = tempC, y = logGPP, 
+                             color = ValleyName), alpha = 0.2) +
+  geom_ribbon(data = filter(predsGPP, daysAwayFromWaterYear == 0),
+              aes(x = tempC, ymin = logGPPdaysvalleys_clwr, ymax = logGPPdaysvalleys_cupr,
+                  color = ValleyName, fill = ValleyName), alpha = 0.2) +
+  geom_line(data = filter(predsGPP, daysAwayFromWaterYear == 0),
+            aes(x = tempC, y = logGPPdaysvalleys, 
+                color = ValleyName)) 
+
+rawplot0
+
+rawplotend <- ggplot() +
+  geom_point(data = jtp, aes(x = tempC, y = logGPP, 
+                             color = ValleyName), alpha = 0.2) +
+  geom_ribbon(data = filter(predsGPP, daysAwayFromWaterYear == 184),
+              aes(x = tempC, ymin = logGPPdaysvalleys_clwr, ymax = logGPPdaysvalleys_cupr,
+                  color = ValleyName, fill = ValleyName), alpha = 0.2) +
+  geom_line(data = filter(predsGPP, daysAwayFromWaterYear == 184),
+            aes(x = tempC, y = logGPPdaysvalleys, 
+                color = ValleyName)) 
+
+rawplotend
+
+  # facet_grid(.~daysAwayFromWaterYear) 
+
+# what to do with daysAwayFromWaterYear? It is continuous, and so not easy to
+# include in the plot. Facetting doesn't work because the points are all across
+# the range. And it DOES make the points sit closer to the fits. One option
+# would be to adjust each data point by the predicted shift from
+# daysFromWaterYear. That's reasonably straightforward, but ignores error in
+# that relationship
+
+predjtp <- jtp %>%
+  add_preds(gppDaysValleys, predname = 'predicted', interval = 'none')
+
+predjtpzero <- jtp %>%
+  mutate(daysAwayFromWaterYear = 0) %>%
+  add_preds(gppDaysValleys, predname = 'predictedzero', interval = 'none')
+
+predjtpend <- jtp %>%
+  mutate(daysAwayFromWaterYear = 184) %>%
+  add_preds(gppDaysValleys, predname = 'predictedend', interval = 'none')
+
+predjtp <- bind_cols(predjtp, 
+                     predictedzero = predjtpzero$predictedzero, 
+                     predictedend = predjtpend$predictedend) %>%
+  mutate(dayadjust0 = predicted-predictedzero, # get the difference between predicted at the relevant day and what it would be at day 0
+         gppadjust0 = logGPP-dayadjust0, # shift the value by the amount we just calculated
+         dayadjustend = predicted-predictedend,
+         gppadjustend = logGPP-dayadjustend) # shift the value by the amount we just calculated
+
+adjplot0 <- ggplot() +
+  geom_point(data = predjtp, aes(x = tempC, y = gppadjust0, 
+                             color = ValleyName), alpha = 0.2) +
+  geom_ribbon(data = filter(predsGPP, daysAwayFromWaterYear == 0),
+              aes(x = tempC, ymin = logGPPdaysvalleys_clwr, ymax = logGPPdaysvalleys_cupr,
+                  color = ValleyName, fill = ValleyName), alpha = 0.2) +
+  geom_line(data = filter(predsGPP, daysAwayFromWaterYear == 0),
+            aes(x = tempC, y = logGPPdaysvalleys, 
+                color = ValleyName))
+adjplot0
+
+adjplotend <- ggplot() +
+  geom_point(data = predjtp, aes(x = tempC, y = gppadjustend, 
+                                 color = ValleyName), alpha = 0.2) +
+  geom_ribbon(data = filter(predsGPP, daysAwayFromWaterYear == 184),
+              aes(x = tempC, ymin = logGPPdaysvalleys_clwr, ymax = logGPPdaysvalleys_cupr,
+                  color = ValleyName, fill = ValleyName), alpha = 0.2) +
+  geom_line(data = filter(predsGPP, daysAwayFromWaterYear == 184),
+            aes(x = tempC, y = logGPPdaysvalleys, 
+                color = ValleyName))
+
+adjplotend
+
+
+# Combine- will need to clean up.- fix axes, for ex. and colors
+(rawplotend + coord_cartesian(ylim = c(-4, 4.5))) + 
+  (adjplot0 + coord_cartesian(ylim = c(-4, 4.5))) + 
+  (adjplotend + coord_cartesian(ylim = c(-4, 4.5))) + 
+  plot_layout(guides = 'collect')
+
+
+# I really don't like the way this is working.
+# The data just doesn't really match the figures
+# Can I find at least sections of days close to the ends? maybe a month?
+ggplot(jtp, aes(x = daysAwayFromWaterYear)) + geom_histogram()
+
+
+rawplot0_chunk <- ggplot() +
+  geom_point(data = filter(jtp, daysAwayFromWaterYear < 30), aes(x = tempC, y = logGPP, 
+                             color = ValleyName), alpha = 0.2) +
+  geom_ribbon(data = filter(predsGPP, daysAwayFromWaterYear == 0),
+              aes(x = tempC, ymin = logGPPdaysvalleys_clwr, ymax = logGPPdaysvalleys_cupr,
+                  color = ValleyName, fill = ValleyName), alpha = 0.2) +
+  geom_line(data = filter(predsGPP, daysAwayFromWaterYear == 0),
+            aes(x = tempC, y = logGPPdaysvalleys, 
+                color = ValleyName)) 
+
+rawplot0_chunk
+
+rawplotend_chunk <- ggplot() +
+  geom_point(data = filter(jtp, daysAwayFromWaterYear > (184-30)), aes(x = tempC, y = logGPP, 
+                             color = ValleyName), alpha = 0.2) +
+  geom_ribbon(data = filter(predsGPP, daysAwayFromWaterYear == 184),
+              aes(x = tempC, ymin = logGPPdaysvalleys_clwr, ymax = logGPPdaysvalleys_cupr,
+                  color = ValleyName, fill = ValleyName), alpha = 0.2) +
+  geom_line(data = filter(predsGPP, daysAwayFromWaterYear == 184),
+            aes(x = tempC, y = logGPPdaysvalleys, 
+                color = ValleyName)) 
+
+rawplotend_chunk
+
+# I think after all that, let's just plot the fits at the ends, and attach a different way of doing the data?
+# these are the same as the rawplots but without the data
+
+## GPP First
+predplot0GPP <- ggplot() +
+  geom_ribbon(data = filter(predsGPP, daysAwayFromWaterYear == 0),
+              aes(x = tempC, ymin = logGPPdaysvalleys_clwr, ymax = logGPPdaysvalleys_cupr,
+                  color = ValleyName, fill = ValleyName), alpha = 0.2) +
+  geom_line(data = filter(predsGPP, daysAwayFromWaterYear == 0),
+            aes(x = tempC, y = logGPPdaysvalleys, 
+                color = ValleyName)) +
+  colorspace::scale_color_discrete_qualitative(palette = 'Dark2') +
+  colorspace::scale_fill_discrete_qualitative(palette = 'Dark2') +
+  labs(y = 'log(GPP)', x =  'Temperature', color = 'Catchment', fill = 'Catchment') +
+  # annotate(geom = 'text', x = 15, y = 2.5, label = '**Day 0**<br>(start/end)') + 
+  ggtext::geom_richtext(aes(x = 18, y = 2.5, label = '**Day 0**<br>(start/end)'),
+                        fill = NA, label.color = NA) 
+predplot0GPP
+
+predplotendGPP <- ggplot() +
+  geom_ribbon(data = filter(predsGPP, daysAwayFromWaterYear == 184),
+              aes(x = tempC, ymin = logGPPdaysvalleys_clwr, ymax = logGPPdaysvalleys_cupr,
+                  color = ValleyName, fill = ValleyName), alpha = 0.2) +
+  geom_line(data = filter(predsGPP, daysAwayFromWaterYear == 184),
+            aes(x = tempC, y = logGPPdaysvalleys, 
+                color = ValleyName)) +
+  colorspace::scale_color_discrete_qualitative(palette = 'Dark2') +
+  colorspace::scale_fill_discrete_qualitative(palette = 'Dark2') +
+  labs(y = 'log(GPP)', x =  'Temperature', color = 'Catchment', fill = 'Catchment') + 
+  ggtext::geom_richtext(aes(x = 15, y = 2.75, label = '**Day 184**<br>(middle)'),
+                        fill = NA, label.color = NA)
+
+predplotendGPP
+
+dataplotGPP <- ggplot(data = jtp, aes(x = tempC, y = logGPP, # shape = ValleyName,
+                                   color = daysAwayFromWaterYear)) +
+  geom_point(alpha = 0.2) +
+  # stat_density2d() +
+  # stat_ellipse() +
+  colorspace::scale_color_continuous_sequential(palette = 'YLGnBu') +
+  facet_wrap(~ValleyName, nrow = 2) +
+  labs(y = 'log(GPP)', x =  'Temperature', color = 'Days From\nWater Year')
+dataplotGPP
+
+dataandpredsGPP_simple <- (dataplotGPP + pubtheme) / 
+  ((predplot0GPP + pubtheme) + 
+     (predplotendGPP + pubtheme)) + 
+  plot_layout(guides = 'collect') #& theme(legend.position = 'bottom')
+dataandpredsGPP_simple
+
+# Close but not ideal legends
+legends <- ggpubr::ggarrange(ggpubr::get_legend(predplotendGPP + pubtheme), ggpubr::get_legend(dataplotGPP + pubtheme))
+
+
+dataandpredsGPP <- (dataplotGPP + pubtheme + 
+                   guides(color = guide_colorbar(title.position = 'top')) +
+                   theme(legend.position = c(0.9, 0.15), 
+                         legend.direction = 'horizontal')) / 
+  ((predplot0GPP + pubtheme +  theme(legend.position = 'none')) + 
+     (predplotendGPP + pubtheme + theme(legend.position = 'none')) +
+     (ggpubr::ggarrange(ggpubr::get_legend(predplotendGPP + pubtheme))))
+dataandpredsGPP
+
+
+# Save Plots
+pdf(file.path(scriptOut, 'gppDataPreds.pdf'), onefile = FALSE, 
+    height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+dataandpredsGPP
+dev.off()
+
+png(file.path(scriptOut, 'gppDataPreds.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+dataandpredsGPP
+dev.off()
+
+## ER
+
+predsER <- predgrid %>%
+  add_preds(erDaysValleys, predname = 'logERdaysvalleys', interval = 'confidence')
+
+
+predplot0ER <- ggplot() +
+  geom_ribbon(data = filter(predsER, daysAwayFromWaterYear == 0),
+              aes(x = tempC, ymin = logERdaysvalleys_clwr, ymax = logERdaysvalleys_cupr,
+                  color = ValleyName, fill = ValleyName), alpha = 0.2) +
+  geom_line(data = filter(predsER, daysAwayFromWaterYear == 0),
+            aes(x = tempC, y = logERdaysvalleys, 
+                color = ValleyName)) +
+  colorspace::scale_color_discrete_qualitative(palette = 'Dark2') +
+  colorspace::scale_fill_discrete_qualitative(palette = 'Dark2') +
+  labs(y = 'log(ER)', x =  'Temperature', color = 'Catchment', fill = 'Catchment') +
+  # annotate(geom = 'text', x = 15, y = 2.5, label = '**Day 0**<br>(start/end)') + 
+  ggtext::geom_richtext(aes(x = 18, y = 2.5, label = '**Day 0**<br>(start/end)'),
+                        fill = NA, label.color = NA) 
+predplot0ER
+
+predplotendER <- ggplot() +
+  geom_ribbon(data = filter(predsER, daysAwayFromWaterYear == 184),
+              aes(x = tempC, ymin = logERdaysvalleys_clwr, ymax = logERdaysvalleys_cupr,
+                  color = ValleyName, fill = ValleyName), alpha = 0.2) +
+  geom_line(data = filter(predsER, daysAwayFromWaterYear == 184),
+            aes(x = tempC, y = logERdaysvalleys, 
+                color = ValleyName)) +
+  colorspace::scale_color_discrete_qualitative(palette = 'Dark2') +
+  colorspace::scale_fill_discrete_qualitative(palette = 'Dark2') +
+  labs(y = 'log(ER)', x =  'Temperature', color = 'Catchment', fill = 'Catchment') + 
+  ggtext::geom_richtext(aes(x = 20, y = 3.5, label = '**Day 184**<br>(middle)'),
+                        fill = NA, label.color = NA)
+
+predplotendER
+
+dataplotER <- ggplot(data = jtp, aes(x = tempC, y = logER, # shape = ValleyName,
+                                      color = daysAwayFromWaterYear)) +
+  geom_point(alpha = 0.2) +
+  # stat_density2d() +
+  # stat_ellipse() +
+  colorspace::scale_color_continuous_sequential(palette = 'YLGnBu') +
+  facet_wrap(~ValleyName, nrow = 2) +
+  labs(y = 'log(ER)', x =  'Temperature', color = 'Days From\nWater Year')
+dataplotER
+
+dataandpredsER_simple <- (dataplotER + pubtheme) / 
+  ((predplot0ER + pubtheme) + 
+     (predplotendER + pubtheme)) + 
+  plot_layout(guides = 'collect') #& theme(legend.position = 'bottom')
+dataandpredsER_simple
+
+# Close but not ideal legends
+
+dataandpredsER <- (dataplotER + pubtheme + 
+                      guides(color = guide_colorbar(title.position = 'top')) +
+                      theme(legend.position = c(0.9, 0.15), 
+                            legend.direction = 'horizontal')) / 
+  ((predplot0ER + pubtheme +  theme(legend.position = 'none')) + 
+     (predplotendER + pubtheme + theme(legend.position = 'none')) +
+     (ggpubr::ggarrange(ggpubr::get_legend(predplotendER + pubtheme))))
+dataandpredsER
+
+
+# Save Plots
+pdf(file.path(scriptOut, 'ERDataPreds.pdf'), onefile = FALSE, 
+    height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+dataandpredsER
+dev.off()
+
+png(file.path(scriptOut, 'ERDataPreds.png'), 
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+dataandpredsER
+dev.off()
+
+# season vs temp ----------------------------------------------------------
+# A quick check of the correlation between temp and season. Made the plots above, really, but
+ggplot(jtp, aes(x = tempC, y = daysAwayFromWaterYear, color = ValleyName)) + geom_point()
+cor(jtp$daysAwayFromWaterYear, jtp$tempC)
+
+# Checking in-stream temps ------------------------------------------------
+gppDaysValleys_IS <- lme4::lmer(logGPP ~ avedailytemp + daysAwayFromWaterYear + ValleyName + 
+                               tempC*daysAwayFromWaterYear + tempC*ValleyName +
+                               (1|wateryear),
+                             data = jtp)
+
+erDaysValleys_IS <- lme4::lmer(logER ~ avedailytemp + daysAwayFromWaterYear + ValleyName + 
+                              tempC*ValleyName +
+                              (1|wateryear),
+                            data = jtpER)
+
+# R2 are tricky from GLMMs, but r.squaredGLMM seems to be reasonably well supported
+# And, later, sjstats::r2 is as well, and has been superseded by performance::r2.
+# All three give the same answer
+# There are arguments for wanting both the marginal (fixed effects only) or conditional (entire model).
+
+# GPP
+# For the version with surface temps
+MuMIn::r.squaredGLMM(gppDaysValleys)
+sjstats::r2(gppDaysValleys)
+performance::r2(gppDaysValleys)
+# and water temps does do a bit better
+MuMIn::r.squaredGLMM(gppDaysValleys_IS)
+sjstats::r2(gppDaysValleys_IS)
+performance::r2(gppDaysValleys_IS)
+
+# ER
+performance::r2(erDaysValleys)
+performance::r2(erDaysValleys_IS)
+
+# How about RMSE? 
+# lower is better
+
+# GPP
+merTools::RMSE.merMod(gppDaysValleys)
+performance::rmse(gppDaysValleys)
+
+merTools::RMSE.merMod(gppDaysValleys_IS)
+performance::rmse(gppDaysValleys_IS)
+
+# ER
+performance::rmse(erDaysValleys)
+
+performance::rmse(erDaysValleys_IS)
+
+# what if I leave out water year (since that is common between the two), and use
+# the better-defined R2 in a linear model?
+gdvLin <- lm(logGPP ~ tempC + daysAwayFromWaterYear + ValleyName + 
+                 tempC*daysAwayFromWaterYear + tempC*ValleyName,
+               data = jtp)
+
+gdvLin_IS <- lm(logGPP ~ avedailytemp + daysAwayFromWaterYear + ValleyName + 
+                 tempC*daysAwayFromWaterYear + tempC*ValleyName,
+               data = jtp)
+
+summary(gdvLin)
+summary(gdvLin_IS)
+# Very similar finding, RMSE is lower for the in-stream and R2 is 3-4% higher (out of 30%).
+
+# Saving ------------------------------------------------------------------
+
 
 save(gppDaysValleys,
      gppBimonthValleys,
