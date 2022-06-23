@@ -14,8 +14,8 @@ library(sf)
 library(tidyverse)
 
 
-registerDoFuture()
-plan(multicore)
+# registerDoFuture()
+# plan(multicore)
 
 
 # Setup -------------------------------------------------------------------
@@ -94,7 +94,7 @@ EdwardWakoolANAE <- st_transform(EdwardWakoolANAE, 3577)
 # to support a colony.
 
 
-# Identidy TRUE/FALSE which polys have breed habitat
+# Identify TRUE/FALSE which polys have breed habitat
 breedANAE <-(EdwardWakoolANAE$ANAE_CODE %in% breedANAEcodes$ANAE_CODE) #class logical i.e. no index, geometry
 # breedANAEind <- which(EdwardWakoolANAE$ANAE_CODE %in% breedANAEcodes$ANAE_CODE)
 
@@ -108,30 +108,32 @@ breedDepth <- EdwardWakool_areaSpoonbillBreed[[2]]
 names(breedDepth) <- "Area"
 
 # double-check index match 
-sum(breedDepth_index$UID==EdwardWakoolANAE$UID)
-length(EdwardWakoolANAE$UID)
+sum(breedDepth_index$UID==EdwardWakoolANAE$UID)==length(EdwardWakoolANAE$UID)
+
 
 # turn non-breeding-suitable polys to zero, other values still areas
 breedANAEstrict <- breedDepth*breedANAE
 
 
-# limit to wetland boundaries
-
-ramsarTF <- st_covered_by(((breedANAEstrict)), 
-                                   (st_buffer(ramsarBoundsMDB,250))) %>% lengths > 0
-
-ramsarStrict <- breedANAEstrict*ramsarTF
-
-dim(breedANAEstrict) - dim(ramsarStrict) # 0 
+# # limit to wetland boundaries
+# ramsarTF <- st_covered_by(((breedANAEstrict)), 
+#                                    (st_buffer(ramsarBoundsMDB,250))) %>% lengths > 0
+# ramsarStrict <- breedANAEstrict*ramsarTF
+# 
+# dim(breedANAEstrict) - dim(ramsarStrict) # 0 
 # constraining to ramsar makes no difference for EdwardWakool
 
 # polygons wet for three consecutive bimonths in breeding season. 
 
-timeStrict <- ramsarStrict >0  #  areas over 0 = TRUE
+# timeStrict <- ramsarStrict >0  #  areas over 0 = TRUE
 
+timeStrict <- breedANAEstrict > 0   #  areas over 0 = TRUE
 
+# roll across times so each new value is the sum of itself and preceding 2. 
+# fill = NA instructs RccpRoll to place NAs for to first 2 times i.e. that have no preceding values.
 timeStrict[[1]] <- t(RcppRoll::roll_sum(t(timeStrict[[1]]), n= 3, align = "right", fill = c(NA, NA, NA)))
 
+# set to TRUE all times that have three consecutive bimonthly period with some inundation
 timeStrict[[1]] <- timeStrict$Area == 3
 
 seasonStrict <- timeStrict
@@ -143,18 +145,20 @@ times <- st_get_dimension_values(seasonStrict, "time")
 breedTimes <- which(lubridate::month(times)== 03)
 
 seasonStrict[[1]] <-0
+# set to TRUE all times in the correct season
 seasonStrict[[1]][,breedTimes]<-1 
 
 seasonStrict <- seasonStrict*timeStrict #  Times and polygon combinations where 3 bimonthly and season strictures are TRUE
 
 # get max inundation for each 6 month (3 x bimonthly period)
+# assumes that max is the most relevant metric. The greatest extent is what will trigger breeding?
 breedDepth[[1]] <- t(RcppRoll::roll_max(t(breedDepth[[1]]), n= 3, align = "right", fill = c(NA, NA, NA)))
 
 breedStrict <- breedDepth*seasonStrict #max area of inundation across 3 bimos in the breeding season 
 # TODO will get rid of intermediate step objects on after testing. 
 
 
-# sum area up to wetland complex scale
+# sum area up to wetland complex scale ---- 
 
 # TODO: redo ramsarBound and leave in valley tag so I can filter
 
@@ -167,8 +171,7 @@ load(file.path(datOut, 'WetlandBoundaries', "ramsarBoundsMDB.rdata"))
 
 ramsarBoundEdwa <- st_intersection(ramsarBoundsMDB, filter(LTIM_Valleys, ValleyName =="Edward Wakool"))
 
-f <- function(x){sum(x, na.rm = TRUE)}
-breedAreaByWetland <- aggregate(breedStrict, ramsarBoundEdwa,f )
+breedAreaByWetland <- aggregate(breedStrict, ramsarBoundEdwa, sum, na.rm = TRUE)
 
 
 # test against minimum total area inundated threshold.
@@ -288,10 +291,10 @@ ggplot()+
 # • Turn main script into a function(s)
 #   • Double-check outputs
 # ○ E.g. Ordering of indicies confused?
-#   • Address possible mismatch between forage = bimonthly ,or summed to year and Breed  = march
+#   • Address possible mismatch between forage = bimonthly ,or summed to year and Breed  = march only
 # • 5% seems like a low threshold value, maybe max() isn't the right metric.
 # 	• Add functionality for Northern basin i.e. Wider breeding season.
-# 	• Solution for matching wetland names to geometry ramsarLabels in W
+# 	• Solution for matching wetland names to geometry e.g. ramsarLabels in WetlandBoundaries.R
 # 	• Analyse breeding data for actual thresholds or sensitivity analysis
 # 	• Check ramsar bounds works for other catchments 
 
