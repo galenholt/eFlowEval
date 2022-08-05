@@ -202,7 +202,8 @@ ersetup <- function(data, attnum, logscale = TRUE, forcemin = NA, forcemax = NA)
 }
 
 # GPP
-gppsetup <- function(data, attnum, logscale = TRUE, forcemin = NA, forcemax = NA) {
+gppsetup <- function(data, attnum, logscale = TRUE, forcemin = NA, forcemax = NA, 
+                     pal = 'Emrld', reverse = TRUE, continuous = FALSE) {
   
   # if feed it a stars, use the chosen attribute. If fed an attribute directly, use that
   if ('stars' %in% class(data)) {
@@ -219,7 +220,7 @@ gppsetup <- function(data, attnum, logscale = TRUE, forcemin = NA, forcemax = NA
     thismin <- ifelse(logscale, log10(1+forcemin), forcemin)
   } else {
     thismin <- ifelse(logscale, 
-                      ceiling(min(log10(1 + thisdata), na.rm = TRUE)),
+                      floor(min(log10(1 + thisdata), na.rm = TRUE)*10)/10,
                       min(thisdata, na.rm = TRUE))
   }
   
@@ -231,8 +232,13 @@ gppsetup <- function(data, attnum, logscale = TRUE, forcemin = NA, forcemax = NA
                       max(thisdata, na.rm = TRUE))
   }
   
+  if (continuous) {
+    n_splits = 4
+  } else {
+    n_splits = 10
+  }
   
-  gppbreaks <- labeling::extended(m = 10,
+  gppbreaks <- labeling::extended(m = n_splits,
                                   dmin = thismin,
                                   dmax = thismax)
   # gppbreaks_log <- labeling::extended(m = 10, 
@@ -241,17 +247,21 @@ gppsetup <- function(data, attnum, logscale = TRUE, forcemin = NA, forcemax = NA
   #                                     dmax = thismax)
   
   # and those breaks might not quite yield 10, so maximise the palette differences
-  gpppal <- sequential_hcl(length(gppbreaks)-1, palette = 'Emrld', rev = TRUE)
+  gpppal <- sequential_hcl(length(gppbreaks)-1, palette = pal, rev = reverse)
   
   # Make pretty labels. Breaks CONTAIN the endpoints
   gpplabels <- if(logscale)  10^gppbreaks else  gppbreaks
   
   gpplabels <- format(gpplabels, big.mark=",", 
                           scientific=FALSE, trim = TRUE, digits = 0)
-  gppstart <- gpplabels[1:(length(gpplabels)-1)]
-  # gppstart[1] <- "0" # instead of 1
-  gpplabels <- paste0(gppstart, ' to ', gpplabels[2:length(gpplabels)])
-  gpplabels
+  
+  if (!continuous) {
+    gppstart <- gpplabels[1:(length(gpplabels)-1)]
+    # gppstart[1] <- "0" # instead of 1
+    gpplabels <- paste0(gppstart, ' to ', gpplabels[2:length(gpplabels)])
+  }
+  
+  # gpplabels
   
   # if (logscale) {
     return(lst(gppbreaks = gppbreaks, 

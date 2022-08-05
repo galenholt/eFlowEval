@@ -212,6 +212,7 @@ gpp_gg_v <- gppfun(logGPPdaysvalleysannual/1000, 1, datewanted, units = 'tonnes'
                    colorchoice = 'grey50', forcelegend = 'Maximum yearly GPP\n(tonnes O2)', forcemin = 1000, forcemax = 10000000)
 gpp_gg_v
 
+
 er_gg_v <- erfun(logERdaysvalleysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year beginning ', 
                    colorchoice = 'grey50', forcelegend = 'Maximum yearly ER\n(tonnes O2)', forcemin = 1000, forcemax = 10000000)
 er_gg_v
@@ -493,6 +494,33 @@ print(GPPER_valleys)
 dev.off()
 ```
 
+## Faded uncertainty
+
+```{r}
+# The auto-titling just stuffs "Two months preceding" on there, which is wrong
+gpp_gg <- gppfun(logGPPdaysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year beginning ', 
+                   colorchoice = 'grey50', forcelegend = 'Maximum yearly GPP\n(tonnes O2)', forcemin = 1000, forcemax = 10000000)
+gpp_gg
+
+gpp_gg_v <- gppfun(logGPPdaysvalleysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year beginning ', 
+                   colorchoice = 'grey50', forcelegend = 'Maximum yearly GPP\n(tonnes O2)', forcemin = 1000, forcemax = 10000000)
+gpp_gg_v
+
+```
+
+gppplot <- gpp_gg +
+  guides(fill = guide_legend(title.position = 'top')) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+        legend.background = element_blank(),
+        legend.key.size = unit(0.3, 'cm')) 
+  
+gpp_vplot <-  gpp_gg_v +
+  guides(fill = guide_legend(title.position = 'top')) +
+  theme_grey(base_size = 8) + 
+  theme(legend.position = 'right', 
+        legend.background = element_blank(),
+        legend.key.size = unit(0.3, 'cm'))
 
 ## Multi-year panels
 
@@ -1744,7 +1772,7 @@ bind5er <- mutate(er5df, scenario = 'Baseline') %>%
   
 ```
 
-Now, make a bar plot. not a huge fan that the qualitative palettes all end up looking like the colours I'm using for GPP and ER, but for now wil have to do.
+Now, make a bar plot. not a huge fan that the qualitative palettes all end up looking like the colours I'm using for GPP and ER, but for now will have to do.
 
 ```{r}
 scenebar_gpp <- ggplot(bind5gpp, 
@@ -1803,8 +1831,6 @@ ggpubr::ggarrange(gppScene,
                   scenebar_gpp, nrow = 2, heights = c(2,1))
 ```
 
-
-
 Needs a bit of cleanup, but it's OK. Not sure why when I shift the basesize stuff on the new plot it gets wonky.
 
 ```{r}
@@ -1849,7 +1875,293 @@ print(scenebar_gppCUT)
 dev.off()
 ```
 
-Same, ER
+Can I make those relative? The inundation just pushes everything 10% higher, which is trivial. And would need a different colour ramp, but that's likely OK?
+
+make the relative data columns
+```{r}
+
+basefun <- function(valuecol, scenecol, basename) {
+  baseval <- valuecol[which(scenecol == basename)]
+}
+
+bind5gpp <- bind5gpp %>%
+  group_by(date, ValleyName) %>%
+  mutate(baseval = basefun(GPP, scenario, 'Baseline'), 
+         relGPP = GPP/baseval,
+         multchange = log(relGPP)) %>%
+  ungroup()
+```
+
+Make bar plots
+```{r}
+scenebar_gppR <- ggplot(bind5gpp, 
+       aes(x = fct_reorder(ValleyName, latpos),
+           y = relGPP, 
+           fill = fct_relevel(scenario, 'Baseline', '2C warm', '110% inundation', 'Both')), 
+                color = NA) + 
+  geom_col(position = 'dodge') +
+  scale_fill_discrete_qualitative(palette = 'dark3') +
+  # scale_y_continuous(breaks = eiC,
+  #                   # limits = c(min(eC$erbreaks), max(eC$erbreaks)),
+  #                   labels = format(10^eiC, big.mark=",",
+  #                                   scientific=FALSE, trim = TRUE, digits = 0))+
+  # theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = NULL, y = NULL, fill = NULL) +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm'),
+          axis.text.x = element_text(angle = 60, hjust = 1)) + 
+  labs(y = gpp5label)
+scenebar_gppR
+```
+Are those exactly the same?
+Make lines to see more clearly
+```{r}
+sceneline_gppR <- ggplot(bind5gpp, 
+       aes(x = fct_reorder(ValleyName, latpos),
+           y = relGPP, 
+           color = fct_relevel(scenario, 'Baseline', '2C warm', '110% inundation', 'Both')), 
+                color = NA) + 
+  geom_point() + geom_line() +
+  scale_color_discrete_qualitative(palette = 'dark3') +
+  # scale_y_continuous(breaks = eiC,
+  #                   # limits = c(min(eC$erbreaks), max(eC$erbreaks)),
+  #                   labels = format(10^eiC, big.mark=",",
+  #                                   scientific=FALSE, trim = TRUE, digits = 0))+
+  # theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = NULL, y = NULL, fill = NULL) +
+    guides(color = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm'),
+          axis.text.x = element_text(angle = 60, hjust = 1)) + 
+  labs(y = gpp5label)
+sceneline_gppR
+```
+
+Multiplicative change isn't going to be any more interesting.
+Make bar plots
+```{r}
+scenebar_gppM <- ggplot(bind5gpp, 
+       aes(x = fct_reorder(ValleyName, latpos),
+           y = multchange, 
+           fill = fct_relevel(scenario, 'Baseline', '2C warm', '110% inundation', 'Both')), 
+                color = NA) + 
+  geom_col(position = 'dodge') +
+  scale_fill_discrete_qualitative(palette = 'dark3') +
+  # scale_y_continuous(breaks = eiC,
+  #                   # limits = c(min(eC$erbreaks), max(eC$erbreaks)),
+  #                   labels = format(10^eiC, big.mark=",",
+  #                                   scientific=FALSE, trim = TRUE, digits = 0))+
+  # theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = NULL, y = NULL, fill = NULL) +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm'),
+          axis.text.x = element_text(angle = 60, hjust = 1)) + 
+  labs(y = gpp5label)
+scenebar_gppM
+```
+
+What if I use that to select a few catchments that are a bit more interesting, and then make a timeseries?
+Those that do something interesting with temp are Ovens, Kiewa, Macquarie, Castlereagh, and Paroo. 
+
+What does a cut set of bars look like for those?
+
+```{r}
+scenebar_gppCUT2 <- ggplot(filter(bind5gpp, ValleyName %in% c('Murrumbidgee', 'Lachlan', 'Lower Darling', 'Ovens', 'Kiewa', 'Macquarie', 'Castlereagh', 'Paroo')), 
+       aes(x = fct_reorder(ValleyName, latpos),
+           y = GPP, 
+           fill = fct_relevel(scenario, 'Baseline', '2C warm', '110% inundation', 'Both')), 
+                color = NA) + 
+  geom_col(position = 'dodge') +
+  scale_fill_discrete_qualitative(palette = 'dark3') +
+  # scale_y_continuous(breaks = eiC,
+  #                   # limits = c(min(eC$erbreaks), max(eC$erbreaks)),
+  #                   labels = format(10^eiC, big.mark=",",
+  #                                   scientific=FALSE, trim = TRUE, digits = 0))+
+  # theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = NULL, y = NULL, fill = NULL) +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) +
+  labs(y = gpp5label)
+scenebar_gppCUT2
+```
+
+That's not helpful.But we can use it to look at comparable things.
+
+```{r}
+scenebar_gppCUT2 <- ggplot(filter(bind5gpp, ValleyName %in% c('Murrumbidgee', 'Lachlan', 'Paroo')), 
+       aes(x = fct_reorder(ValleyName, latpos),
+           y = GPP, 
+           fill = fct_relevel(scenario, 'Baseline', '2C warm', '110% inundation', 'Both')), 
+                color = NA) + 
+  geom_col(position = 'dodge') +
+  scale_fill_discrete_qualitative(palette = 'dark3') +
+  scale_y_continuous(breaks = c(0, 10^shortcuts))+
+  # theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = NULL, y = NULL, fill = NULL) +
+    guides(fill = guide_legend(title.position = 'top')) +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')) +
+  labs(y = gpp5label)
+scenebar_gppCUT2
+```
+I guess that's interesting/better than before, since at least Paroo is behaving a BIT differently.
+
+Is there a way to do a timeseries?
+Borrowing the timeseries code from above, but binding together the scenarios first. 
+```{r}
+
+gppannualscenes <- mutate(gppannualdf, scenario = 'Baseline') %>%
+  bind_rows(mutate(gppannualCLIMdf, scenario = '2C warm')) %>%
+  bind_rows(mutate(gppannual10pdf, scenario = '110% inundation')) %>%
+  bind_rows(mutate(gppannual10pCLIMdf, scenario = 'Both'))
+
+erannualscenes <- mutate(erannualdf, scenario = 'Baseline') %>%
+  bind_rows(mutate(erannualCLIMdf, scenario = '2C warm')) %>%
+  bind_rows(mutate(erannual10pdf, scenario = '110% inundation')) %>%
+  bind_rows(mutate(erannual10pCLIMdf, scenario = 'Both'))
+
+
+```
+
+Plots. Just gpp for now.
+```{r}
+selectedCatches <- c('Murrumbidgee', 'Lachlan', 'Paroo')# c('Lachlan', 'Paroo', 'Castlereagh', 'Campaspe', 'Goulburn', 'Mitta Mitta')
+
+gppSceneseries <- ggplot(filter(gppannualscenes, ValleyName %in% selectedCatches), aes(x = waterYear, y = logGPP, color = scenario, group = interaction(ValleyName, scenario))) +  
+  geom_point() + geom_line() + scale_y_continuous(breaks = eiC,
+                    # limits = c(min(eiC), max(eiC)),
+                    labels = format(10^eiC, big.mark=",",
+                                    scientific=FALSE, trim = TRUE, digits = 0))+
+  labs(x = NULL, y = 'Maximum yearly GPP\n(tonnes O2)')
+
+gppSceneseries
+
+```
+
+We have the catchment comparison stuff already, so maybe a single catchment? Or two?
+```{r}
+selectedCatches2 <- c('Lachlan', 'Paroo')# c('Lachlan', 'Paroo', 'Castlereagh', 'Campaspe', 'Goulburn', 'Mitta Mitta')
+
+shortcuts <- c(log(125000)/log(10), log(250000)/log(10), log(500000)/log(10), 
+               log(1000000)/log(10), log(2000000)/log(10))
+
+gppSceneseries2 <- ggplot(filter(gppannualscenes, ValleyName %in% selectedCatches2), 
+                          aes(x = waterYear, y = logGPP, color = fct_relevel(scenario, 'Baseline', '2C warm', '110% inundation', 'Both'), 
+                              group = interaction(ValleyName, scenario))) +  
+  geom_point() + geom_line() + 
+   scale_color_discrete_qualitative(palette = 'dark3') +
+  scale_y_continuous(breaks = shortcuts,
+                    limits = c(min(shortcuts), max(shortcuts)),
+                    labels = format(10^shortcuts, big.mark=",",
+                                    scientific=FALSE, trim = TRUE, digits = 0))+
+  labs(x = NULL, y = 'Maximum yearly GPP\n(tonnes O2)', color = 'Scenario') +
+  
+  ggrepel::geom_label_repel(data = filter(gppannualscenes,
+                                          (waterYear == 2014 &
+                                             scenario == 'Baseline' &
+                                            ValleyName %in%
+                                             selectedCatches2)),
+                            aes(label = ValleyName), color = 'black', 
+                           size = 3, label.size = 0.1) +   
+  theme_grey(base_size = 8) + 
+  xlim(c(2014, 2018))
+#+
+  # theme(legend.position = 'none')
+
+gppSceneseries2
+
+```
+
+
+
+
+```{r}
+selectedCatches1 <- c('Lachlan')# c('Lachlan', 'Paroo', 'Castlereagh', 'Campaspe', 'Goulburn', 'Mitta Mitta')
+
+gppSceneseries1 <- ggplot(filter(gppannualscenes, ValleyName %in% selectedCatches1), aes(x = waterYear, y = logGPP, color = scenario, group = interaction(ValleyName, scenario))) +  
+  geom_point() + geom_line() + scale_y_continuous(breaks = eiC,
+                    # limits = c(min(eiC), max(eiC)),
+                    labels = format(10^eiC, big.mark=",",
+                                    scientific=FALSE, trim = TRUE, digits = 0))+
+  labs(x = NULL, y = 'Maximum yearly GPP\n(tonnes O2)')
+
+gppSceneseries1
+
+```
+Fundamentally, these are just fairly uninteresting. But we should show them, probably
+
+are they better on the linear scale
+We have the catchment comparison stuff already, so maybe a single catchment? Or two?
+```{r}
+# selectedCatches2 <- c('Lachlan', 'Paroo')# c('Lachlan', 'Paroo', 'Castlereagh', 'Campaspe', 'Goulburn', 'Mitta Mitta')
+
+gppSceneseriesLin <- ggplot(filter(gppannualscenes, ValleyName %in% selectedCatches), 
+                          aes(x = waterYear, y = GPP, color = fct_relevel(scenario, 'Baseline', '2C warm', '110% inundation', 'Both'), 
+                              group = interaction(ValleyName, scenario))) +  
+  geom_point() + geom_line() + 
+   scale_color_discrete_qualitative(palette = 'dark3') +
+  scale_y_continuous(breaks = c(0, 10^shortcuts), limits = c(0, 1550000))+
+  # scale_y_continuous(breaks = shortcuts,
+  #                   limits = c(min(shortcuts), max(shortcuts)),
+  #                   labels = format(10^shortcuts, big.mark=",",
+  #                                   scientific=FALSE, trim = TRUE, digits = 0))+
+  labs(x = NULL, y = 'Maximum yearly GPP\n(tonnes O2)', color = 'Scenario') +
+  
+  ggrepel::geom_label_repel(data = filter(gppannualscenes,
+                                          (waterYear == 2014 &
+                                             scenario == 'Baseline' &
+                                            ValleyName %in%
+                                             selectedCatches)),
+                            aes(label = ValleyName), color = 'black', 
+                           size = 3, label.size = 0.1) +   
+  theme_grey(base_size = 8) + 
+  xlim(c(2014, 2018))
+#+
+  # theme(legend.position = 'none')
+
+gppSceneseriesLin
+
+```
+
+So, let's package that up as one figure
+```{r}
+
+scenecutbartime <- ggpubr::ggarrange(gppSceneseriesLin+theme(legend.position = 'none'), scenebar_gppCUT2)
+scenecutbartime
+
+scenemapbartime <- ggpubr::ggarrange(gppScene,
+                  scenecutbartime,
+    nrow = 2, heights = c(3,1))
+
+scenemapbartime
+```
+
+```{r}
+pdf(file.path(scriptOut, 'gppSceneCatchBarTime.pdf'), 
+    onefile = FALSE, height = 20/2.54, width = 16/2.54, useDingbats = FALSE)
+print(scenemapbartime)
+dev.off()
+
+png(file.path(scriptOut, 'gppSceneCatchBarTime.png'), 
+    height = 20/2.54, width = 16/2.54, units = 'in', res = 300)
+print(scenemapbartime)
+dev.off()
+```
+
+#### Same, ER
 
 ```{r}
 scenebar_er <- ggplot(bind5er, 
