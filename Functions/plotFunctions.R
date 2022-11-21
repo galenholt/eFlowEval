@@ -117,7 +117,7 @@ inunsetup <- function(data, attnum, logscale = TRUE,
   inunlabels <- if(logscale)  10^inunbreaks else  inunbreaks
   
   inunlabels <- format(inunlabels, big.mark=",", 
-                           scientific=FALSE, trim = TRUE, digits = 0)
+                           scientific=FALSE, trim = TRUE, digits = 1)
   inunstart <- inunlabels[1:(length(inunlabels)-1)]
   # inunstart[1] <- "0" # instead of 1
   inunlabels <- paste0(inunstart, ' to ', inunlabels[2:length(inunlabels)])
@@ -183,7 +183,7 @@ ersetup <- function(data, attnum, logscale = TRUE, forcemin = NA, forcemax = NA)
   erlabels <- if(logscale)  10^erbreaks else  erbreaks
   
   erlabels <- format(erlabels, big.mark=",", 
-                         scientific=FALSE, trim = TRUE, digits = 0)
+                         scientific=FALSE, trim = TRUE, digits = 1)
   erstart <- erlabels[1:(length(erlabels)-1)]
   # erstart[1] <- "0" # instead of 1
   erlabels <- paste0(erstart, ' to ', erlabels[2:length(erlabels)])
@@ -253,7 +253,7 @@ gppsetup <- function(data, attnum, logscale = TRUE, forcemin = NA, forcemax = NA
   gpplabels <- if(logscale)  10^gppbreaks else  gppbreaks
   
   gpplabels <- format(gpplabels, big.mark=",", 
-                          scientific=FALSE, trim = TRUE, digits = 0)
+                          scientific=FALSE, trim = TRUE, digits = 1)
   
   if (!continuous) {
     gppstart <- gpplabels[1:(length(gpplabels)-1)]
@@ -442,7 +442,7 @@ inunfun <- function(starsObj, attributeNum = 1, datewanted, units = 'Ml',
 gppfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
                    forcelegend = NULL, colorchoice = NA,
                    titled = TRUE, titlePrefix = NULL, titleSuffix = NULL, 
-                   plotPkg = 'tmap', logscale = TRUE, ...) {
+                   plotPkg = 'tmap', logscale = TRUE, binfill = TRUE, ...) {
   
   # Title prefix and suffix lets us add bits around the date
   if (titled) {
@@ -499,15 +499,29 @@ gppfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
     gpp_gg <- ggplot() +
     geom_sf(data = gpp_sf, mapping = aes(fill = plotValues), color = colorchoice, size = 0.1) +
       # geom_sf_label(data = ltimNoNorth, mapping = aes(label = ValleyName)) +
-      coord_sf() +
-      # scale_fill_stepsn(colors = gppControl$gpppal)
+      coord_sf()
+    
+    if (binfill) {
       # Closest to the tmap
-      scale_fill_stepsn(colors = gppControl$gpppal,
-                        breaks = gppControl$gppbreaks[2:length(gppControl$gppbreaks)],
-                        limits = c(min(gppControl$gppbreaks), max(gppControl$gppbreaks)),
-                        labels = gppControl$gpplabels,
-                        guide = 'legend',
-                        name = legendlabel)
+      gpp_gg <- gpp_gg + 
+        scale_fill_stepsn(colors = gppControl$gpppal,
+                          breaks = gppControl$gppbreaks[2:length(gppControl$gppbreaks)],
+                          limits = c(min(gppControl$gppbreaks), max(gppControl$gppbreaks)),
+                          labels = gppControl$gpplabels,
+                          guide = 'legend',
+                          name = legendlabel)
+    } else {
+      # Closest to the tmap
+      gpp_gg <- gpp_gg +
+        scale_fill_gradientn(colors = gppControl$gpppal,
+                             breaks = gppControl$gppbreaks[2:length(gppControl$gppbreaks)],
+                             limits = c(min(gppControl$gppbreaks), max(gppControl$gppbreaks)),
+                             labels = gppControl$gpplabels,
+                             guide = 'colourbar',
+                             name = legendlabel)
+    }
+      # scale_fill_stepsn(colors = gppControl$gpppal)
+
     # gpp_gg
     if (length(datewanted) > 1) {
       gpp_gg <- gpp_gg + facet_wrap(vars(date))  
