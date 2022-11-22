@@ -444,6 +444,9 @@ gppfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
                    titled = TRUE, titlePrefix = NULL, titleSuffix = NULL, 
                    plotPkg = 'tmap', logscale = TRUE, binfill = TRUE, ...) {
   
+  rlang::warn('This function has been superseded by `gppfade`, which is more general. Please use that in future.',
+              .frequency = 'regularly', .frequency_id = 'b')
+  
   # Title prefix and suffix lets us add bits around the date
   if (titled) {
     thistitle <- paste0(titlePrefix, datewanted, titleSuffix)
@@ -541,6 +544,8 @@ erfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
                   forcelegend = NULL, colorchoice = NA,
                   titled = TRUE, titlePrefix = NULL, titleSuffix = NULL, 
                   plotPkg = 'tmap', logscale = TRUE, ...) {
+  
+  rlang::warn('This function has been superseded by `gppfade`, which is more general (and works for ER as well). Please use that in future.', .frequency = 'once')
   
   # Title prefix and suffix lets us add bits around the date
   if (titled) {
