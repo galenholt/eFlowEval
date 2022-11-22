@@ -37,12 +37,21 @@ huefinder <- function(hueval, minhue, maxhue, n = Inf, palname = NULL, reverse =
 
 # Sort of a short-circuit of huefinder for binned data using the old setup
 # functions so I don't have to re-write all the labeling
-hueassign <- function(hueval, huepal, huebreaks) {
+hueassign <- function(hueval, huepal, huebreaks, naOutside = FALSE) {
   # use the palette and breaks calculated from gppsetup
-  whichbin <- findInterval(hueval,
+  if (!naOutside) {
+      whichbin <- findInterval(hueval,
                            huebreaks,
-                           rightmost.closed = TRUE)
-  h <- huepal[whichbin]
+                           all.inside = TRUE)
+  } else {
+    whichbin <- findInterval(hueval,
+                              huebreaks,
+                              rightmost.closed = TRUE)
+    whichbin[whichbin == 0] <- NA
+  }
+
+  
+  h <- purrr::map_chr(whichbin, ~huepal[.])
 }
 
 fadefinder <- function(fadeval, basehue, n = Inf) {
@@ -213,13 +222,14 @@ sf_to_plot <- function(starsObj, attributeNum = 1, datewanted,
 
 # GPP
 # Major re-write of gppfun to make more general- binned vs continuous, better labeling, and fades
+# also just works for ER as well, so need to take the 'gpp'off of it.
 gppfade <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
                     forcelegend = NULL, colorchoice = NA,
                     titled = TRUE, titlePrefix = NULL, titleSuffix = NULL, 
                     plotPkg = 'tmap', logscale = TRUE, 
                     binOrCon = 'bin', palette = 'ag_Sunset', reverse = FALSE,
                     lessCertainStars = NULL, fadeAmount = 0.5,
-                    fadeAtts = NULL, fadeRel = TRUE, ...) {
+                    fadeAtts = NULL, fadeRel = TRUE, returnLegend = FALSE, ...) {
   
   # Title prefix and suffix lets us add bits around the date
   if (titled) {
@@ -349,7 +359,7 @@ gppfade <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
         # theselabels <- if(logscale)  10^thesebreaks else  thesebreaks
         # 
         # theselabels <- format(theselabels, big.mark=",", 
-        #                     scientific=FALSE, trim = TRUE, digits = 0)
+        #                     scientific=FALSE, trim = TRUE, digits = 1)
         # 
         gpp_gg <- ggplot() +
           geom_sf(data = gpp_sf, mapping = aes(fill = plotValues), color = colorchoice, size = 0.1) +
@@ -429,9 +439,13 @@ gppfade <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
           # Get them on the 1-100 scale of the axis bins
           ybreaks <- round(relbreaksF[3:length(relbreaksF)]*100)
   
-          
-          ylabels <- format(10^internalbreaksF, big.mark=",", 
-                            scientific=FALSE, trim = TRUE, digits = 0)
+          logbreaks <- 10^internalbreaksF
+          ydigits <- 1
+          if ((logbreaks[length(logbreaks)] - logbreaks[1]) < 1) {
+            ydigits <- 3
+          } 
+          ylabels <- format(logbreaks, big.mark=",", 
+                            scientific=FALSE, trim = TRUE, digits = ydigits)
         }
         
         # breaks are tricky. they're set pretty from the data, so can be a bit
@@ -466,10 +480,14 @@ gppfade <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
       # Example 1: the position needs to differ between binned and continuous
       bpos = ifelse(binOrCon == 'bin', 0.65, 0.75)
       
-      gpp_gg <- (gpp_gg + theme_bw() + theme(legend.position = 'none')) +
-        inset_element((bin_leg + theme(axis.text = element_text(size = 8),
-                                            title = element_text(size = 8))),
-                      left = 0.01, bottom = bpos, right = 0.48, top = 1)
+      if (!returnLegend) {
+        gpp_gg <- (gpp_gg + theme_bw() + theme(legend.position = 'none')) +
+          inset_element((bin_leg + theme(axis.text = element_text(size = 8),
+                                         title = element_text(size = 8))),
+                        left = 0.01, bottom = bpos, right = 0.48, top = 1)
+      }
+      
+
       
     }
 
@@ -482,7 +500,14 @@ gppfade <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
       gpp_gg <- gpp_gg + 
         ggtitle(thistitle)
     }
-    return(gpp_gg)
+    
+    if (returnLegend) {
+      return(list(plot = gpp_gg, legend = bin_leg))
+    } else {
+      return(gpp_gg)
+    }
+    
+    
   }
   
 }

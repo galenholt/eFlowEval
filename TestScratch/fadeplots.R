@@ -470,7 +470,7 @@ gppfade(starsObjU/1000, attributeNum = 1, datewanted, units = 'tonnes',
         lessCertainStars = NULL, fadeAmount = 0.5,
         fadeAtts = c(2,3), fadeRel = FALSE)
 
-  # NEED TO sort out the legend size for these where it's getting bigger.
+  # **TODO** NEED TO sort out the legend size for these where it's getting bigger.
 
 # Binned, only uncertain, fade by a single col (will need to just make this data externally- it's just a check of the fader functionality)
 
@@ -480,15 +480,15 @@ gppfade(starsObjU/1000, attributeNum = 1, datewanted, units = 'tonnes',
 # Same, continuous
 
 
+## **TODO** NEED TO CHECK datewanted longer than 1- does that screw up the legend plot method?
 
+## **TODO** new colors for gpp and er
 
+## **TODO** can we make this universal? ie use the xxcontrol functions to do
+## things differently for temp, inun, er, gpp, and then use one single plotting
+## function? this does not seem gpp-specific.
 
-## NEED TO CHECK datewanted longer than 1- does that screw up the legend plot method?
-
-
-
-
-
+## TODO use dummy data put the sortin in a markdown
 
 
 
