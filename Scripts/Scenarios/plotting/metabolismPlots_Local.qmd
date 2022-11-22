@@ -23,7 +23,7 @@ library(gganimate) # not needed here at present
 library(viridis)
 library(colorspace)
 library(patchwork)
-
+library(latex2exp)
 ```
 
 ```{r}
@@ -1414,7 +1414,7 @@ gppBaseC <- gppfun(gppannclip, 1,
                  colorchoice = NA,
                  logscale = FALSE, 
                  forcemin = clipmin, forcemax = clipmax,
-                 forcelegend = 'Change in GPP from baseline\n(kg O_2/day)')  +
+                 forcelegend = 'Change in GPP from baseline\n (kg O2/day)')  +
   theme_grey(base_size = 8) + 
   theme(legend.position = 'right', 
        legend.background = element_blank(),
