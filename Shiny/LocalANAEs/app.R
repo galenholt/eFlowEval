@@ -94,7 +94,7 @@ server <- function(input, output) {
     output$inun <- tmap::renderTmap({
         # Works. the others might work, if I do something reactive?
         # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
-        inunfun(weraiCropTemp, 1, input$datewanted, titled = FALSE)
+        inunfun(weraiCropInun, 1, input$datewanted, titled = FALSE)
         # fastgrab(input$datewanted)
         # tmap_leaflet(inputsfun(input$datewanted), in.shiny = TRUE)
         # tmap_leaflet(tempfun(input$datewanted), in.shiny = TRUE)
