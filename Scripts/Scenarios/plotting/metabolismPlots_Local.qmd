@@ -1547,16 +1547,32 @@ inun10pyrC <- inunfun(inun10pclip, 1,
 
 ```{r}
 gppSceneC <- guide_area() +
-(tempyrC + ggtitle('Baseline temperature') + theme(legend.position = 'none')) +
-  (climyrC + ggtitle('2c warming') + theme(legend.position = 'none')) +
+(tempyrC + 
+   ggtitle('Baseline temperature') + 
+   scale_x_continuous(breaks = c(144, 144.3, 144.6)) +
+   theme(legend.position = 'none')) +
+  (climyrC + 
+     ggtitle('2c warming') + 
+     scale_x_continuous(breaks = c(144, 144.3, 144.6)) + 
+     theme(legend.position = 'none')) +
   
-  (inunyrC + ggtitle('Baseline inundation') + theme(legend.position = 'none')) +
-(gppBaseC) + # + ggtitle('Baseline') 
-  (gppClimC + theme(legend.position = 'none')) + #  + ggtitle('2c warming')
+  (inunyrC + 
+     ggtitle('Baseline inundation') +
+     scale_x_continuous(breaks = c(144, 144.3, 144.6)) + 
+     theme(legend.position = 'none')) +
+(gppBaseC + scale_x_continuous(breaks = c(144, 144.3, 144.6))) +
+  (gppClimC + 
+     scale_x_continuous(breaks = c(144, 144.3, 144.6)) +
+     theme(legend.position = 'none')) + #  + ggtitle('2c warming')
   
-  (inun10pyrC + ggtitle('110% inundation') + theme(legend.position = 'none')) +
-  (gpp10pC + theme(legend.position = 'none')) + # + ggtitle('110% inundation') 
-  (gpp10p_climC + theme(legend.position = 'none')) + # + ggtitle('2c & 110%')
+  (inun10pyrC + 
+     ggtitle('110% inundation') +
+     scale_x_continuous(breaks = c(144, 144.3, 144.6)) +
+     theme(legend.position = 'none')) +
+  (gpp10pC + scale_x_continuous(breaks = c(144, 144.3, 144.6)) +
+   theme(legend.position = 'none')) + # + ggtitle('110% inundation') 
+  (gpp10p_climC + scale_x_continuous(breaks = c(144, 144.3, 144.6)) +
+   theme(legend.position = 'none')) + # + ggtitle('2c & 110%')
   plot_layout(nrow = 3, guides = 'collect')
 gppSceneC
 ```
