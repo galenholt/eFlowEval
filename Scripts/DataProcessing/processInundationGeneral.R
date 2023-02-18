@@ -23,12 +23,12 @@ registerDoFuture()
 plan(multicore) # multicore on HPC
 
 # # For local testing
-plan(multisession)
-summaryFun <- 'volInun'
+# plan(multisession)
+# summaryFun <- 'volInun'
 # args <- c('blah', 'b', 'c', 'g', '3', 't', 'a', '3', 'Warrego', '8', '6', '8')
 # args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '9', 'Warrego', '8', '6', '10')
 # Does it break with one level of chunking?
-args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '10', 'Avoca')
+# args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '10', 'Avoca')
 
 # args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '96', 'Broken')
 
@@ -66,6 +66,9 @@ maxPix <- 100000 # Seems likely to be a good balance based on local testing, but
 
 
 # INUNDATION UNITS ARE METERS ---------------------------------------------
+
+# NO INUNDATION IS NA *and* 0, as far as I can tell------------------------
+
 
 
 # Set up the function -----------------------------------------------------
@@ -118,6 +121,11 @@ if (summaryFun == 'areaInun') {
   chosenSummary <- function(x, area) {
     max(x, na.rm = TRUE)
   }
+  } else if (summaryFun == 'lippiaAdultSurvive') {
+    # area of water <= 30cm
+    chosenSummary <- function(x, area, limitShallow = 0, limitDeep = 0.3) {
+      sum(ifelse((x <= limitDeep)|(is.na(x)), area, 0))
+    }
   } else {
   stop('need to choose a summary function')
 }
