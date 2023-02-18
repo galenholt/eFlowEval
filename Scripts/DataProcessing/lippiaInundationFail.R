@@ -1,8 +1,8 @@
 # script to check failures and make new shell scripts for spoonbill foraging inundation
 
 # Rscript is easier than dealing with slurm for this
-# module load R/4.0.2
-# Rscript hpc_wrap.R 'Scripts/DataProcessing/tempFails.R'
+# module load R/4.0.5
+# Rscript hpc_wrap.R 'Scripts/DataProcessing/lippiaInundationFail.R'
 
 
 # Header from the temperature file to retain all the directories,  --------

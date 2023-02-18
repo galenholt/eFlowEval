@@ -20,11 +20,19 @@ library(doFuture)
 
 # Set up parallel backend
 registerDoFuture()
-plan(multicore) # multicore on HPC
+# plan(multicore) # multicore on HPC
 
 # # For local testing
 # plan(multisession)
 # summaryFun <- 'volInun'
+
+# args order: 
+# SLURM_ARRAY_TASK_ID (ie the chunk) is 8
+# Catchment name is 9
+# summaryFun is 7
+# the script to run (this one) is 6
+# Subchunks are 10+
+
 # args <- c('blah', 'b', 'c', 'g', '3', 't', 'a', '3', 'Warrego', '8', '6', '8')
 # args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '9', 'Warrego', '8', '6', '10')
 # Does it break with one level of chunking?
