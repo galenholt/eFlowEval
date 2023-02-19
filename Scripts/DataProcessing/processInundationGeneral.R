@@ -174,6 +174,16 @@ processInundationGeneral <- function(datOut, args) {
   # Somehow some are invalid, despite the st_make_valid in processANAE
   anaePolys <- st_make_valid(anaePolys)
   
+  # Weird geometry types were causing problems for the grid, but don't seem to
+  # be an issue here. If there are potential issues, throw a warning.
+  if (any(!st_is(anaePolys, c('POLYGON', 'MULTIPOLYGON')))) {
+    warning("anaePolys have geometries other than polygons, which tends to cause 
+            problems with crops. Do somethign like 
+            `st_collection_extract(anaePolys, 'POLYGON')` to get rid of the 
+            non-areal geometries. 
+            See the grid loop in rastPolyJoin for an example")
+  }
+  
   # change its name to something generic so can be looped over
   # This is annoying, but I guess not too bad
   
@@ -338,15 +348,20 @@ processInundationGeneral <- function(datOut, args) {
   
   # the below gets weird if I run with nrow(anaePolys) == 0. tried to fix in
   # rastPolyJoin, and did, but the list unpacking is still a pain. so, use a
-  # workaround
+  # workaround 
+  
+  # Need to change the way we do the grid-cropped situation. It should be out
+  # here so we don't have to potentially crop twice.
   # dpList <- foreach(s = 8:12) %dopar% {
   dpList <- foreach(s = 1:nrow(anaePolys)) %dopar% {
+
     thiscrop <- st_crop(tifTimes, anaePolys[s,], as_points = FALSE)
     thistemp <- rastPolyJoin(polysf = anaePolys[s,], rastst = thiscrop, FUN = chosenSummary,
                              grouper = 'UID', maintainPolys = TRUE,
                              na.replace = 0, whichcrs = commonCRS, 
                              maxPixels = maxPix,
-                             pixelsize = pixarea)
+                             pixelsize = pixarea,
+                             uncropraster = tifTimes)
   } # end foreach
   
   # the below gets weird if I run with nrow(anaePolys) == 0. tried to fix in
