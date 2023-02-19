@@ -23,15 +23,29 @@ source(file.path('Scripts/DataProcessing/processInundationGeneral.R'))
 # the script to run is 6 (not necessary in this wrapper, at least not now)
 # Subchunks are 10+
 
-# The two foreaches are just doing what the sh per-catchment and SLURM chunking
-# are doing. So those *should* be easily modifiable to call this same function
+# I've modified makeSHfails to give me a list
+runlist <- makeSHfails(outerDir = file.path(datOut, 'Inundationprocessed'),
+            summaryFuns = 'lippiaAdultSurvive',
+            varName = 'LippiaSurvive',
+            nchunks = 100,
+            lengthOrChunk = c('short', 'long'), # , 'long', 'chunk'
+            runImmediate = FALSE,
+            forceAllCatchments = TRUE,
+            returnForR = TRUE)
 
-alltimes <- foreach(i = as.character(1:100), .combine = rbind) %dopar% {
+# still kind of a funny workaround for 'args' to work for both hpc and here.
+# Unpacking them in the hpc version and calling them what they are makes more
+# sense. What I really should do is figure out how to generate HPC runs *from*
+# foreach/future, so it's all one thing
+
+# Run over the catchments and chunks 
+alltimes <- foreach(w = names(runlist), .combine = rbind, .errorhandling = 'remove') %:%
+  foreach(i = as.character(runlist[[w]]), .combine = rbind, .errorhandling = 'remove') %dopar% {
   args <- c('blah', 'b', 'c', 'g', '5', 
             'Scripts/DataProcessing/processInundationGeneral.R', 
-            'lippiaAdultSurvive', i, 'Avoca')
+            'lippiaAdultSurvive', i, w)
   timeeach <- system.time(processInundationGeneral(datOut, args))
   # both returns the time taken AND prevents it from trying to build a list from who knows what.
-  timeeach <- c(timeeach, catchment = 'Avoca', chunk = i)
+  timeeach <- c(timeeach, catchment = w, chunk = i)
   timeach <- as.data.frame(t(timeeach))
-}
+  }

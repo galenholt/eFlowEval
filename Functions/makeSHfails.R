@@ -19,7 +19,8 @@
 
 makeSHfails <- function(outerDir, varName, summaryFuns, 
                         nchunks = 100, lengthOrChunk, runImmediate = FALSE,
-                        forceAllCatchments = FALSE) {
+                        forceAllCatchments = FALSE, 
+                        returnForR = FALSE) {
   # Outerdir is the outer directory, containing all summaryFun directories and chunking
   # varName is just a unique name to avoid overwriting other variables
     # it tends to be the name in the SLURM script: allvarnameSLURM.sh
@@ -118,7 +119,14 @@ makeSHfails <- function(outerDir, varName, summaryFuns,
     cat("\n")
     
     
-    # NOW, do I just run this, or is there a way to create the shell script?
+    # If we are using this to support a foreach loop, we don't need to build a
+    # script, we need misslist to loop over, and then we're done
+    if (returnForR) {
+      return(misslist)
+    }
+    
+    
+    # If we're using this to support the HPC, we need to create the shell script
     missnames <- names(misslist)
     headline <- "#!/bin/bash"
     head2 <- "\n"

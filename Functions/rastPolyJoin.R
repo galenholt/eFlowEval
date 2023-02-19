@@ -3,8 +3,7 @@
 rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,  
                          maintainPolys = TRUE, na.replace = NA, whichcrs = 3577, 
                          maxPixels = 100000,
-                         pixelsize = NA,
-                         uncropraster = NULL) {
+                         pixelsize = NA) {
   # polysf is a spatial polygon simple feactures object
   # rastst is a raster brick in stars format
   # grouper is a single grouping variable to identify single polygons in polysf
@@ -46,7 +45,6 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
     pixneeded <- bbarea/pixelsize
 
   
-    # This whole thing just needs to be its own function, I think. Getting to be so many tweaks
   # If less than maxPixels are needed, just get the intersection directly
       # also if I didn't pass in a pixelsize or maxpixels
     # rpintersect is just a wrapper of st_intersection with a bunch of read-in and transform boilerplate so it works consistently
@@ -59,38 +57,20 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
     # Now, the intersection gets the polysf split by grids (and drops grids with no polysf in them)
     gridsf <- st_intersection(polysf, grid) 
     
-    # get rid of linestrings and points- they don't make sense in this context
-    # and cause the crop to fail
-    if (any(!st_is(gridsf, c('POLYGON', 'MULTIPOLYGON')))) {
-      gridsf <- st_collection_extract(gridsf, 'POLYGON') # Extracts both poly and multi
-    }
-    
-    gridsf <- st_make_valid(gridsf)
     # Now, foreach over each of the polygon chunks and bind_rows back together
     # The group_by below for the stats means it doesn't matter that the gridding puts in extra 'cuts'
     # and we put it back together here (rather than keep going all the way
     # through the stats) because averages would require careful weighting if we
     # aren't averaging over the whole anae polygon
     
-    ## THE second crop in here is breaking with proxys. Sort that out. I htink 
+    ## THE second crop in here is breaking with proxys. Sort that out.
     intPR <- foreach(r = 1:nrow(gridsf),
                      .combine = bind_rows,
                      .multicombine = TRUE) %dopar% {
                        # Get the grid-cut polygon r
                        thissmall <- gridsf[r,]
-                       # crop the raster to JUST this grid-cut polygon. That
-                       # currently fails with a nested st_crop on a proxy. So
-                       # two options for a workaround- read the whole thing in,
-                       # or pass in the uncropped proxy and just do the crop
-                       # here. The whole point is it's too big to read in, so
-                       # try the latter. But do it in a conditional so we can switch back if we fix the bug
-                       if (is.null(uncropraster)) {
-                         smallcrop <- st_crop(rastst, thissmall, as_points = FALSE)
-                       } else if (inherits(uncropraster, 'stars_proxy')) {
-                         smallcrop <- st_crop(uncropraster, thissmall, as_points = FALSE)
-                        } else {stop("the double crop isn't working and hasn't been end-run")}
-                       
-                       
+                       # crop the raster to JUST this grid-cut polygon
+                       smallcrop <- st_crop(rastst, thissmall, as_points = FALSE)
                        
                        # Use the core rpintersect function to do the intersection
                        intPRsmall <- rpintersect(singlesf = thissmall, singleraster = smallcrop, 
