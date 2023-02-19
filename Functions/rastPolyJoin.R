@@ -63,6 +63,7 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
     # through the stats) because averages would require careful weighting if we
     # aren't averaging over the whole anae polygon
     
+    ## THE second crop in here is breaking with proxys. Sort that out.
     intPR <- foreach(r = 1:nrow(gridsf),
                      .combine = bind_rows,
                      .multicombine = TRUE) %dopar% {
