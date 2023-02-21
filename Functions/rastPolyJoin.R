@@ -3,10 +3,9 @@
 rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,  
                          maintainPolys = TRUE, na.replace = NA, whichcrs = 3577, 
                          maxPixels = 100000,
-                         pixelsize = NA,
-                         uncropraster = NULL) {
+                         pixelsize = NA) {
   # polysf is a spatial polygon simple feactures object
-  # rastst is a raster brick in stars format
+  # rastst is a raster brick in stars or stars_proxy (more likely) format
   # grouper is a single grouping variable to identify single polygons in polysf
   # maintainPolys TRUE averages back into them. FALSE leaves them split, and
   # makes a new grouping variable to keep it distinct
@@ -23,7 +22,6 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
   # workaround
   # maxPixels and pixelsize are used to bring the raster in in chunks if it's too big
 
-  # test <- 1
     # Handle the case where we feed it a null dataframe (or, more generally, where
   # the grouper doesn't exist)
     # The [1] index is because it returns FALSE for the geometry, and we only
@@ -59,8 +57,8 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
     # Now, the intersection gets the polysf split by grids (and drops grids with no polysf in them)
     gridsf <- st_intersection(polysf, grid) 
     
-    # get rid of linestrings and points- they don't make sense in this context
-    # and cause the crop to fail
+    # get rid of linestrings and points that occasionally appear when we make
+    # the grid- they don't make sense in this context and cause the crop to fail
     if (any(!st_is(gridsf, c('POLYGON', 'MULTIPOLYGON')))) {
       gridsf <- st_collection_extract(gridsf, 'POLYGON') # Extracts both poly and multi
     }
@@ -78,22 +76,22 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
                      .multicombine = TRUE) %dopar% {
                        # Get the grid-cut polygon r
                        thissmall <- gridsf[r,]
-                       # crop the raster to JUST this grid-cut polygon. That
-                       # currently fails with a nested st_crop on a proxy. So
-                       # two options for a workaround- read the whole thing in,
-                       # or pass in the uncropped proxy and just do the crop
-                       # here. The whole point is it's too big to read in, so
-                       # try the latter. But do it in a conditional so we can switch back if we fix the bug
-                       if (is.null(uncropraster)) {
-                         smallcrop <- st_crop(rastst, thissmall, as_points = FALSE)
-                       } else if (inherits(uncropraster, 'stars_proxy')) {
-                         smallcrop <- st_crop(uncropraster, thissmall, as_points = FALSE)
-                        } else {stop("the double crop isn't working and hasn't been end-run")}
+                       # # crop the raster to JUST this grid-cut polygon. That
+                       # # currently fails with a nested st_crop on a proxy. So
+                       # # two options for a workaround- read the whole thing in,
+                       # # or pass in the uncropped proxy and just do the crop
+                       # # here. The whole point is it's too big to read in, so
+                       # # try the latter. But do it in a conditional so we can switch back if we fix the bug
+                       # if (is.null(uncropraster)) {
+                       #   smallcrop <- st_crop(rastst, thissmall, as_points = FALSE)
+                       # } else if (inherits(uncropraster, 'stars_proxy')) {
+                       #   smallcrop <- st_crop(uncropraster, thissmall, as_points = FALSE)
+                       #  } else {stop("the double crop isn't working and hasn't been end-run")}
                        
                        
                        
                        # Use the core rpintersect function to do the intersection
-                       intPRsmall <- rpintersect(singlesf = thissmall, singleraster = smallcrop, 
+                       intPRsmall <- rpintersect(singlesf = thissmall, singleraster = rastst, 
                                                  na.replace = na.replace, whichcrs = whichcrs)
                        # Return to be row-bound
                        intPRsmall
@@ -205,11 +203,19 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
 
 # The core intersection function used by rastPolyJoin ------------------------------------------
 
-# THIS IS THE CORE FUNCTION THAT does a single
-# polygon x raster intersect (or a whole sf dataframe) and ensures transforms,
-# etc
+# THIS IS THE CORE FUNCTION THAT does a single polygon x raster intersect (or a
+# whole sf dataframe) and ensures transforms, etc 
+
+# It is agnostic to cropping- it should work (with sufficient memory or
+# stars_proxy) if it's fed a raster that's been cropped or a raster of the whole
+# world
 rpintersect <- function(singlesf, singleraster, 
                         na.replace = NA, whichcrs = 3577) {
+  
+  # Crop for memory and speed- mostly useful for stars_proxy, but also
+  # elsewhere. Fine to have pre-cropped as well, I think. But proxies can get in
+  # here on their own just fine, and then crop at the last minute
+  singleraster <- st_crop(singleraster, singlesf, as_points = FALSE)
   
   # read in the stars as sf polys
     # I want to use merge = TRUE to reduce the number of polygons, but it ALSO merges the time dimension, which is bad.

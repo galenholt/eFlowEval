@@ -351,17 +351,17 @@ processInundationGeneral <- function(datOut, args) {
   # workaround 
   
   # Need to change the way we do the grid-cropped situation. It should be out
-  # here so we don't have to potentially crop twice.
+  # here (or the thiscrop step should be in rastpolyjoin) so we don't have to
+  # potentially crop twice. I think I've now done this.
   # dpList <- foreach(s = 8:12) %dopar% {
   dpList <- foreach(s = 1:nrow(anaePolys)) %dopar% {
-
-    thiscrop <- st_crop(tifTimes, anaePolys[s,], as_points = FALSE)
+    # moved the cropping all the way in to rpintersect
+    # thiscrop <- st_crop(tifTimes, anaePolys[s,], as_points = FALSE)
     thistemp <- rastPolyJoin(polysf = anaePolys[s,], rastst = thiscrop, FUN = chosenSummary,
                              grouper = 'UID', maintainPolys = TRUE,
                              na.replace = 0, whichcrs = commonCRS, 
                              maxPixels = maxPix,
-                             pixelsize = pixarea,
-                             uncropraster = tifTimes)
+                             pixelsize = pixarea)
   } # end foreach
   
   # the below gets weird if I run with nrow(anaePolys) == 0. tried to fix in
