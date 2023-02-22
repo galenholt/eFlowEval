@@ -4,11 +4,8 @@ library(tidyverse)
 library(sf)
 library(stars)
 
-# Argh. sort all this directory crap out later
-  # Trying to at least separate scripts and functions, looking towards library
+# also loads internal functions
 source('directorySet.R')
-source(here('Functions', 'rastPolyJoin.R'))
-source(here('Functions', 'timeRoll.R'))
 
 
 # load the processed anae files, cut to lachlan

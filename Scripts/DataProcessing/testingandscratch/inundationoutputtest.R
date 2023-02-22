@@ -22,7 +22,6 @@ library(stars)
 library(foreach)
 library(doFuture)
 
-source('Functions/rastPolyJoin.R')
 
 
 
@@ -65,7 +64,6 @@ library(stars)
 library(foreach)
 library(doFuture)
 registerDoFuture()
-source('Functions/rastPolyJoin.R')
 
 
 # Read in all the data ----------------------------------------------------

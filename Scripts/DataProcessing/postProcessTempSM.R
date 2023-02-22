@@ -7,12 +7,7 @@ library(tidyverse)
 library(sf)
 library(stars)
 
-# Argh. sort all this directory crap out later
-# Trying to at least separate scripts and functions, looking towards library
-# source(here('Functions', 'rastPolyJoin.R'))
-# source(here('Functions', 'timeRoll.R'))
-# source(here('Functions', 'helpers.R'))
-# source(here('Functions', 'unevenTimeMult.R'))
+# also loads internal functions
 source('directorySet.R')
 
 

@@ -838,7 +838,7 @@ timeinun <- function(ntimes, nanaes) {
 }
 
 library(microbenchmark)
-source('Functions/rastPolyJoin.R')
+
 
 benchInSmall <- microbenchmark("t2a2" = { b <- timeinun(ntimes = 2, nanaes = 2) },
                           "t5a5" = {b <- timeinun(ntimes = 5, nanaes = 5)},

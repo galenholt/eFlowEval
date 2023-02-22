@@ -16,7 +16,7 @@
 # library(foreach)
 # library(doFuture)
 
-# source('Functions/rastPolyJoin.R') # Shouldn't be needed anymore
+#  # Shouldn't be needed anymore
 
 # Set up parallel backend
 # registerDoFuture()

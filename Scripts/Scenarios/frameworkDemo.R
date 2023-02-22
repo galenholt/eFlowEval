@@ -38,8 +38,8 @@ library(viridis)
 # Trying to at least separate scripts and functions, looking towards library
 source('directorySet.R')
 # This is almost EXACTLY a library load at this point. Just need to actually wrap it up and split the git
-basicfuns <- list.files(here('Functions'))
-basicfuns <- here('Functions', basicfuns)
+# basicfuns <- list.files(here('Functions'))
+# basicfuns <- here('Functions', basicfuns)
 strictfuns <- list.files(here('Strictures'), pattern = '.R')
 strictfuns <- here('Strictures', strictfuns)
 

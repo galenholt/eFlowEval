@@ -19,7 +19,6 @@ library(stars)
 library(foreach)
 library(doFuture)
 
-source('Functions/rastPolyJoin.R')
 
 # Set up parallel backend
 registerDoFuture()

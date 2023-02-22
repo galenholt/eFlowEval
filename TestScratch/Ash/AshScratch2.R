@@ -23,7 +23,7 @@ library(ncdf4)
 library(lubridate)
 
 
-source(here('Functions',"strictlyFun.R"))
+source(here('R',"strictlyFun.R"))
 
 load(file.path(datOut, 'lachAll.rdata'))
 load(file = file.path(datOut, 'kanDemo.rdata'))

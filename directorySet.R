@@ -56,8 +56,8 @@ if (!dir.exists(datOut)) {dir.create(datOut, recursive = TRUE)}
 # The in directory has to exist, or there won't be anything to use
 
 # source everything in the functions folder. This really is turning into a package
-funfiles <- list.files('Functions', pattern = '.R$')
+funfiles <- list.files('R', pattern = '.R$')
 # funfiles
 for (s in 1:length(funfiles)) {
-  source(file.path('Functions', funfiles[s])) 
+  source(file.path('R', funfiles[s])) 
 }

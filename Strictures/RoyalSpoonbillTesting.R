@@ -47,7 +47,7 @@ AvocaMarshesBounds <- ramsarBoundsMDB %>%
            Wetland == "Third Marsh (Top Marsh)")
 
 AvocaMarshBB <- st_bbox(AvocaMarshesBounds)
-source("./Functions/BBoxAdj.R")
+source("./R/BBoxAdj.R")
 AvocaMarshBB <- BBoxAdj(AvocaMarshBB, 0.5,0.5)
 
 # gplot + coord_sf(xlim = st_coordinates(bbox_new)[c(1,2),1], # min & max of x values

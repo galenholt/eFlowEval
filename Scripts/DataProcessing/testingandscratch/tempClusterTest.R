@@ -24,7 +24,7 @@ registerDoFuture
 print('plan at the top')
 plan(cluster) 
 print('plan started')
-source('Functions/rastPolyJoin.R')
+
 
 # Read in all the data ----------------------------------------------------
 
