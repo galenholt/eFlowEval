@@ -23,6 +23,16 @@ source(file.path('Scripts/DataProcessing/processInundationGeneral.R'))
 # the script to run is 6 (not necessary in this wrapper, at least not now)
 # Subchunks are 10+
 
+# If I run this locally, does it make more sense to just loop over all polygons
+# in a catchment, and let that inner foreach do all the work? The chunking here
+# was to split array jobs on SLURM, but not clear that doesn't just booger
+# things up locally and not let future/foreach pick the best options. And not
+# clear whether to chunk by catchment even, though that's more enforced in the
+# way the data and processData are set up
+
+# One advantage of chunking is that it means a failure doesn't kill the whole
+# thing
+
 # I've modified makeSHfails to give me a list
 runlist <- makeSHfails(outerDir = file.path(datOut, 'Inundationprocessed'),
             summaryFuns = 'lippiaAdultSurvive',

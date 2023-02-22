@@ -357,7 +357,7 @@ processInundationGeneral <- function(datOut, args) {
   dpList <- foreach(s = 1:nrow(anaePolys)) %dopar% {
     # moved the cropping all the way in to rpintersect
     # thiscrop <- st_crop(tifTimes, anaePolys[s,], as_points = FALSE)
-    thistemp <- rastPolyJoin(polysf = anaePolys[s,], rastst = thiscrop, FUN = chosenSummary,
+    thistemp <- rastPolyJoin(polysf = anaePolys[s,], rastst = tifTimes, FUN = chosenSummary,
                              grouper = 'UID', maintainPolys = TRUE,
                              na.replace = 0, whichcrs = commonCRS, 
                              maxPixels = maxPix,
