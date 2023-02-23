@@ -59,21 +59,56 @@ sumFun <- 'weightedMean'
 
 Typically I'll now throw a breakpoint in something and debug. This approach separates the debug setup business from the functions.
 
-Without rastrolling
+Without rastrolling- commenting for speed
 
 ```{r}
-processData(dataname = datname, data_dir = datDir, summaryFun = sumFun, out_dir = datOut, catchment = catch, thischunk = chunk, subchunkArgs = suba)
+
+# processData(dataname = datname, data_dir = datDir, summaryFun = sumFun, out_dir = datOut, catchment = catch, thischunk = chunk, subchunkArgs = suba, saveout = FALSE)
 ```
 
-witth
+with
+
+Commenting for speed
 
 ```{r}
 rra <- list(attribute_number = 1, tDim = 3, FUN = RcppRoll::roll_max, rolln = 2, align = 'right', na.rm = TRUE)
 
-processData(dataname = datname, data_dir = datDir, summaryFun = sumFun, out_dir = datOut, catchment = catch, thischunk = chunk, subchunkArgs = suba, rastRollArgs = rra)
+# processData(dataname = datname, data_dir = datDir, summaryFun = sumFun, out_dir = datOut, catchment = catch, thischunk = chunk, subchunkArgs = suba, rastRollArgs = rra, saveout = FALSE)
+```
+
+## Does processData work with each dataset?
+
+Try it all the way through with each for a smallish set of polys
+
+### Moisture
+
+```{r}
+moisttab <- processData(dataname = 'moisture', data_dir = datDir, summaryFun = sumFun, out_dir = datOut, catchment = catch, thischunk = chunk, subchunkArgs = suba, saveout = FALSE)
+
+moisttab
+```
+
+### Inundation
+
+```{r}
+inuntab <- processData(dataname = 'inundation', data_dir = datDir, summaryFun = sumFun, out_dir = datOut, catchment = catch, thischunk = chunk, subchunkArgs = suba, saveout = FALSE)
+
+inuntab
+```
+
+### Temperature
+
+```{r}
+#| eval: false
+# This is full of read errors.
+temptab <- processData(dataname = 'soiltemp', data_dir = datDir, summaryFun = sumFun, out_dir = datOut, catchment = catch, thischunk = chunk, subchunkArgs = suba, saveout = FALSE)
+
+temptab
 ```
 
 ## The temp issue
+
+Trying to figure out the issue with temp, it clearly used to work in processTemp.
 
 As soon as we try to turn the proxy into memory, it barfs. Doesn't seem to happen with moisture or inundation (that I've found so far).
 
@@ -132,6 +167,8 @@ The dimensions match. So what's going on?
 st_dimensions(testRstars)
 st_dimensions(testRproxy)
 ```
+
+Does it still work in processTemp, or has somethign changed in stars/sf/netcdf?
 
 ## HPC
 
