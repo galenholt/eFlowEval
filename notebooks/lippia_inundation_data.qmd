@@ -1,0 +1,77 @@
+---
+title: "Local_Inundation"
+author: "Galen"
+format: html
+editor: visual
+---
+
+## Local runs of inundation
+
+### Setup
+
+```{r}
+# Yeesh, pull these out
+library(here)
+library(tidyverse)
+library(sf)
+library(stars)
+library(foreach)
+library(doFuture)
+```
+
+First, set directories and read-in function
+
+```{r}
+source('directorySet.R')
+
+registerDoFuture()
+
+plan(multisession) # I *think* sequential allows debug?
+```
+
+### Check what needs to happen
+
+```{r}
+# I've modified makeSHfails to give me a list
+runlist <- makeSHfails(outerDir = file.path(datOut, 'Inundationprocessed'),
+            summaryFuns = 'lippiaAdultSurvive',
+            varName = 'LippiaSurvive',
+            nchunks = 100,
+            lengthOrChunk = c('short', 'long'), # , 'long', 'chunk'
+            runImmediate = FALSE,
+            forceAllCatchments = TRUE,
+            returnForR = TRUE)
+```
+
+```{r}
+runlist
+```
+
+## Set up the runs
+
+```{r}
+# Run over the catchments and chunks 
+alltimes <- foreach(w = names(runlist), 
+                    .combine = rbind, 
+                    .errorhandling = 'remove') %:%
+  foreach(i = as.character(runlist[[w]]), 
+          .combine = rbind, 
+          .errorhandling = 'remove') %dopar% {
+            inuntab <- processData(dataname = 'inundation', 
+                                   data_dir = datDir, 
+                                   summaryFun = 'lippiaAdultSurvive', 
+                                   out_dir = datOut, 
+                                   catchment = w, 
+                                   thischunk = i)
+            
+            inuntab
+          }
+```
+
+### Timings
+
+The timings are saved in alltimes
+
+```{r}
+alltimes
+```
