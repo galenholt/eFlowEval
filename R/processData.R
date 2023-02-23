@@ -1,60 +1,25 @@
-# Things we'll now need to unpack outside (esp on HPC)
 
-# Set up parallel backend
-# registerDoFuture()
-# plan(multicore) # multicore on HPC
-
-# # For local testing
-# plan(multisession)
-# args order: 
-# SLURM_ARRAY_TASK_ID (ie the chunk) is 8
-# Catchment name is 9
-# summaryFun is 7
-# the script to run (this one) is 6
-# Subchunks are 10+
-
-# summaryFun <- args[7]
-
-# Note stash TO get pixarea and areaunits for soil moisture, need to deal with
-# time differently than in inundation because they are yearly NCs. Something like
-# read_stars(allpaths[1], RasterIO = rasterio, proxy = FALSE)[,,,1] %>% 
-# st_set_crs(4326) %>% 
-#   adrop() %>% 
-#   st_as_sf(as_points = FALSE, merge = FALSE, na.rm = FALSE) %>% 
-#   mutate(area = st_area(.))
-
-# Make the pixarea and units its own function. It will be useful for any future
-# setup of new datasets too to see how big their pixels are. Unclear why I did
-# it twice- the units is exactly the same thing, just not averaged? ie all we
-# need is %>% dplyr::summarize(mean_area = mean(area)) on the end
-
-# For testing
-catchment <- 'Avoca'
-thischunk <- '9'
-subchunkArgs <- c('8', '6', '10')
-subchunkArgs <- NULL
-dataname <- 'Inundation'
-data_dir <- datDir
-summaryFun <- 'weightedMean'
 
 processData <- function(dataname,
                         data_dir,
-                        poly_path = file.path(datOut, 'ANAEprocessed'),
+                        poly_path = file.path(out_dir, 'ANAEprocessed'),
                         summaryFun, 
-                        datOut, 
+                        out_dir, 
                         catchment,
                         thischunk, # character. formerly `arrayNum` (numeric) and `chunkName` (the character version)
                         subchunkArgs = NULL,
                         nchunks = 100,
                         whichcrs = 3577,
-                        maxPix = 100000) {
+                        maxPix = 100000,
+                        rastRollArgs = NULL) {
+  start_time <- Sys.time()
   # Make a sub-directory for the subchunk
   if (length(subchunkArgs) == 0 | is.null(subchunkArgs)) {chunkpath <- catchment} 
   if (length(subchunkArgs) > 0) {
     chunkpath <- stringr::str_flatten(c(catchment, subchunkArgs),
                                          collapse = '/sub_')
     }
-  scriptOut <- file.path(datOut, paste0(dataname, 'processed'), summaryFun, 'chunked',
+  scriptOut <- file.path(out_dir, paste0(dataname, 'processed'), summaryFun, 'chunked',
                          chunkpath)
   
   # Get the function indicated by summaryFun. Why don't we just use the
@@ -65,9 +30,12 @@ processData <- function(dataname,
   # Get the needed chunk of anaes
   anaePolys <- get_anae_chunk(anae_path = poly_path,
                               catchment = catchment, 
-                              thischunk = thischunk, subchunkArgs)
+                              thischunk = thischunk, 
+                              subchunkArgs = subchunkArgs,
+                              nchunks = nchunks)
   
-  print(paste0('number of polygons processing is ', nrow(anaePolys)))
+  npolys <- nrow(anaePolys)
+  print(paste0('number of polygons processing is ', npolys))
   
   # Get the stars proxy
   if (grepl(dataname,'inundation', ignore.case=TRUE)) {
@@ -82,17 +50,20 @@ processData <- function(dataname,
   if (grepl(dataname, 'soiltemp', ignore.case=TRUE) | 
       grepl(dataname, 'soil_temp', ignore.case=TRUE) |
       grepl(dataname, 'soil temp', ignore.case=TRUE)) {
-    tempDir <- file.path(datDir, 'soilTemp14_20')
+    tempDir <- file.path(data_dir, 'soilTemp14_20')
     
-    proxylist <- read_soil_temp(tempDir)
+    proxylist <- read_soil_temp(tempDir, sub = 'LST_Day_1km')
+    na.replace <- NA
     
   }
   
-  if (grepl(dataname, 'moist', ignore.case=TRUE)) {
-    moistDir <- file.path(datDir, 'soilmoisture')
+  if (grepl(dataname, 'moist', ignore.case=TRUE) |
+      grepl('moist', dataname, ignore.case= TRUE)) {
+    moistDir <- file.path(data_dir, 'soilmoisture')
     
     # units are soil moisture percent 'sm_pct' as 0-1, not 0-100
-    proxylist <- read_soil_moisture(tempDir)
+    proxylist <- read_soil_moisture(moistDir)
+    na.replace <- NA
     
   }
   
@@ -109,7 +80,7 @@ processData <- function(dataname,
   # within catchments (and skip the whole outer SLURM/foreach entirely)
   
   # parallel loop over the anae polygons
-  dpList <- foreach(s = 1:nrow(anaePolys)) %dopar% {
+  dpList <- foreach(s = 1:nrow(anaePolys)) %do% {
     # moved the cropping all the way in to rpintersect
     thistemp <- rastPolyJoin(polysf = anaePolys[s,], 
                              rastst = proxylist$proxy_data, 
@@ -118,7 +89,8 @@ processData <- function(dataname,
                              na.replace = na.replace,
                              whichcrs = whichcrs, 
                              maxPixels = maxPix,
-                             pixelsize = as.numeric(proxylist$pixarea))
+                             pixelsize = as.numeric(proxylist$pixarea),
+                             rastRollArgs = rastRollArgs)
   } # end foreach
   
   
@@ -178,5 +150,8 @@ processData <- function(dataname,
   # use the list of characters
   save(list = c(thistemp, thisIndex), file = file.path(scriptOut, paste0(thistemp, '.rdata')))
 
+  end_time <- Sys.time()
+  elapsed <- end_time-start_time
   
+  sumtab <- tibble::tibble(catchment, chunknumber = as.numeric(thischunk), summaryFun, npolys, pixarea = proxy_list$pixarea, elapsed)
 }

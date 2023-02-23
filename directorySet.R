@@ -59,5 +59,6 @@ if (!dir.exists(datOut)) {dir.create(datOut, recursive = TRUE)}
 funfiles <- list.files('R', pattern = '.R$')
 # funfiles
 for (s in 1:length(funfiles)) {
+  # print(s)
   source(file.path('R', funfiles[s])) 
 }
