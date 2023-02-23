@@ -1,5 +1,7 @@
-get_anae_chunk <- function(anae_path, catchment, thischunk, subchunkArgs) {
+get_anae_chunk <- function(anae_path, catchment, thischunk, subchunkArgs, nchunks) {
   
+  # need numeric for calcs.
+  arraynum <- as.integer(thischunk)
   
   # Read in all ANAE ----------------------------------
   # The whole-basin version is ANAEbasinclim.rdata
@@ -7,7 +9,7 @@ get_anae_chunk <- function(anae_path, catchment, thischunk, subchunkArgs) {
   thisAName <- paste0(catchment, 'ANAE') 
   allANAES <- list.files(anae_path, pattern = paste0('^', thisAName))
   ## Read in all ANAE polygons
-  load(file.path(datOut, 'ANAEprocessed', allANAES))
+  load(file.path(anae_path, allANAES))
   # datOut is location-aware, based on directorySet.R, so this should work
   # locally or on HPC
   
