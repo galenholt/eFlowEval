@@ -3,7 +3,8 @@
 rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,  
                          maintainPolys = TRUE, na.replace = NA, whichcrs = 3577, 
                          maxPixels = 100000,
-                         pixelsize = NA) {
+                         pixelsize = NA,
+                         rastRollArgs = NULL) {
   # polysf is a spatial polygon simple feactures object
   # rastst is a raster brick in stars or stars_proxy (more likely) format
   # grouper is a single grouping variable to identify single polygons in polysf
@@ -21,6 +22,10 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
   # that are calculated internal to this function, so this assumption is a
   # workaround
   # maxPixels and pixelsize are used to bring the raster in in chunks if it's too big
+  # rastRollArgs allows passing a list of arguments to timeRoll to roll the
+  # raster after cropping. use the `attribute_number` format, e.g. `rastRollArgs
+  # = list(attribute_number = 1, tDim = 3, FUN = RcppRoll::roll_max, rolln = 2,
+  # align = 'right', na.rm = TRUE)`. NULL (the default) just bypasses
 
     # Handle the case where we feed it a null dataframe (or, more generally, where
   # the grouper doesn't exist)
@@ -50,7 +55,8 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
     # rpintersect is just a wrapper of st_intersection with a bunch of read-in and transform boilerplate so it works consistently
   if (is.na(pixneeded) | is.na(maxPixels) | (pixneeded <= maxPixels)) {
     intPR <- rpintersect(singlesf = polysf, singleraster = rastst, 
-                         na.replace = na.replace, whichcrs = whichcrs)
+                         na.replace = na.replace, whichcrs = whichcrs,
+                         rastRollArgs = rastRollArgs)
   } else if (pixneeded > maxPixels) {
     # make a grid that breaks up the polygon (or is just the bb if the number of pixels is small enough)
     grid <- st_make_grid(polysf, n = ceiling(sqrt(pixneeded/maxPixels)))
@@ -92,7 +98,8 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
                        
                        # Use the core rpintersect function to do the intersection
                        intPRsmall <- rpintersect(singlesf = thissmall, singleraster = rastst, 
-                                                 na.replace = na.replace, whichcrs = whichcrs)
+                                                 na.replace = na.replace, whichcrs = whichcrs,
+                                                 rastRollArgs = rastRollArgs)
                        # Return to be row-bound
                        intPRsmall
                      } # end foreach
@@ -210,13 +217,19 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
 # stars_proxy) if it's fed a raster that's been cropped or a raster of the whole
 # world
 rpintersect <- function(singlesf, singleraster, 
-                        na.replace = NA, whichcrs = 3577) {
+                        na.replace = NA, whichcrs = 3577,
+                        rastRollArgs = NULL) {
   
   # Crop for memory and speed- mostly useful for stars_proxy, but also
   # elsewhere. Fine to have pre-cropped as well, I think. But proxies can get in
   # here on their own just fine, and then crop at the last minute
   singleraster <- st_crop(singleraster, singlesf, as_points = FALSE)
   
+  # time-roll the raster if needed
+  if (!is.null(rastRollArgs)) {
+    singleraster <- st_as_stars(singleraster)
+    singleraster[[rastRollArgs$attribute_number]] <- rlang::exec(timeRoll, singleraster, !!!rastRollArgs)
+  }
   # read in the stars as sf polys
     # I want to use merge = TRUE to reduce the number of polygons, but it ALSO merges the time dimension, which is bad.
   rastSF <- st_as_sf(singleraster, as_points = FALSE, merge = FALSE, na.rm = FALSE)

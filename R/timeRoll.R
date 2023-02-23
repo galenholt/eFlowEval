@@ -1,12 +1,17 @@
 # timeRoll function
 
-timeRoll <- function(stardat, 
+timeRoll <- function(stardat, attribute_number = 1,
                      tDim = NULL, FUN, rolln = 1L,
                      align = 'center', fill = c(NA, NA, NA), na.rm = FALSE) {
   
-  # fname <- paste(deparse(substitute(FUN), 50), collapse = "\n")
-  # This takes stardat, which is JUST a single starsobj[[attribute]]. I had thought about getting the whole object, but this allows either replacing or adding
+  # This takes stardat, which can be JUST a single starsobj[[attribute]], or a
+  # stars object, with the attribute_number extracted in here. That allows
+  # easier calling (the stars), but also more flexibility. It returns just the
+  # array though, so we can easily add to stars as a new attribute.
   
+  if (inherits(stardat, 'stars')) {
+    stardat <- stardat[[attribute_number]]
+  }
   # The data for the attribute may be a matrix or array
   
   ndims <- length(dim(stardat))
