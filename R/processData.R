@@ -11,7 +11,8 @@ processData <- function(dataname,
                         nchunks = 100,
                         whichcrs = 3577,
                         maxPix = 100000,
-                        rastRollArgs = NULL) {
+                        rastRollArgs = NULL,
+                        saveout = TRUE) {
   start_time <- Sys.time()
   # Make a sub-directory for the subchunk
   if (length(subchunkArgs) == 0 | is.null(subchunkArgs)) {chunkpath <- catchment} 
@@ -52,7 +53,8 @@ processData <- function(dataname,
       grepl(dataname, 'soil temp', ignore.case=TRUE)) {
     tempDir <- file.path(data_dir, 'soilTemp14_20')
     
-    proxylist <- read_soil_temp(tempDir, sub = 'LST_Day_1km')
+    # The `sub = 'LST_Day_1km'` argument happens inside here
+    proxylist <- read_soil_temp(tempDir)
     na.replace <- NA
     
   }
@@ -80,7 +82,7 @@ processData <- function(dataname,
   # within catchments (and skip the whole outer SLURM/foreach entirely)
   
   # parallel loop over the anae polygons
-  dpList <- foreach(s = 1:nrow(anaePolys)) %do% {
+  dpList <- foreach(s = 1:nrow(anaePolys)) %dopar% {
     # moved the cropping all the way in to rpintersect
     thistemp <- rastPolyJoin(polysf = anaePolys[s,], 
                              rastst = proxylist$proxy_data, 
@@ -148,10 +150,15 @@ processData <- function(dataname,
   # but this is more explicit
   # This does not actually save a list; to save with character vectors need to
   # use the list of characters
-  save(list = c(thistemp, thisIndex), file = file.path(scriptOut, paste0(thistemp, '.rdata')))
-
+  # saveout is a way to bypass saving while testing
+  if (saveout) {
+    save(list = c(thistemp, thisIndex), file = file.path(scriptOut, paste0(thistemp, '.rdata')))
+  }
+  
   end_time <- Sys.time()
   elapsed <- end_time-start_time
   
-  sumtab <- tibble::tibble(catchment, chunknumber = as.numeric(thischunk), summaryFun, npolys, pixarea = proxy_list$pixarea, elapsed)
+  sumtab <- tibble::tibble(catchment, chunknumber = as.numeric(thischunk), summaryFun, npolys, pixarea = proxylist$pixarea, elapsed)
+  
+  return(sumtab)
 }
