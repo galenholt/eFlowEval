@@ -26,11 +26,14 @@ get_anae_chunk <- function(anae_path, catchment, thischunk, subchunkArgs, nchunk
   # Weird geometry types were causing problems for the grid, but don't seem to
   # be an issue here. If there are potential issues, throw a warning.
   if (any(!st_is(anaePolys, c('POLYGON', 'MULTIPOLYGON')))) {
-    warning("anaePolys have geometries other than polygons, which tends to cause 
-            problems with crops. Do somethign like 
-            `st_collection_extract(anaePolys, 'POLYGON')` to get rid of the 
-            non-areal geometries. 
-            See the grid loop in rastPolyJoin for an example")
+    origrows <- nrow(anaePolys)
+    anaePolys <- anaePolys %>% 
+      dplyr::filter(!st_is_empty(.)) %>% 
+      st_collection_extract('POLYGON')
+    
+    droppedrows <- origrows - nrow(anaePolys)
+    rlang::inform("anaePolys have empty geometries or geometries other than polygons, which tends to cause 
+            problems with crops. These have been dropped, yielding {droppedrows} fewer rows")
   }
   
   # Sort out the chunks -----------------------------------------------------
