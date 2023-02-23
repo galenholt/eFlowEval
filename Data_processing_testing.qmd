@@ -1,0 +1,150 @@
+---
+title: "Data_Processing_testing"
+author: "Galen"
+format: html
+editor: visual
+---
+
+## Testing new processData approach
+
+### Things we'll now need to unpack outside (esp on HPC)
+
+-   Directory setting
+
+-   passing args in
+
+-   registering futures and plan()
+
+## Local testing
+
+We now need to call libraries here. Which is WAY better than inside functions, but need to remember to do it. This could be cleaned up with `::` referencing in the functions.
+
+```{r}
+# Yeesh, pull these out
+library(here)
+library(tidyverse)
+library(sf)
+library(stars)
+library(foreach)
+library(doFuture)
+```
+
+First, set directories and read-in function
+
+```{r}
+source('directorySet.R')
+
+registerDoFuture()
+
+plan(sequential) # I *think* sequential allows debug?
+```
+
+Set some parameters for testing- Inundation is super-small, so don't use it unless actually testing it. Naming them different things than function args to avoid end-running values accidentally
+
+```{r}
+catch <- 'Avoca'
+
+chunk <- '9'
+
+# subchunkArgs <- c('8', '6', '10')
+
+suba <- NULL
+
+datname <- 'moisture' # there's a really weird problem with 'soil_temp' where it works as a non-proxy (but can't be read in), and completely stuffs up the dimensions when it's a proxy and fails as soon as we try to actually read-in, even with no cropping etc.
+# 
+# data_dir <- datDir
+
+sumFun <- 'weightedMean'
+```
+
+Typically I'll now throw a breakpoint in something and debug. This approach separates the debug setup business from the functions.
+
+Without rastrolling
+
+```{r}
+processData(dataname = datname, data_dir = datDir, summaryFun = sumFun, out_dir = datOut, catchment = catch, thischunk = chunk, subchunkArgs = suba)
+```
+
+witth
+
+```{r}
+rra <- list(attribute_number = 1, tDim = 3, FUN = RcppRoll::roll_max, rolln = 2, align = 'right', na.rm = TRUE)
+
+processData(dataname = datname, data_dir = datDir, summaryFun = sumFun, out_dir = datOut, catchment = catch, thischunk = chunk, subchunkArgs = suba, rastRollArgs = rra)
+```
+
+## The temp issue
+
+As soon as we try to turn the proxy into memory, it barfs. Doesn't seem to happen with moisture or inundation (that I've found so far).
+
+```{r}
+soil_temp_dir <- file.path(datDir, 'soilTemp14_20')
+tempfile <- list.files(soil_temp_dir, pattern = '.nc')
+temppath <- file.path(soil_temp_dir, tempfile)
+test <- read_stars(temppath, sub = 'LST_Day_1km', proxy = TRUE)
+# Fails going proxy to non-proxy
+# st_as_stars(test)
+
+
+```
+
+The error there is
+
+    Access window out of range in RasterIO().  Requested (0,0) of size 1933x1865 on raster of 1933x1.Error in CPL_read_gdal(as.character(x), as.character(options), as.character(driver),  : 
+      read failure
+
+But it *has* size 1933x1865-
+
+```{r}
+st_dimensions(test)
+```
+
+It's too big to just read in, but we can use RasterIO as in get_pixarea, and still has the issue if proxy first, but not if read straight. Though there is a weird note in there about proxy=TRUE failing.
+
+```{r}
+# blows up memory
+# test2 <- read_stars(temppath, sub = 'LST_Day_1km', proxy = FALSE)
+
+# so use rasterio
+rasterio = list(nXOff = 1, nYOff = 1, nXSize = 100, nYSize = 100)
+  
+testRstars <- temppath %>% # filename
+  stars::read_stars(RasterIO = rasterio, sub = 'LST_Day_1km', proxy = FALSE)
+
+testRproxy <- temppath %>% # filename
+  stars::read_stars(RasterIO = rasterio, sub = 'LST_Day_1km', proxy = TRUE)
+
+```
+
+But the proxy can't be turned into a stars
+
+    Access window out of range in RasterIO().  Requested (0,0) of size 100x100 on raster of 1933x1.Error in CPL_read_gdal(as.character(x), as.character(options), as.character(driver),  : 
+      read failure
+
+```{r}
+#| eval: false
+st_as_stars(testRproxy)
+```
+
+The dimensions match. So what's going on?
+
+```{r}
+st_dimensions(testRstars)
+st_dimensions(testRproxy)
+```
+
+## HPC
+
+For reference, the old args lined up as
+
+-   SLURM_ARRAY_TASK_ID (ie the chunk) is 8
+
+-   Catchment name is 9
+
+-   summaryFun is 7
+
+-   the script to run (this one) is 6
+
+-   Subchunks are 10+
+
+-   summaryFun \<- args\[7\]
