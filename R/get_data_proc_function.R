@@ -54,7 +54,13 @@ get_data_proc_function <- function(summaryFun) {
     chosenSummary <- function(x, area, limitShallow = 0, limitDeep = 0.3) {
       sum(ifelse((x <= limitDeep)|(is.na(x)), area, 0))
     }
-  } else {
+  } else if (summaryFun == 'areaCentipedaSurvive') {
+    # area of moisture > 0.1. Using a max of Inf, though the max should be 1.
+    # Have to sort of write a min() out of ifelse or it does min() over the column, not the rows
+    chosenSummary <- function(x, area, limitdry = 0.1, limitwet = Inf) {
+      sum(ifelse(x > limitdry & x <= limitwet, area, 0))
+    }
+    } else {
     stop('need to choose a summary function')
   }
   
