@@ -1,0 +1,104 @@
+---
+title: "Centipeda moisture duration"
+author: "Galen"
+format: html
+editor: visual
+---
+
+## Moisture for centipeda stricture 2
+
+This does the data processing for:
+
+**Stricture 2**: Soil moisture needs to be maintained for a certain period of time to enable fruiting and seed-set. As with stricture 1, no numbers for the moisture level or period of time.
+
+Let's say they die if soil moisture is \< 10% in the preceding 6-week growing period
+
+To meet the "dead if not moist \> 10% for 6 weeks" condition, we need to check if min(last 6 weeks) is below 10
+
+And then aggregate to the polygon. So, what's the logic?
+
+1.  Roll the raster to get min(moisture over last 6 weeks) \> 0.1
+2.  Aggregate into raster with areaCentipedaSurvive, which calculates the area with x \> 0.1 (on the rolled mins from step 1).
+
+### Setup
+
+```{r}
+# Yeesh, pull these out
+library(here)
+library(tidyverse)
+library(sf)
+library(stars)
+library(foreach)
+library(doFuture)
+```
+
+First, set directories and read-in function
+
+```{r}
+source('directorySet.R')
+
+registerDoFuture()
+
+plan(multisession) # I *think* sequential allows debug?
+```
+
+### Check what needs to happen
+
+```{r}
+# I've modified makeSHfails to give me a list
+runlist <- makeSHfails(outerDir = file.path(datOut, 'soilmoistureprocessed'),
+            summaryFuns = 'areaCentipedaSurvive',
+            varName = 'CentipedaSurvive',
+            nchunks = 100,
+            lengthOrChunk = c('short', 'long'), # , 'long', 'chunk'
+            runImmediate = FALSE,
+            forceAllCatchments = TRUE,
+            returnForR = TRUE)
+```
+
+```{r}
+runlist
+```
+
+## Set up the runs
+
+First, the arguments for time-rolling the raster- get the 42-day min
+
+```{r}
+min42args <- list(attribute_number = 1, 
+                  tDim = 3, 
+                  FUN = RcppRoll::roll_min,
+                  rolln = 42,
+                  align = 'right',
+                  na.rm = TRUE)
+```
+
+Then run the loops over catchments and chunks, with the right functions passed in and args passed to roll the raster first.
+
+```{r}
+# Run over the catchments and chunks 
+alltimes <- foreach(w = names(runlist), 
+                    .combine = rbind, 
+                    .errorhandling = 'remove') %:%
+  foreach(i = as.character(runlist[[w]]), 
+          .combine = rbind, 
+          .errorhandling = 'remove') %dopar% {
+            inuntab <- processData(dataname = 'soilmoisture', 
+                                   data_dir = datDir, 
+                                   summaryFun = 'areaCentipedaSurvive', 
+                                   out_dir = datOut, 
+                                   catchment = w, 
+                                   thischunk = i,
+                                   rastRollArgs = min42args)
+            
+            inuntab
+          }
+```
+
+### Timings
+
+The timings are saved in alltimes
+
+```{r}
+alltimes
+```
