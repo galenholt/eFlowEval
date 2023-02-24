@@ -53,7 +53,8 @@ runlist <- makeSHfails(outerDir = file.path(datOut, 'soilmoistureprocessed'),
             lengthOrChunk = c('short', 'long'), # , 'long', 'chunk'
             runImmediate = FALSE,
             forceAllCatchments = TRUE,
-            returnForR = TRUE)
+            returnForR = TRUE,
+            produce_sh = FALSE)
 ```
 
 ```{r}

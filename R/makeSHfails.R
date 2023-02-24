@@ -20,7 +20,8 @@
 makeSHfails <- function(outerDir, varName, summaryFuns, 
                         nchunks = 100, lengthOrChunk, runImmediate = FALSE,
                         forceAllCatchments = FALSE, 
-                        returnForR = FALSE) {
+                        returnForR = FALSE,
+                        produce_sh = TRUE) {
   # Outerdir is the outer directory, containing all summaryFun directories and chunking
   # varName is just a unique name to avoid overwriting other variables
     # it tends to be the name in the SLURM script: allvarnameSLURM.sh
@@ -100,15 +101,18 @@ makeSHfails <- function(outerDir, varName, summaryFuns,
     # If we're done, just wrap up here
     if (length(misslist) == 0) {
       print("Finished all catchments")
-      if ('long' %in% lengthOrChunk) {
-        writeLines(c("echo 'All catchments finished, not running anything'", "\n"), con = paste0('missing', varName, 'long.sh'))
+      if (produce_sh) {
+        if ('long' %in% lengthOrChunk) {
+          writeLines(c("echo 'All catchments finished, not running anything'", "\n"), con = paste0('missing', varName, 'long.sh'))
+        }
+        if ('short' %in% lengthOrChunk) {
+          writeLines(c("echo 'All catchments finished, not running anything'", "\n"), con = paste0('missing', varName, '.sh'))
+        }
+        if ('chunk' %in% lengthOrChunk) {
+          writeLines(c("echo 'All catchments finished, not running anything'", "\n"), con = paste0('missing', varName, 'Chunk.sh'))
+        }
       }
-      if ('short' %in% lengthOrChunk) {
-        writeLines(c("echo 'All catchments finished, not running anything'", "\n"), con = paste0('missing', varName, '.sh'))
-      }
-      if ('chunk' %in% lengthOrChunk) {
-        writeLines(c("echo 'All catchments finished, not running anything'", "\n"), con = paste0('missing', varName, 'Chunk.sh'))
-      }
+      
       
       return()
       
@@ -119,102 +123,98 @@ makeSHfails <- function(outerDir, varName, summaryFuns,
     cat("\n")
     
     
-    # If we are using this to support a foreach loop, we don't need to build a
-    # script, we need misslist to loop over, and then we're done
-    if (returnForR) {
-      return(misslist)
-    }
-    
-    
-    # If we're using this to support the HPC, we need to create the shell script
-    missnames <- names(misslist)
-    headline <- "#!/bin/bash"
-    head2 <- "\n"
-    
-    
-    # Short runs
-    if ('short' %in% lengthOrChunk) {
-      # For each catchment, I need to set up the chunk in a list
-      lineslist <- foreach(cn = 1:length(missnames), .inorder = TRUE, .combine = c) %do% {
-        l1 <- stringr::str_c("thiscatch='", missnames[cn],"'")
-        l2 <- stringr::str_c("echo 'start' $thiscatch")
-        misschars <- str_flatten(misslist[[cn]], collapse = ",")
-        l3 <- stringr::str_c("sbatch -J $thiscatch --array=", misschars, " all", varName, "SLURM.sh $thiscatch")
-        l4 <- "sleep 2"
-        l5 <- "\n"
-        thislist <- list(l1, l2, l3, l4, l5)
-      }
+    if (produce_sh) {
+      # If we're using this to support the HPC, we need to create the shell script
+      missnames <- names(misslist)
+      headline <- "#!/bin/bash"
+      head2 <- "\n"
       
-      filechars <- c(headline, head2, unlist(lineslist))
       
-      # Hpc says file isn't an option
-      # readr::write_lines(filechars, file = 'missingTemps.sh')
-      
-      writeLines(filechars, con = paste0('missing', varName, '.sh'))
-      
-      # Do I want to have R actually run this too?
-      if (runImmediate) {
-        system2(command = 'bash', args = paste0('missing', varName, '.sh'))
-      }
-      
-    } 
-    
-    # Just run longer
-    if ('long' %in% lengthOrChunk) {
-      # For each catchment, I need to set up the chunk in a list
-      lineslist <- foreach(cn = 1:length(missnames), .inorder = TRUE, .combine = c) %do% {
-        l1 <- stringr::str_c("thiscatch='", missnames[cn],"'")
-        l2 <- stringr::str_c("echo 'start' $thiscatch")
-        misschars <- str_flatten(misslist[[cn]], collapse = ",")
-        l3 <- stringr::str_c("sbatch -J $thiscatch --array=", misschars, " all", varName, "SLURMLong.sh $thiscatch")
-        l4 <- "sleep 2"
-        l5 <- "\n"
-        thislist <- list(l1, l2, l3, l4, l5)
-      }
-      
-      filechars <- c(headline, head2, unlist(lineslist))
-      
-      # Hpc says file isn't an option
-      # readr::write_lines(filechars, file = 'missingTemps.sh')
-      
-      writeLines(filechars, con = paste0('missing', varName, 'long.sh'))
-      
-      # Do I want to have R actually run this too?
-      if (runImmediate) {
-        system2(command = 'bash', args = paste0('missing', varName, 'long.sh'))
-      }
-      
-    } 
-    
-    # Make the subchunk script
-    if ('chunk' %in% lengthOrChunk) {
-      # This generates an absurd number of runs. I think usually run the above first, and then only do this if necessary.
-      # For each catchment, I need to set up the chunk in a list, but ALSO need to loop over the missings to sub-chunk
-      lineslistSUB <- foreach(cn = 1:length(missnames)) %:%
-        foreach(sc = 1:length(misslist[[cn]]), .inorder = TRUE, .combine = c) %do% {
+      # Short runs
+      if ('short' %in% lengthOrChunk) {
+        # For each catchment, I need to set up the chunk in a list
+        lineslist <- foreach(cn = 1:length(missnames), .inorder = TRUE, .combine = c) %do% {
           l1 <- stringr::str_c("thiscatch='", missnames[cn],"'")
-          l1.5 <- stringr::str_c("thiscchunk='", misslist[[cn]][sc],"'")
-          l2 <- stringr::str_c("echo 'start' $thiscatch $thischunk")
-          
-          l3 <- stringr::str_c("sbatch -J $thiscatch --array=1-100",
-                               " all", varName, "TempSLURMchunk.sh $thiscatch $thischunk")
+          l2 <- stringr::str_c("echo 'start' $thiscatch")
+          misschars <- str_flatten(misslist[[cn]], collapse = ",")
+          l3 <- stringr::str_c("sbatch -J $thiscatch --array=", misschars, " all", varName, "SLURM.sh $thiscatch")
           l4 <- "sleep 2"
           l5 <- "\n"
-          thislist <- list(l1, l1.5, l2, l3, l4, l5)
+          thislist <- list(l1, l2, l3, l4, l5)
         }
+        
+        filechars <- c(headline, head2, unlist(lineslist))
+        
+        # Hpc says file isn't an option
+        # readr::write_lines(filechars, file = 'missingTemps.sh')
+        
+        writeLines(filechars, con = paste0('missing', varName, '.sh'))
+        
+        # Do I want to have R actually run this too?
+        if (runImmediate) {
+          system2(command = 'bash', args = paste0('missing', varName, '.sh'))
+        }
+        
+      } 
       
-      filecharsSUB <- c(headline, head2, unlist(lineslistSUB))  
-      writeLines(filecharsSUB, con = paste0('missing', varName, 'Chunk.sh'))
+      # Just run longer
+      if ('long' %in% lengthOrChunk) {
+        # For each catchment, I need to set up the chunk in a list
+        lineslist <- foreach(cn = 1:length(missnames), .inorder = TRUE, .combine = c) %do% {
+          l1 <- stringr::str_c("thiscatch='", missnames[cn],"'")
+          l2 <- stringr::str_c("echo 'start' $thiscatch")
+          misschars <- str_flatten(misslist[[cn]], collapse = ",")
+          l3 <- stringr::str_c("sbatch -J $thiscatch --array=", misschars, " all", varName, "SLURMLong.sh $thiscatch")
+          l4 <- "sleep 2"
+          l5 <- "\n"
+          thislist <- list(l1, l2, l3, l4, l5)
+        }
+        
+        filechars <- c(headline, head2, unlist(lineslist))
+        
+        # Hpc says file isn't an option
+        # readr::write_lines(filechars, file = 'missingTemps.sh')
+        
+        writeLines(filechars, con = paste0('missing', varName, 'long.sh'))
+        
+        # Do I want to have R actually run this too?
+        if (runImmediate) {
+          system2(command = 'bash', args = paste0('missing', varName, 'long.sh'))
+        }
+        
+      } 
       
-      # I *should* be able to recurse this relatively easily, but hopefully won't need to.
-      
-      # Do I want to have R actually run this too?
-      if (runImmediate) {
-        system2(command = 'bash', args = paste0('missing', varName, 'Chunk.sh'))
+      # Make the subchunk script
+      if ('chunk' %in% lengthOrChunk) {
+        # This generates an absurd number of runs. I think usually run the above first, and then only do this if necessary.
+        # For each catchment, I need to set up the chunk in a list, but ALSO need to loop over the missings to sub-chunk
+        lineslistSUB <- foreach(cn = 1:length(missnames)) %:%
+          foreach(sc = 1:length(misslist[[cn]]), .inorder = TRUE, .combine = c) %do% {
+            l1 <- stringr::str_c("thiscatch='", missnames[cn],"'")
+            l1.5 <- stringr::str_c("thiscchunk='", misslist[[cn]][sc],"'")
+            l2 <- stringr::str_c("echo 'start' $thiscatch $thischunk")
+            
+            l3 <- stringr::str_c("sbatch -J $thiscatch --array=1-100",
+                                 " all", varName, "TempSLURMchunk.sh $thiscatch $thischunk")
+            l4 <- "sleep 2"
+            l5 <- "\n"
+            thislist <- list(l1, l1.5, l2, l3, l4, l5)
+          }
+        
+        filecharsSUB <- c(headline, head2, unlist(lineslistSUB))  
+        writeLines(filecharsSUB, con = paste0('missing', varName, 'Chunk.sh'))
+        
+        # I *should* be able to recurse this relatively easily, but hopefully won't need to.
+        
+        # Do I want to have R actually run this too?
+        if (runImmediate) {
+          system2(command = 'bash', args = paste0('missing', varName, 'Chunk.sh'))
+        }
+        
       }
-      
     }
-  }
+    }
+    
   return()
 }
 
@@ -397,5 +397,13 @@ makeSHfailsNoChunk <- function(outerDir, varName, summaryFuns,
       
     }
   }
-  return()
+  
+  # If we are using this to support a foreach loop, we don't need to build a
+  # script, we need misslist to loop over, and then we're done
+  if (returnForR) {
+    return(misslist)
+  } else {
+    return()
+  }
+  
 }
