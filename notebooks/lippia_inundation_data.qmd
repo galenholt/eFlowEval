@@ -7,6 +7,8 @@ editor: visual
 
 ## Local runs of inundation
 
+This could really be cleaned up even quite a bit more- it really just only takes a couple args and could be a function. And possibly wrapped in a while (!is.null(runlist)) (though that's dangerous)- see the post-processing at the end.
+
 ### Setup
 
 ```{r}
@@ -75,3 +77,29 @@ The timings are saved in alltimes
 ```{r}
 alltimes
 ```
+
+## Concatenate
+
+**TODO- make this automatic (a function?)**- I should be able to run \`makeSHfails\` here, then if there are no fails, immediately run `concatANAEchunks`. Could wrap the whole script in a `while(!is.null(runlist))`, but that's dangerous.
+
+```{r}
+runlist_end <- makeSHfails(outerDir = file.path(datOut, 'Inundationprocessed'),
+                       summaryFuns = 'lippiaAdultSurvive',
+                       varName = 'LippiaSurvive',
+                       nchunks = 100,
+                       lengthOrChunk = c('short', 'long'), # , 'long', 'chunk'
+                       runImmediate = FALSE,
+                       forceAllCatchments = TRUE,
+                       returnForR = TRUE)
+
+if (is.null(runlist_end)) {
+  cattime <- system.time(concatANAEchunks(outerDir = file.path(datOut, 'Inundationprocessed'),
+                               summaryFuns = c('lippiaAdultSurvive')))
+  print(cattime)
+}
+
+
+```
+
+     user  system elapsed 
+      91.36   61.53 1479.17 
