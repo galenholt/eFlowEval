@@ -82,10 +82,34 @@ matchStarsIndex <- function(index1, stars1 = NULL, index2, stars2, indexcol = c(
     dup2 <- index2[which(duplicated(index2$INDEX)), ]
     bothdup2 <- which(index2$INDEX %in% dup2$INDEX)
     
+    if (!all(dup1$INDEX %in% dup2$INDEX)) {
+      stop('duplicate indices present in both indices, 
+      but they are not the same polygons. 
+      This suggests you are comparing different sets of ANAEs,
+           and this function may not yield expected results')
+    }
+    
     # looking just at the duplicates, get the indices of 2 that match 1 based on the geometry itself
     matchindex <- as.numeric(st_equals_exact(index1[bothdup1, ], 
                                              index2[bothdup2, ], 
                                              par = 1, sparse = TRUE))
+    
+    # There's a weird edge case sometimes where they don't `equal_exact`, but do
+    # match, it just can't sort it out. Bypass and warn, I guess. I could
+    # probably be more clever to find the closest, but at this point they're
+    # functionally identical- I think it's likely an ANAE problem.
+    if (all(is.na(matchindex)) & 
+        all(st_intersects(index1[bothdup1, ],
+                          index2[bothdup2, ], 
+                          sparse = FALSE))) {
+      warning('duplicates are failing to match, but seem to actually match well.
+              Just assigning based on position, but should check')
+      # just match on position to get past this.
+      matchindex <- seq(1, length(bothdup1))
+      # one way to look and see
+      # plot(index1[bothdup1[1], 2])
+      # plot(index2[bothdup2[1], 2])
+    }
     
     # Modify the relevant second index- for the reference set, just append 1:index
     index1$INDUP[bothdup1] <- paste0(index1[bothdup1, ]$INDUP, 1:length(bothdup1))

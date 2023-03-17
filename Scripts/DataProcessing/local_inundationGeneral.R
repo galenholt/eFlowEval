@@ -14,18 +14,6 @@ plan(multisession)
 
 source(file.path('Scripts/DataProcessing/processInundationGeneral.R'))
 
-
-# NOTE --------------------------------------------------------------------
-
-# This has been moved to `notebooks/lippia_inundation_data.qmd`. 
-
-# USE THAT FOR PROCESSING
-
-
-# -------------------------------------------------------------------------
-
-
-
 # Try it with just one catchment
 
 # args order: 
@@ -44,11 +32,6 @@ source(file.path('Scripts/DataProcessing/processInundationGeneral.R'))
 
 # One advantage of chunking is that it means a failure doesn't kill the whole
 # thing
-
-# This could really be cleaned up even quite a bit more- it really just only
-# takes a couple args and could be a function. And possibly wrapped in a while
-# (!is.null(runlist)) (though that's dangerous)- see the post-processing at the
-# end.
 
 # I've modified makeSHfails to give me a list
 runlist <- makeSHfails(outerDir = file.path(datOut, 'Inundationprocessed'),
@@ -76,21 +59,3 @@ alltimes <- foreach(w = names(runlist), .combine = rbind, .errorhandling = 'remo
   timeeach <- c(timeeach, catchment = w, chunk = i)
   timeach <- as.data.frame(t(timeeach))
   }
-
-# TODO:: I should be able to run `makeSHfails` here, then if there are no fails,
-# immediately run `concatANAEchunks`.
-
-# Like so
-runlist_end <- makeSHfails(outerDir = file.path(datOut, 'Inundationprocessed'),
-                       summaryFuns = 'lippiaAdultSurvive',
-                       varName = 'LippiaSurvive',
-                       nchunks = 100,
-                       lengthOrChunk = c('short', 'long'), # , 'long', 'chunk'
-                       runImmediate = FALSE,
-                       forceAllCatchments = TRUE,
-                       returnForR = TRUE)
-
-if (is.null(runlist_end)) {
-  system.time(concatANAEchunks(outerDir = file.path(datOut, 'Inundationprocessed'),
-                               summaryFuns = c('lippiaAdultSurvive')))
-}

@@ -298,6 +298,28 @@ loadappend <- function(filename, append) {
 
 }
 
+# Similar to above, but for the situation where we know the names a priori, and
+# want to package them into a list we can name whatever we want (and
+# allows naming the list items whatever we want). Or just return one item.
+load_rename <- function(filepath, knownnames, 
+                       newnames = knownnames, returnOne = NULL) {
+  load(filepath)
+  
+  # Short-circuit if we really just want to get one of them
+  if (!is.null(returnOne)) {
+    # if (length(knownnames) > 1) {rlang::abort("can't return one, not sure which")}
+    
+    return(get(returnOne))
+  }
+  
+  renamelist <- mget(knownnames)
+  names(renamelist) <- newnames
+  
+  return(renamelist)
+  
+  
+}
+
 
 # Plot helpers (themes) ---------------------------------------------------
 pubtheme <- ggplot2::theme_bw(base_size = 11) + 
