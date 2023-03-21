@@ -22,7 +22,7 @@ plan(multisession) # no need to parallelize, I don't think
 
 # Concatenate -------------------------------------------------------------
 ## NEEDS 2 hours on HPC
-# let's array to fic that
+# let's array to fix that
 predicteds <- c('logERdays', 'logERdaysvalleys', 'logGPPdays', 'logGPPdaysvalleys')
 
 thispredict <- predicteds[as.numeric(args[7])]

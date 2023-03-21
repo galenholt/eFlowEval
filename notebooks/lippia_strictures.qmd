@@ -1,0 +1,81 @@
+---
+title: "Lippia strictures"
+author: "Galen Holt"
+format: html
+editor: visual
+---
+
+## Notebook to run the lippia strictures across the basin
+
+### Setup
+
+```{r}
+library(here)
+library(tidyverse)
+library(sf)
+library(stars)
+library(foreach)
+library(doFuture)
+```
+
+First, set directories and read-in function
+
+```{r}
+source('directorySet.R')
+source(file.path('Strictures', 'lippia.R'))
+
+registerDoFuture()
+
+plan(multisession) # I *think* sequential allows debug?
+```
+
+### Check what needs to happen
+
+I don't think we need to chunk. Not sure I need both summaryFun and Varname, so making them the same. It bugs me that I can't just use `makeSHfails` with `nchunks = 1`, but that still sets up the `chunked/CATCHMENTNAME/file` structure. I'm sure I can fix that, but not now.
+
+```{r}
+# I've modified makeSHfails to give me a list
+runlist <- makeSHfailsNoChunk(outerDir = file.path(datOut, 'Strictures'),
+            summaryFuns = 'lippia',
+            varName = 'lippia_strictures',
+            # nchunks = 1,
+            lengthOrChunk = c('short', 'long'), # , 'long', 'chunk'
+            runImmediate = FALSE,
+            forceAllCatchments = TRUE,
+            returnForR = TRUE,
+            produce_sh = FALSE)
+
+```
+
+```{r}
+runlist
+```
+
+## Set up the runs
+
+run the loops over catchments. No chunks here, I don't think.
+
+*how would I do this with batchtools? I think just ask for length(runlist) cpus (or tasks, if using the batchtools template) without worrying about nodes.*
+
+```{r}
+#| warning: false
+# Run over the catchments
+alltimes <- foreach(w = runlist[1:2], 
+                    .combine = rbind, 
+                    .errorhandling = 'remove') %dopar% {
+            lippiatime <- lippiastricts(catchment = w, 
+                                   savefile = TRUE, returnR = FALSE)
+            
+            lippiatime
+          }
+```
+
+### Timings
+
+The timings are saved in alltimes
+
+```{r}
+alltimes
+```
+
+## 

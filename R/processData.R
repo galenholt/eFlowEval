@@ -108,15 +108,16 @@ processData <- function(dataname,
     # Then, unpack the lists also using foreach 
       # does making these %do% actually
       # speed things up overall by giving more resources to the dopars?
+      # Does using dopar potentially shuffle these relative to each other?
     tempAns <- foreach(l = 1:length(dpList),
                        .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
-                       .multicombine=TRUE) %dopar% {
+                       .multicombine=TRUE) %do% {
                          dpList[[l]][[1]]
                        }
     
     tempIndex <- foreach(l = 1:length(dpList),
                          .combine=bind_rows,
-                         .multicombine=TRUE) %dopar% {
+                         .multicombine=TRUE) %do% {
                            dpList[[l]][[2]]
                          }
   }

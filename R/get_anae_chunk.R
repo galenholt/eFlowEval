@@ -1,5 +1,7 @@
 get_anae_chunk <- function(anae_path, catchment, thischunk, subchunkArgs, nchunks) {
   
+  # Why don't I just use `cut` and be done with it? Maybe iteratively for subchunks?
+  
   # need numeric for calcs.
   arraynum <- as.integer(thischunk)
   
@@ -32,8 +34,8 @@ get_anae_chunk <- function(anae_path, catchment, thischunk, subchunkArgs, nchunk
       st_collection_extract('POLYGON')
     
     droppedrows <- origrows - nrow(anaePolys)
-    rlang::inform("anaePolys have empty geometries or geometries other than polygons, which tends to cause 
-            problems with crops. These have been dropped, yielding {droppedrows} fewer rows")
+    rlang::inform(glue::glue("anaePolys have empty geometries or geometries other than polygons, which tends to cause 
+            problems with crops. These have been dropped, yielding {droppedrows} fewer rows"))
   }
   
   # Sort out the chunks -----------------------------------------------------
