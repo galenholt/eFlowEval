@@ -215,7 +215,13 @@ makeSHfails <- function(outerDir, varName, summaryFuns,
     }
     }
     
-  return()
+  # If we are using this to support a foreach loop, we don't need to build a
+  # script, we need misslist to loop over, and then we're done
+  if (returnForR) {
+    return(misslist)
+  } else {
+    return()
+  }
 }
 
   
@@ -224,7 +230,9 @@ makeSHfails <- function(outerDir, varName, summaryFuns,
 
 makeSHfailsNoChunk <- function(outerDir, varName, summaryFuns,
                                lengthOrChunk, runImmediate = FALSE,
-                               forceAllCatchments = TRUE) {
+                               forceAllCatchments = TRUE,
+                               returnForR = FALSE,
+                               produce_sh = TRUE) {
   # Outerdir is the outer directory, containing all summaryFun directories and chunking
   # varName is just a unique name to avoid overwriting other variables
   # lengthOrChunk can be one of 'short', 'long', or 'chunk'
@@ -258,19 +266,24 @@ makeSHfailsNoChunk <- function(outerDir, varName, summaryFuns,
     
     scriptOut <- file.path(outerDir, summaryFun)
     
+    if (!dir.exists(scriptOut)) {
+            dir.create(scriptOut, recursive = TRUE)
+          }
+      
     # If we want to ensure all catchments, create those directories
-    if (forceAllCatchments) {
-      scriptOut <- file.path(outerDir, summaryFun)
-      
-      for (d in 1:length(allcatch)){
-        if (!dir.exists(file.path(scriptOut, allcatch[d]))) {
-          dir.create(file.path(scriptOut, allcatch[d]), recursive = TRUE)
-        }
-      }
-      
-    }
+    # We don't actually want these dirs for no chunking
+    # if (forceAllCatchments) {
+    #   scriptOut <- file.path(outerDir, summaryFun)
+    #   
+    #   for (d in 1:length(allcatch)){
+    #     if (!dir.exists(file.path(scriptOut, allcatch[d]))) {
+    #       dir.create(file.path(scriptOut, allcatch[d]), recursive = TRUE)
+    #     }
+    #   }
+    #   
+    # }
     
-    # get the names of the catchments. Here, in the unchinked, this needs to be passed in.
+    # get the names of the catchments. Here, in the unchunked, this needs to be passed in.
     catchNames <- allcatch
     
     # 
@@ -278,7 +291,9 @@ makeSHfailsNoChunk <- function(outerDir, varName, summaryFuns,
                                pattern = '.rdata', recursive = TRUE)
       
       # Which chunks worked?
-      workedcatch <- str_extract(catchfiles, pattern = '[A-z]*_')
+      # workedcatch <- str_extract(catchfiles, pattern = '[A-z]*_')
+      workedcatch <- str_extract(catchfiles, pattern = '^[^_]*')
+      
       workedcatch
       
       misslist <- catchNames[!(catchNames %in% workedcatch)]
@@ -292,22 +307,25 @@ makeSHfailsNoChunk <- function(outerDir, varName, summaryFuns,
     # If we're done, just wrap up here
     if (length(misslist) == 0) {
       print("Finished all catchments")
-      if ('length' %in% lengthOrChunk) {
-        writeLines(c("echo 'All catchments finished, not running anything'", "\n"), con = paste0('missing', varName, '.sh'))
-      }
-      if ('chunk' %in% lengthOrChunk) {
-        writeLines(c("echo 'All catchments finished, not running anything'", "\n"), con = paste0('missing', varName, 'Chunk.sh'))
+      if (produce_sh) {
+        if ('length' %in% lengthOrChunk) {
+          writeLines(c("echo 'All catchments finished, not running anything'", "\n"), con = paste0('missing', varName, '.sh'))
+        }
+        if ('chunk' %in% lengthOrChunk) {
+          writeLines(c("echo 'All catchments finished, not running anything'", "\n"), con = paste0('missing', varName, 'Chunk.sh'))
+        }
       }
       
       return()
       
     } else {
       cat(paste('These catchments will run again:', 
-                stringr::str_flatten(names(misslist), collapse = '\n'), sep = '\n'))
+                stringr::str_flatten(misslist, collapse = '\n'), sep = '\n'))
     }
     cat("\n")
     
     
+    if (produce_sh) {
     # NOW, do I just run this, or is there a way to create the shell script?
     missnames <- misslist
     headline <- "#!/bin/bash"
@@ -395,6 +413,7 @@ makeSHfailsNoChunk <- function(outerDir, varName, summaryFuns,
         system2(command = 'bash', args = paste0('missing', varName, 'Chunk.sh'))
       }
       
+    }
     }
   }
   
