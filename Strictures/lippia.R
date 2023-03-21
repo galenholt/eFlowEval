@@ -252,8 +252,8 @@ lippiastricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
                               indexcol = c(1, 1), testfinal = FALSE)
   names(inunSurv) <- c('indices', 'aggdata')
 
-  all(soilTemp$indices$UID == anaes$UID)
-  all(inunSurv$indices$UID == anaes$UID)
+  # all(soilTemp$indices$UID == anaes$UID)
+  # all(inunSurv$indices$UID == anaes$UID)
   
   
   
@@ -274,7 +274,7 @@ lippiastricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   # So, here, we'll just ask if the daily temp is >= 25 & <= 35
   
   # Is the mean temp for the polygon in the germ band?
-  system.time(germ_Lippia <- (soilTemp$aggdata >= 25) & (soilTemp$aggdata <= 35))
+  germ_Lippia <- (soilTemp$aggdata >= 25) & (soilTemp$aggdata <= 35)
   
   # make it area- we can always turn it back into 0-1, but we have confirmed
   # matching ordering now, so make everything area passed

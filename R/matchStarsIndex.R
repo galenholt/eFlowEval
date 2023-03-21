@@ -54,7 +54,8 @@ matchStarsIndex <- function(index1, stars1 = NULL, index2, stars2, indexcol = c(
   # the sorted index and stars for 2
   
   # First, do a check, and if they already match, don't need to do any more
-  if (all(index1$INDEX == index2$INDEX)) {
+  if (length(index1$INDEX) == length(index2$INDEX) && 
+      all(index1$INDEX == index2$INDEX)) {
     names(index2)[indexcol[2]] <- origname2
     return(lst(index2, stars2))
   }
@@ -75,6 +76,37 @@ matchStarsIndex <- function(index1, stars1 = NULL, index2, stars2, indexcol = c(
            and this function may not yield expected results')
     }
     
+    # identify where the duplicates are
+    dup1 <- index1[which(duplicated(index1$INDEX)), ]
+    bothdup1 <- which(index1$INDEX %in% dup1$INDEX)
+    
+    dup2 <- index2[which(duplicated(index2$INDEX)), ]
+    bothdup2 <- which(index2$INDEX %in% dup2$INDEX)
+    
+    # sometimes duplicates happen because geometries have the same index, but
+    # are not actually the same. We want to handle and retain those. But
+    # sometimes there are true duplicates, in which case we should remove them.
+    truedup2 <- unlist(st_equals(index2[bothdup2, ], retain_unique = TRUE))
+    drop2 <- bothdup2[truedup2]
+    
+    # Suppress warnings because it can throw a warning when calculating the
+    # moments to print(), and that screws up my warning/error catcher.
+    if (length(drop2) > 0) {
+      index2 <- index2[-drop2, ]
+      stars2 <- stars2[,-drop2, ]
+    }
+    
+    
+    truedup1 <- unlist(st_equals(index1[bothdup1, ], retain_unique = TRUE))
+    drop1 <- bothdup1[truedup1]
+    
+    if (length(drop1) > 0) {
+      index1 <- index1[-drop1, ]
+      if (!is.null(stars1)) {stars1 <- stars1[,-drop1, ]}
+    }
+    
+    
+    # and now we need to re-do the dup-finding. This is getting a bit silly, but I don't have time to refactor.
     # identify where the duplicates are
     dup1 <- index1[which(duplicated(index1$INDEX)), ]
     bothdup1 <- which(index1$INDEX %in% dup1$INDEX)

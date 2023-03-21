@@ -16,6 +16,7 @@ library(sf)
 library(stars)
 library(foreach)
 library(doFuture)
+library(doRNG)
 ```
 
 First, set directories and read-in function
@@ -49,6 +50,43 @@ runlist <- makeSHfailsNoChunk(outerDir = file.path(datOut, 'Strictures'),
 
 ```{r}
 runlist
+```
+
+## Pre-check the data
+
+I should integrate this into the function, but this is easier to look at
+
+```{r}
+check_surv <- test_anae_agg(catchments = NULL, datDir = datOut, variableDir = 'Inundationprocessed', summaryFun = 'lippiaAdultSurvive', forceAllCatchments = TRUE)
+
+```
+
+If there are sets of polys that fail the matching step, they can't be multiplied for strictures, so we need to fail and deal with that.
+
+```{r}
+check_temp <- test_anae_agg(catchments = NULL, datDir = datOut, variableDir = 'Tempprocessed', summaryFun = 'weightedMean', forceAllCatchments = TRUE)
+
+```
+
+There are some warnings that we're OK with- failing duplicate check on IDs and but they pass on the geometry.
+
+```{r}
+
+surv_fail <- check_surv %>% 
+  filter(passfail != 'pass' & !grepl('duplicates are failing to match, but seem to actually match', passfail))
+
+temp_fail <- check_temp %>% 
+  filter(passfail != 'pass' & !grepl('duplicates are failing to match, but seem to actually match', passfail))
+
+if (nrow(surv_fail) > 0) {
+  print(surv_fail)
+}
+
+if (nrow(temp_fail) > 0) {
+  print(temp_fail)
+}
+
+if (nrow(surv_fail)  | nrow(temp_fail) > 0) {stop("The stars aren't matching, so can't be used for stricture multiplication. Sort that out.")}
 ```
 
 ## Set up the runs

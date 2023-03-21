@@ -19,6 +19,7 @@ library(sf)
 library(stars)
 library(foreach)
 library(doFuture)
+library(doRNG)
 ```
 
 First, set directories and read-in function
@@ -80,96 +81,6 @@ The timings are saved in alltimes
 alltimes
 ```
 
-# TEST-check BorderRivers for issues
-
-On doing strictures, these kept not matching the ANAEs and having weird duplicates.
-
-```{r}
-
-bchunks <- list.files(file.path(datOut, 'Inundationprocessed', 'lippiaAdultSurvive', 'chunked', 'BorderRivers'))
-```
-
-```{r}
-bdups <- foreach(i = bchunks) %do% {
-  path <- file.path(datOut, 'Inundationprocessed', 
-                 'lippiaAdultSurvive', 
-                 'chunked', 'BorderRivers', i)
-  chnames1 <- stringr::str_extract(i, '^.*(?=\\.rdata$)')
-  chnames2 <- stringr::str_replace(chnames1, 'Survive_', 'Survive_index_')
-  
-  ch <- load_rename(path, 
-                    knownnames = c(chnames1, chnames2),
-                    newnames = c('aggdata', 'indices'))
-  
-  dups <- which(duplicated(ch$indices$UID))
-}
-
-which(!purrr::map_lgl(bdups, is_empty))
-```
-
-OK, no duplicates in any particular chunk
-
-Let's concatenate, and see if that's where there's an issue. Steal the relevant bits from concatANAEchunks
-
-Read in as list- this is almost the same as above, but modifing to work without refactoring that code
-
-```{r}
-
-partnames <- stringr::str_extract(bchunks, '^.*(?=\\.rdata$)')
-indexnames <- stringr::str_replace(partnames, 'Survive_', 'Survive_index_')
-  
-  
-dpList <- foreach(s = 1:length(bchunks)) %dopar% {
-        load(file.path(datOut, 'Inundationprocessed', 
-                 'lippiaAdultSurvive', 
-                 'chunked', 'BorderRivers', bchunks[s]))
-        # outl <- list()
-        starpart <- get(partnames[s])
-        indexpart <- get(indexnames[s])
-        outl <- list(starpart, indexpart)
-      }
-```
-
-Check null?
-
-```{r}
-nullindices <- foreach(l = 1:length(dpList), .combine = c) %do% {
-        if (is.null(dpList[[l]][[1]]) & 
-            (is.null(dpList[[l]][[2]]) || nrow(dpList[[l]][[2]]) == 0)) { # either null indices or a 0-lenght tibble
-          l
-        } else {
-          NULL
-        }
-      }
-```
-
-Unpack and concatenate
-
-```{r}
-# Then, unpack the lists also using foreach
-      depthAns <- foreach(l = 1:length(dpList),
-                          .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
-                          .multicombine=TRUE,
-                          .inorder = TRUE) %dopar% {
-                            dpList[[l]][[1]]
-                          }
-      
-      depthIndex <- foreach(l = 1:length(dpList),
-                            .combine=bind_rows,
-                            .multicombine=TRUE,
-                            .inorder = TRUE) %dopar% {
-                              dpList[[l]][[2]]
-                            }
-```
-
-Check for duplicates
-
-```{r}
-which(duplicated(depthIndex$UID))
-```
-
-Well, that's odd. It also only has 15550 rows instead of 15552. Which is correct. So what happened? Was there a processing error somewhere?
-
 ## Concatenate
 
 **TODO- make this automatic (a function?)**- I should be able to run \`makeSHfails\` here, then if there are no fails, immediately run `concatANAEchunks`. Could wrap the whole script in a `while(!is.null(runlist))`, but that's dangerous.
@@ -197,3 +108,19 @@ if (is.null(runlist_end)) {
 
      user  system elapsed 
       91.36   61.53 1479.17 
+
+### Check the anaes aren't weirdly duplicated
+
+```{r}
+check_aggs <- test_anae_agg(catchments = NULL, datDir = datOut, variableDir = 'Inundationprocessed', summaryFun = 'lippiaAdultSurvive', forceAllCatchments = TRUE)
+```
+
+```{r}
+check_aggs
+```
+
+This should yield 0 rows unless there are unexpected errors and warnings.
+
+```{r}
+check_aggs %>% filter(passfail != 'pass' & !grepl('duplicates are failing', passfail))
+```
