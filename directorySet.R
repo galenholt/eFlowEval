@@ -5,7 +5,7 @@
 # print(paste0('opened directoryset, time is ', Sys.time(), ', run is ', dataWhere))
 print(Sys.info())
 
-# Rather than a functtion, I want this to set a few things, so building as a script instead
+# Rather than a function, I want this to set a few things, so building as a script instead
 # Set directory structure for pearcey (or petrichor)
 # Pearcey seems to have all the nodes named 'c###' 
 # trying to avoid needing to say sysname == Linux, because would be nice to run on local linux
