@@ -1,6 +1,7 @@
 # # Function to concatenate chunked ANAE outputs
 
-concatANAEchunks <- function(outerDir, summaryFuns, namedIndex = TRUE) {
+concatANAEchunks <- function(outerDir, summaryFuns, namedIndex = TRUE, catchNames = 'all',
+                             rebuild = FALSE) {
   # loop over summary functions
   for (su in 1:length(summaryFuns)) {
     summaryFun <- summaryFuns[su]
@@ -13,9 +14,22 @@ concatANAEchunks <- function(outerDir, summaryFuns, namedIndex = TRUE) {
     # # Make the out directory, in case it doesn't exist- but it has to, so this is moot
     # if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
     
-    # get the names of the catchments
-    catchNames <- list.files(scriptChunked)
+    if ('all' %in% catchNames) {
+      # get the names of the catchments
+      catchNames <- list.files(scriptChunked)
+    }
+
+    # Usually only rebuild new data
+    if (!rebuild) {
+      filespresent <- list.files(scriptOut)
+      catchespresent <- stringr::str_remove(filespresent, '_[A-z].*')
+      catchNames <- catchNames[!(catchNames %in% catchespresent)]
+    }
     
+    if (length(catchNames) == 0) {
+      rlang::inform("No catchments to combine, likely because `rebuild = FALSE` and they're all done")
+      return()
+    }
     
     # Loop over catchments that were chunked
     # This is actually fairly fast to step through. I think I'm just going to
@@ -24,9 +38,9 @@ concatANAEchunks <- function(outerDir, summaryFuns, namedIndex = TRUE) {
     # so the inner is in the same line as outer - see
     # https://stackoverflow.com/questions/9674530/outer-loop-variable-in-nested-r-foreach-loop
     # Not actually sure I can do that, because I need the dplist. 
-    for (cn in 1:length(catchNames)) {
-      
-      # allcatch <- foreach(cn = 1:length(catchNames[1:2])) %do% {
+    # for(cn in 1:length(catchNames)) {
+
+      allcatch <- foreach(cn = 1:length(catchNames)) %do% {
       thiscatch <- catchNames[cn]
       # what do these look like? quick test
       catchfiles <- list.files(file.path(scriptChunked, thiscatch), 
@@ -50,7 +64,7 @@ concatANAEchunks <- function(outerDir, summaryFuns, namedIndex = TRUE) {
       # instead of making it initially
       # I COULD just skip to the bottom two, but then I'd need to load() twice as many times
       # in hindsight, I should have just saved the lists...
-      dpList <- foreach(s = 1:length(catchfiles)) %dopar% {
+      dpList <- foreach(s = 1:length(catchfiles)) %do% {
         load(file.path(scriptChunked, thiscatch, catchfiles[s]))
         # outl <- list()
         starpart <- get(partnames[s])
@@ -84,14 +98,14 @@ concatANAEchunks <- function(outerDir, summaryFuns, namedIndex = TRUE) {
       depthAns <- foreach(l = 1:length(dpList),
                           .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
                           .multicombine=TRUE,
-                          .inorder = TRUE) %dopar% {
+                          .inorder = TRUE) %do% {
                             dpList[[l]][[1]]
                           }
       
       depthIndex <- foreach(l = 1:length(dpList),
                             .combine=bind_rows,
                             .multicombine=TRUE,
-                            .inorder = TRUE) %dopar% {
+                            .inorder = TRUE) %do% {
                               dpList[[l]][[2]]
                             }
       
@@ -110,6 +124,7 @@ concatANAEchunks <- function(outerDir, summaryFuns, namedIndex = TRUE) {
       # Don't return anything useful- all I want is the side effect- only needed to
       # use an outer foreach
       a <- 1
+      a
     }
   }
   
