@@ -57,14 +57,14 @@ runlist
 I should integrate this into the function, but this is easier to look at
 
 ```{r}
-check_surv <- test_anae_agg(catchments = NULL, datDir = datOut, variableDir = 'Inundationprocessed', summaryFun = 'lippiaAdultSurvive', forceAllCatchments = TRUE)
+check_surv <- test_anae_agg(catchments = 'all', datDir = datOut, variableDir = 'Inundationprocessed', summaryFun = 'lippiaAdultSurvive')
 
 ```
 
 If there are sets of polys that fail the matching step, they can't be multiplied for strictures, so we need to fail and deal with that.
 
 ```{r}
-check_temp <- test_anae_agg(catchments = NULL, datDir = datOut, variableDir = 'Tempprocessed', summaryFun = 'weightedMean', forceAllCatchments = TRUE)
+check_temp <- test_anae_agg(catchments = 'all', datDir = datOut, variableDir = 'Tempprocessed', summaryFun = 'weightedMean')
 
 ```
 
@@ -73,10 +73,10 @@ There are some warnings that we're OK with- failing duplicate check on IDs and b
 ```{r}
 
 surv_fail <- check_surv %>% 
-  filter(passfail != 'pass' & !grepl('duplicates are failing to match, but seem to actually match', passfail))
+  filter(passfail != 'pass' & !grepl('Assigning based on position', passfail))
 
 temp_fail <- check_temp %>% 
-  filter(passfail != 'pass' & !grepl('duplicates are failing to match, but seem to actually match', passfail))
+  filter(passfail != 'pass' & !grepl('Assigning based on position', passfail))
 
 if (nrow(surv_fail) > 0) {
   print(surv_fail)
@@ -98,7 +98,7 @@ run the loops over catchments. No chunks here, I don't think.
 ```{r}
 #| warning: false
 # Run over the catchments
-alltimes <- foreach(w = runlist[1:2], 
+alltimes <- foreach(w = runlist, 
                     .combine = rbind, 
                     .errorhandling = 'remove') %dopar% {
             lippiatime <- lippiastricts(catchment = w, 
