@@ -95,6 +95,8 @@ run the loops over catchments. No chunks here, I don't think.
 
 *how would I do this with batchtools? I think just ask for length(runlist) cpus (or tasks, if using the batchtools template) without worrying about nodes.*
 
+For ref, longest one takes about 3.5 minutes, took about 10 mins to run locally with `plan(multisession)` .
+
 ```{r}
 #| warning: false
 # Run over the catchments
