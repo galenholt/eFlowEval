@@ -43,7 +43,7 @@ runlist <- makeSHfails(outerDir = file.path(datOut, 'Inundationprocessed'),
             lengthOrChunk = c('short', 'long'), # , 'long', 'chunk'
             runImmediate = FALSE,
             forceAllCatchments = TRUE,
-            returnForR = TRUE)
+            returnForR = TRUE, produce_sh = FALSE)
 ```
 
 ```{r}
@@ -93,7 +93,7 @@ runlist_end <- makeSHfails(outerDir = file.path(datOut, 'Inundationprocessed'),
                        lengthOrChunk = c('short', 'long'), # , 'long', 'chunk'
                        runImmediate = FALSE,
                        forceAllCatchments = TRUE,
-                       returnForR = TRUE)
+                       returnForR = TRUE, produce_sh = FALSE)
 
 if (is.null(runlist_end)) {
   cattime <- system.time(concatANAEchunks(
@@ -111,8 +111,29 @@ if (is.null(runlist_end)) {
 
 ### Check the anaes aren't weirdly duplicated
 
+Just cat the new ones- this is manual while testing
+
 ```{r}
-check_aggs <- test_anae_agg(catchments = NULL, datDir = datOut, variableDir = 'Inundationprocessed', summaryFun = 'lippiaAdultSurvive', forceAllCatchments = TRUE)
+# concatANAEchunks(
+#     outerDir = file.path(datOut,
+#                          'Inundationprocessed'),
+#     summaryFuns = c('lippiaAdultSurvive'), catchNames = c('EdwardWakool', 'LowerMurray', 'CentralMurray'))
+```
+
+```{r}
+# check_aggs <- test_anae_agg(catchments = c('EdwardWakool', 'LowerMurray', 'CentralMurray'), datDir = datOut, variableDir = 'Inundationprocessed', summaryFun = 'lippiaAdultSurvive')
+```
+
+Check with debug. `debugbreak = TRUE` runs the code outside a tryCatch, and so makes us able to set breakpoints internally.
+
+```{r}
+# test_anae_agg(catchments = 'Murrumbidgee', datDir = datOut, variableDir = 'Inundationprocessed', summaryFun = 'lippiaAdultSurvive', debugbreak = TRUE)
+```
+
+Back to everything, now that I fixed the issues I was testing.
+
+```{r}
+check_aggs <- test_anae_agg(catchments = 'all', datDir = datOut, variableDir = 'Inundationprocessed', summaryFun = 'lippiaAdultSurvive')
 ```
 
 ```{r}
@@ -122,5 +143,5 @@ check_aggs
 This should yield 0 rows unless there are unexpected errors and warnings.
 
 ```{r}
-check_aggs %>% filter(passfail != 'pass' & !grepl('duplicates are failing', passfail))
+check_aggs %>% filter(passfail != 'pass' & !grepl('Assigning based on position', passfail))
 ```

@@ -1,11 +1,11 @@
 
 
-test_anae_agg <- function(catchments, datDir, variableDir, summaryFun, forceAllCatchments = FALSE, debugbreak = FALSE) {
+test_anae_agg <- function(catchments, datDir, variableDir, summaryFun, debugbreak = FALSE) {
   # This is a test file because I'm getting weird issues with ANAE duplication on big runs but not individual runs.
   # based on lippia.R, but moving to others too
   # Read in soil temp in ANAEs --------------------------------------------
   
-  if (forceAllCatchments) {
+  if ('all' %in% catchments) {
     catchments <- c("Avoca", "BarwonDarling", "BorderRivers", "Broken", "Campaspe", 
                     "Castlereagh", "CentralMurray", "CondamineBalonne", 
                     "EdwardWakool", "Goulburn", "Gwydir", "Kiewa", "Lachlan", 

@@ -130,18 +130,36 @@ matchStarsIndex <- function(index1, stars1 = NULL, index2, stars2, indexcol = c(
     # match, it just can't sort it out. Bypass and warn, I guess. I could
     # probably be more clever to find the closest, but at this point they're
     # functionally identical- I think it's likely an ANAE problem.
-    if (all(is.na(matchindex)) & 
-        all(st_intersects(index1[bothdup1, ],
-                          index2[bothdup2, ], 
-                          sparse = FALSE))) {
-      warning('duplicates are failing to match, but seem to actually match well.
-              Just assigning based on position, but should check')
-      # just match on position to get past this.
-      matchindex <- seq(1, length(bothdup1))
-      # one way to look and see
-      # plot(index1[bothdup1[1], 2])
-      # plot(index2[bothdup2[1], 2])
+    if (all(is.na(matchindex))) {
+      #
+      
+      # We need to do this over potentially multiple sets of duplicates
+      # We've already checked the dup1 and dup2 match
+      itstart <- 0
+      matchindex <- NULL
+      for (i in 1:nrow(dup1)) {
+        bd1 <- which(index1$INDEX %in% dup1$INDEX[i])
+        bd2 <- which(index2$INDEX %in% dup1$INDEX[i])
+        
+        # The `diag` is here because that's asking if each pair of indices
+        # matches- ie even if they aren't true duplicates, do each of them
+        # intersect? It effectively is an `st_intersects` version of the
+        # `truedup` stuff above with `st_equals`, just more approximate.
+        if (all(diag(st_intersects(index1[bd1, ],
+                      index2[bd2, ], sparse = FALSE)))) {
+          rlang::warn(glue::glue("duplicates of UIDs {dup1$INDEX[i]} are failing to match exactly, but intersect well. Assigning based on position"))
+          mi <- seq(itstart + 1, itstart + length(bd1))
+          itstart <- itstart + length(bd1)
+          matchindex <- c(matchindex, mi)
+        } else {
+          rlang::abort(glue::glue("Error: duplicates don't spatially match between index1 and index2 for UIDs {dup1$INDEX[i]}"))
+        }
+        
+      }
     }
+    
+    # TESTING
+    # ggplot() + geom_sf(data = index1[bd1, 'INDEX']) + geom_sf(data = index2[bd2, 'INDEX'])
     
     # Modify the relevant second index- for the reference set, just append 1:index
     index1$INDUP[bothdup1] <- paste0(index1[bothdup1, ]$INDUP, 1:length(bothdup1))
@@ -149,7 +167,6 @@ matchStarsIndex <- function(index1, stars1 = NULL, index2, stars2, indexcol = c(
     index2$INDUP[bothdup2] <- paste0(index2[bothdup2, ]$INDUP, matchindex)
   }
   
-
 # Matching and sorting ----------------------------------------------------
   # I think this sorts the first argument to the second. So if I want to have
   # the first be the reference, need to reverse order here
