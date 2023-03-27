@@ -78,15 +78,17 @@ catchAggPlot <- function(catchAgg, varname = NA, title = NULL, as_sf = FALSE) {
 
 # For some reason, feeding aggregate dates instead of something like 'years' leaves an NA sheet hanging on the end.
 # and, rightmost.closed has to be used. So, setting up a wrapper function that fixes it
-
-tempaggregate <- function(starObj, by_t, FUN, na.rm = TRUE) {
+### THIS RETURNS TIMES AT THE *START* OF THE INTERVAL ### 
+# This is particularly an issue for inundation, which reports inundation for the
+# *preceding* interval. dates_end_interval shifts to the end.
+tempaggregate <- function(starObj, by_t, FUN, na.rm = TRUE, dates_end_interval = FALSE) {
   
 
   
   if (is.character(by_t)) {
     # If character, aggregate handles the time intervals correctly
     aggObj <- aggregate(starObj, by = by_t, FUN = FUN, na.rm = na.rm)
-  } else {
+  } else { 
     # If fed a date vector, aggregate needs different settings, and returns a final NA sheet. 
     if (!(lubridate::is.POSIXct(by_t) | lubridate::is.Date(by_t))) {
       warning('aggregation fix only tested with POSIXct and Date objects, assuming other non-character objects work the same way')
@@ -102,6 +104,11 @@ tempaggregate <- function(starObj, by_t, FUN, na.rm = TRUE) {
     
     # Discard the last sheet, it's just NA
     aggObj <- slice(aggObj, time, -length(by_t))
+    
+    if (dates_end_interval) {
+      # the first one gets dropped (just like the last one does if the dates are at the beginning- we can't aggregate into a period beyond the end)
+      aggObj <- st_set_dimensions(aggObj, which = 'time', values = by_t[2:length(by_t)])
+    }
     
   }
   

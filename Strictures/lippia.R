@@ -31,12 +31,6 @@ lippiastricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   # de-kelvin- strictures are easier to think about in C 
   soilTemp$aggdata <- soilTemp$aggdata - 273
   
-  # if we needed the index too, we'd use this to get a list, but we don't so
-  # keep it simple
-  # catchlist <- load_rename(filepath = soilTemp_path, 
-  #                          knownnames = soilTemp_names,
-  #                          newnames = c('soilTemp', 'soilTemp_index'))
-  
   
   # Read in inundation ------------------------------------------------------
   inun_names <- c(paste0(catchment, '_lippiaAdultSurvive'), 
@@ -241,21 +235,34 @@ lippiastricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   # 
   # check the indices and the anae to make sure we're not shuffled
   # This returns a list of re-sorted indices and values
+  # save the anaes that this may modify because of duplication, so we can use them as indices 
   soilTemp <- matchStarsIndex(index1 = anaes, stars1 = NULL,
                               index2 = soilTemp$indices, stars2 = soilTemp$aggdata,
-                              indexcol = c(1, 1), testfinal = FALSE)
+                              indexcol = c(1, 1), testfinal = FALSE,
+                              return1 = TRUE)
   # flops the names
-  names(soilTemp) <- c('indices', 'aggdata')
+  names(soilTemp) <- c('indices_anae', 'indices', 'aggdata')
+  anaest <- soilTemp$indices_anae
 
   inunSurv <- matchStarsIndex(index1 = anaes, stars1 = NULL,
                               index2 = inunSurv$indices, stars2 = inunSurv$aggdata,
-                              indexcol = c(1, 1), testfinal = FALSE)
-  names(inunSurv) <- c('indices', 'aggdata')
-
+                              indexcol = c(1, 1), testfinal = FALSE, return1 = TRUE)
+  names(inunSurv) <- c('indices_anae', 'indices', 'aggdata')
+  anaeis <- inunSurv$indices_anae
+  
+  if (!all(anaest$UID == anaeis$UID)) {
+    rlang::abort("something is wrong with the sorting")
+  }
+  
+  # Cut the anaes off
+  soilTemp <- soilTemp[-1]
+  inunSurv <- inunSurv[-1]
+  # but keep them and use the cleaned versions
+  anaes <- anaest
+ 
   # all(soilTemp$indices$UID == anaes$UID)
   # all(inunSurv$indices$UID == anaes$UID)
-  
-  
+
   
   ### STRICTURE CALCS ###
   
@@ -344,7 +351,8 @@ lippiastricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   germ_Lippia_prev_year <- germ_Lippia # initialize
   
   # 3-4 seconds
-  # Rolling mean instead of sum because adding up areas over 365 days potentailly risks overflow, though unlikely.
+  # Rolling mean instead of sum because adding up areas over 365 days
+  # potentially risks overflow, though unlikely.
   system.time(germ_Lippia_prev_year[[1]] <- timeRoll(germ_Lippia[[1]], 
                                                      FUN = RcppRoll::roll_mean, 
                                                      rolln = 365, 
@@ -357,7 +365,9 @@ lippiastricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   
   # Maybe I don't actually need to aggregate to bimonthly here though, just hit
   # germ_Lippia_prev_year on the days that match the bimonth records. That asks
-  # whether it was germ in year previous to those days. The catch is that the dates dont' use the same format and getting them to match is going to be a pain. 
+  # whether it was germ in year previous to those days. The catch is that the
+  # dates dont' use the same format and getting them to match is going to be a
+  # pain.
   
   glt <- st_get_dimension_values(germ_Lippia_prev_year, which = 'time')
   ist <- st_get_dimension_values(inunSurv$aggdata, which = 'time')

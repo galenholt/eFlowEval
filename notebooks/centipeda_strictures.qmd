@@ -1,0 +1,190 @@
+---
+title: "Centipeda strictures"
+author: "Galen Holt"
+format: html
+editor: visual
+---
+
+## Run centipeda strictures across the basin
+
+```{r}
+library(here)
+library(tidyverse)
+library(sf)
+library(stars)
+library(foreach)
+library(doFuture)
+library(doRNG)
+```
+
+First, set directories and read-in function
+
+```{r}
+source('directorySet.R')
+source(file.path('Strictures', 'centipeda.R'))
+
+registerDoFuture()
+
+plan(multisession) # I *think* sequential allows debug?
+```
+
+## Check what needs to happen
+
+I don't think we need to chunk. Not sure I need both summaryFun and Varname, so making them the same. It bugs me that I can't just use `makeSHfails` with `nchunks = 1`, but that still sets up the `chunked/CATCHMENTNAME/file` structure. I'm sure I can fix that, but not now.
+
+```{r}
+# I've modified makeSHfails to give me a list
+runlist <- makeSHfailsNoChunk(outerDir = file.path(datOut, 'Strictures'),
+            summaryFuns = 'centipeda',
+            varName = 'centipeda_strictures',
+            # nchunks = 1,
+            lengthOrChunk = c('short', 'long'), # , 'long', 'chunk'
+            runImmediate = FALSE,
+            forceAllCatchments = TRUE,
+            returnForR = TRUE,
+            produce_sh = FALSE)
+
+```
+
+```{r}
+runlist
+```
+
+## Test input data
+
+If there are sets of polys that fail the matching step, they can't be multiplied for strictures, so we need to fail and deal with that.
+
+I should integrate this into the function, but this is easier to look at
+
+```{r}
+check_inun <- test_anae_agg(catchments = 'all', datDir = datOut, variableDir = 'Inundationprocessed', summaryFun = 'areaInun')
+
+```
+
+```{r}
+check_temp <- test_anae_agg(catchments = 'all', datDir = datOut, variableDir = 'Tempprocessed', summaryFun = 'weightedMean')
+
+```
+
+```{r}
+check_moist <- test_anae_agg(catchments = 'all', datDir = datOut, variableDir = 'soilmoistureprocessed', summaryFun = 'areaCentipedaSurvive')
+```
+
+Can I assume that the lippia are lined up? they had this check. And doing this check lines things up with the ANAE themselves.- they are lined up with `anaes`.
+
+There are some warnings that we're OK with- failing duplicate check on IDs and but they pass on the geometry.
+
+```{r}
+
+inun_fail <- check_inun %>% 
+  filter(passfail != 'pass' & !grepl('Assigning based on position', passfail))
+
+temp_fail <- check_temp %>% 
+  filter(passfail != 'pass' & !grepl('Assigning based on position', passfail))
+
+moist_fail <- check_moist %>% 
+  filter(passfail != 'pass' & !grepl('Assigning based on position', passfail))
+
+if (nrow(inun_fail) > 0) {
+  print(inun_fail)
+}
+
+if (nrow(temp_fail) > 0) {
+  print(temp_fail)
+}
+
+if (nrow(moist_fail) > 0) {
+  print(moist_fail)
+}
+
+
+if (nrow(inun_fail) > 0  | nrow(temp_fail) > 0 | nrow(moist_fail) > 0) {
+  stop("The stars aren't matching, so can't be used for stricture multiplication. Sort that out.")
+  }
+```
+
+## Set up the runs
+
+run the loops over catchments. No chunks here, I don't think.
+
+```{r}
+#| warning: false
+# Run over the catchments
+alltimes <- foreach(w = runlist, 
+                    .combine = rbind, 
+                    .errorhandling = 'remove') %dopar% {
+            centipedatime <- centipedastricts(catchment = w, 
+                                   savefile = TRUE, returnR = FALSE)
+            
+            centipedatime
+          }
+```
+
+### Timings
+
+```{r}
+alltimes
+```
+
+Can I make a quick plot of some \> 0?
+
+Logical indexing gives vector index, but we have a matrix
+
+```{r}
+vecind <- which(centipedastricts$fullCycle_lippiaLimit_centipeda[[1]] > 0)
+```
+
+Indexing goes down cols
+
+```{r}
+a <- matrix(1:8, nrow = 2)
+which(a < 2)
+ which(a < 3)
+ which(a < 4)
+ which(a < 5)
+```
+
+Can we get the row, col indices?
+
+```{r}
+dim(centipedastricts$fullCycle_lippiaLimit_centipeda[[1]])
+```
+
+So there are 10370 rows.
+
+So, the *column* is ceiling(index/10370), e.g. 1:nrow(matrix) goes into col 1, then nrow() + into 2, etc. Then row is the remainder
+
+```{r}
+findmatindex <- function(vecind, nrows) {
+  column <- ceiling(vecind/nrows)
+  row <- vecind - ((column-1) * nrows)
+  return(c(row, column))
+}
+```
+
+```{r}
+findmatindex(1,3)
+findmatindex(2, 3)
+findmatindex(3,3)
+findmatindex(4,3)
+findmatindex(5, 3)
+findmatindex(6,3)
+```
+
+Use this to get in te ballpark of a section with a few
+
+```{r}
+findmatindex(vecind[950], as.numeric(nrow(centipedastricts$fullCycle_lippiaLimit_centipeda)))
+```
+
+```{r}
+plot(centipedastricts$fullCycle_lippiaLimit_centipeda[,2600:3000, 39])
+```
+
+That's hard to see, but it's in there (along with some others above.)
+
+```{r}
+plot(centipedastricts$fullCycle_lippiaLimit_centipeda[,2670:2680, 39])
+```
+
+OK, on to analyses.

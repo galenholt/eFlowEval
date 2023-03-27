@@ -1,6 +1,8 @@
 # Function to sort stars according to their index files and deal with any duplicated ANAEs
 
-matchStarsIndex <- function(index1, stars1 = NULL, index2, stars2, indexcol = c(1, 1), testfinal = TRUE) {
+matchStarsIndex <- function(index1, stars1 = NULL, index2, stars2, 
+                            indexcol = c(1, 1), testfinal = TRUE,
+                            return1 = FALSE) {
   # index1 and index2 expected to be an sf with an index in the first column and geometry
   # testfinal does a big st_intersects on the stars, and so can take FOREVER. Turn it off for speed
   # If stars1 is NULL, this just matches to index1. particularly useful for matching to the ANAE in sf form,
@@ -57,6 +59,7 @@ matchStarsIndex <- function(index1, stars1 = NULL, index2, stars2, indexcol = c(
   if (length(index1$INDEX) == length(index2$INDEX) && 
       all(index1$INDEX == index2$INDEX)) {
     names(index2)[indexcol[2]] <- origname2
+    if (return1) {return(lst(index1, index2, stars2))}
     return(lst(index2, stars2))
   }
   
@@ -214,9 +217,16 @@ matchStarsIndex <- function(index1, stars1 = NULL, index2, stars2, indexcol = c(
     names(index2)[indexcol[2]] <- origname2
     index2$INDUP <- NULL
     
+    
     # test <- 1
     
-    return(lst(index2, stars2))
+    if (return1) {
+      names(index1)[indexcol[2]] <- origname1
+      index1$INDUP <- NULL
+      return(lst(index1, index2, stars2))
+    }
+    
+   if (!return1) {return(lst(index2, stars2))}
   
 }
 

@@ -55,7 +55,7 @@ metabIn <- file.path(datOut, 'TempAndProduction', 'Predictions')
 metclimIn <- file.path(datOut, 'ClimateAndProduction', 'Predictions')
 metabStats <- c('logERdays', 'logERdaysvalleys', 'logGPPdays', 'logGPPdaysvalleys')
 
-# i want the bimonth, at least for now to keep tiungs small there's the
+# i want the bimonth, at least for now to keep things small there's the
 # predcictions given water in bimonth itself, but right now I only want the
 # outcome multiplied by water, to keep things simple. For a walkthrough, maybe
 # we will want that intermediate, but not right now
