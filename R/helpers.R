@@ -6,6 +6,22 @@ propor <- function(x, na.rm = FALSE) {
   sum(x, na.rm = na.rm)/length(x)
 }
 
+# when everything being summed (or otherwise aggregated) is NA, sum(na.rm =
+# TRUE) gives 0, but I need it to be NA. So define a function on the backend,
+# some of the code expects a na.rm so pass it I guess really, should make these
+# generic and accept the FUN, but not now
+maxna <- function(x, na.rm = TRUE) {
+  ifelse(all(is.na(x)), NA, sum(x, na.rm = TRUE))
+}
+
+meanna <- function(x, na.rm = TRUE) {
+  ifelse(all(is.na(x)), NA, mean(x, na.rm = TRUE))
+}
+
+maxna <- function(x, na.rm = TRUE) {
+  ifelse(all(is.na(x)), NA, max(x, na.rm = TRUE))
+}
+
 
 # Aggregation and plotting in the catchment -------------------------------
 

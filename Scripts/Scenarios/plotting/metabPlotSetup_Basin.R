@@ -177,22 +177,11 @@ for (i in 1:length(starobjs)) {
 
 # WHY DOES TEMPAGGREGATE FLIP DIMS?????
 
-# when everything being summed is NA, sum(na.rm = TRUE) gives 0, but I need it to be NA. So define a function
 
 # when everything being summed is NA, sum(na.rm = TRUE) gives 0, but I need it to be NA. So define a function
 # on the backend, some of the code expects a na.rm so pass it I guess
 # really, should make these generic and accept the FUN, but not now
-maxna <- function(x, na.rm = TRUE) {
-  ifelse(all(is.na(x)), NA, sum(x, na.rm = TRUE))
-}
-
-meanna <- function(x, na.rm = TRUE) {
-  ifelse(all(is.na(x)), NA, mean(x, na.rm = TRUE))
-}
-
-maxna <- function(x, na.rm = TRUE) {
-  ifelse(all(is.na(x)), NA, max(x, na.rm = TRUE))
-}
+  # The relevant functions meanna, maxna, sumna are now defined in helpers.R
 
 #
 # This is super ugly. should have looped. Oh well.
@@ -209,7 +198,7 @@ temperatureannual <- tempaggregate(temperature, by_t = as.Date(interDates),
                                    FUN = meanna, na.rm = TRUE) %>%
   aperm(c('Shape', 'time'))
 
-# Sum to get the total inundation
+# max to get mostin the bimonth (sum isn't right for the inundation, since it's max extent)
 inundationannual <- tempaggregate(inundation, by_t = as.Date(interDates), 
                                   FUN = maxna, na.rm = TRUE) %>%
   aperm(c('Shape', 'time'))
@@ -217,7 +206,7 @@ inundation10pannual <- tempaggregate(inundation10p, by_t = as.Date(interDates),
                                      FUN = maxna, na.rm = TRUE) %>%
   aperm(c('Shape', 'time'))
 
-# sum to get total ER
+# max to get mostin the bimonth (sum isn't right for the inundation, since it's max extent)
 logERdaysannual <- tempaggregate(logERdays, by_t = as.Date(interDates), 
                                   FUN = maxna, na.rm = TRUE) %>%
   aperm(c('Shape', 'time'))
@@ -250,7 +239,7 @@ logERdaysvalleysCLIMannual <- tempaggregate(logERdaysvalleysCLIM, by_t = as.Date
                                      FUN = maxna, na.rm = TRUE) %>%
   aperm(c('Shape', 'time'))
 
-# sum to get total ER
+# max to get mostin the bimonth (sum isn't right for the inundation, since it's max extent)
 logGPPdaysannual <- tempaggregate(logGPPdays, by_t = as.Date(interDates), 
                                  FUN = maxna, na.rm = TRUE) %>%
   aperm(c('Shape', 'time'))
