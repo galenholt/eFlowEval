@@ -24,6 +24,8 @@ First, set directories and read-in function
 ```{r}
 source('directorySet.R')
 source(file.path('Strictures', 'lippia.R'))
+source(file.path('Strictures', 'vegCatchmentAggregate.R'))
+
 
 registerDoFuture()
 
@@ -118,4 +120,8 @@ The timings are saved in alltimes
 alltimes
 ```
 
-## 
+## Aggregate the data to the catchment scale
+
+```{r}
+veg_catch_agg(datOut = datOut, summaryFuns = 'lippia')
+```

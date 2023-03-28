@@ -22,6 +22,7 @@ First, set directories and read-in function
 ```{r}
 source('directorySet.R')
 source(file.path('Strictures', 'centipeda.R'))
+source(file.path('Strictures', 'vegCatchmentAggregate.R'))
 
 registerDoFuture()
 
@@ -124,6 +125,12 @@ alltimes <- foreach(w = runlist,
 
 ```{r}
 alltimes
+```
+
+## Aggregate the data to the catchment scale
+
+```{r}
+veg_catch_agg(datOut = datOut, summaryFuns = 'centipeda')
 ```
 
 Can I make a quick plot of some \> 0?
