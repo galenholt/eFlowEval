@@ -2,15 +2,13 @@
 # Libraries and system setup
 source('directorySet.R')
 
-# Let's get libraries here, then sort out git then sort out making this a library so we don't have to deal with all the library crap
-# library(sp)
-# library(rgeos)
 library(here)
 library(tidyverse)
 library(sf)
 library(stars)
 library(foreach)
 library(doFuture)
+library(doRNG)
 
 # Set up parallel backend
 registerDoFuture()
@@ -28,46 +26,45 @@ if (parSet == 'local') {
 # Set the crs
 whichcrs <- 3577
 # directory
-summaryFuns <- c('areaInun', 'areaSpoonbillBreed', 'areaSpoonbillForage', 'volInun', 'vol10p')
+summaryFuns <- c('lippia', 'centipeda')
 
 for(sfun in 1:length(summaryFuns)) {
   summaryFun <- summaryFuns[sfun]
   # There are some that were NOT chunked- leave them alone, and just look in the chunked folder
-  inunIn <- paste0(datOut, '/Inundationprocessed/', summaryFun)
+  dataIn <- file.path(datOut, 'Strictures', summaryFun)
   anaeIn <- file.path(datOut, 'ANAEprocessed')
   
-  # scriptFigOut <- file.path('strictOut', 'inundation')
-  scriptDatOut <- file.path(inunIn, 'basinConcat')
+  scriptDatOut <- file.path(dataIn, 'basinConcat')
   # Make the out directory, in case it doesn't exist
   # if (!dir.exists(scriptFigOut)) {dir.create(scriptFigOut, recursive = TRUE)}
   if (!dir.exists(scriptDatOut)) {dir.create(scriptDatOut, recursive = TRUE)}
   
   # List the catchments
-  catchfiles <- list.files(inunIn, pattern = '*.rdata')
-  catchNames <- str_remove(catchfiles, pattern = paste0('_', summaryFun, '.rdata'))
+  catchfiles <- list.files(dataIn, pattern = '*.rdata')
+  catchNames <- str_remove(catchfiles, pattern = paste0('_', summaryFun, '_strictures.rdata'))
   
   # Loop over each catchment, since that's how the files are structured for memory purposes
   # for (i in 1:length(catchNames)) {
   # for (i in 1:2) {
   loopstart <- proc.time()
-  # inunBasin <- foreach(i = 1:3, # length(catchNames)
-  inunBasin <- foreach(i = 1:length(catchNames), # length(catchNames)
-                       .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
-                       .multicombine=TRUE,
-                       .inorder = TRUE, .packages = c('sf', 'stars', 'dplyr')) %dopar% { # dopar now seems to work with .packages
+  # don't .combine these strictures, because they are lists of stars, not single stars
+  dataBasin <- foreach(i = 1:length(catchNames), # length(catchNames)
+                       # .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
+                       # .multicombine=TRUE,
+                       .inorder = TRUE, .packages = c('sf', 'stars', 'dplyr')) %dorng% { # dopar now seems to work with .packages
                          
                          # oneloopstart <- proc.time()
                          # Set up loop iterations
                          thisCatch <- catchNames[i] #13 is lachlan, to keep consistent with previous checking
-                         thisInunfile <- catchfiles[i]
+                         thisdatafile <- catchfiles[i]
                          
                          
                          # Read in the data
                          anfile <- file.path(anaeIn, paste0(thisCatch, 'ANAE.rdata'))
-                         inunfile <- file.path(inunIn, thisInunfile)
+                         datafile <- file.path(dataIn, thisdatafile)
                          
                          load(anfile)
-                         load(inunfile)
+                         load(datafile)
                          
                          # get just this valley- would be nice to do this earlier, but unable
                          # Get the right valley- same as in processANAE
@@ -81,58 +78,61 @@ for(sfun in 1:length(summaryFuns)) {
                          
                          # give standard names
                          theseANAEs <- get(paste0(thisCatch, 'ANAE'))
-                         theseInuns <- get(paste0(thisCatch, '_', summaryFun))
-                         theseIndices <- get(paste0(thisCatch, '_', summaryFun, '_index'))
+                         thesedatas <- get(paste0(summaryFun, 'stricts'))
+                         # indices are (should) in the stricture lists
+                         # theseIndices <- get(paste0(thisCatch, '_', summaryFun, '_index'))
                          rm(list = c(paste0(thisCatch, 'ANAE'), 
-                                     paste0(thisCatch, '_', summaryFun),
-                                     paste0(thisCatch, '_', summaryFun, '_index'))) 
+                                     paste0(summaryFun, 'stricts'))) 
                          
-                         # make a smaller version of the inundation for testing
+                         # make a smaller version of for testing
                          # Smaller in the time dimension, NOT space, since we need all the anaes
                          # TODO: make this settable with a timespan- I've done it somewhere else
-                         # theseInuns <- theseInuns[,,1:10] # %>% slice("time", 1:10) # Slice doesn't work with dopar
+                         # thesedatas <- thesedatas[,,1:10] # %>% slice("time", 1:10) # Slice doesn't work with dopar
                          
                          # Set crs
-                          # Why (how???) are some of the inuns not in the right crs?
+                         # Why (how???) are some of the datas not in the right crs?
                          theseANAEs <- st_transform(theseANAEs, whichcrs)
                          thisPoly <- st_transform(thisPoly, whichcrs)
-                         theseInuns <- st_transform(theseInuns, whichcrs)
-                         theseIndices <- st_transform(theseIndices, whichcrs)
+                         # thesedatas is a list of stars. deal with that
+                         # and only transform if necessary?
+                         thesedatas <- thesedatas %>% 
+                           purrr::map(\(x) st_transform(x, whichcrs))
                          
-                         # Set up to plot ----------------------------------------------------------
-                         # Need to make this name-agnostic
-                         # There's some spillover if we use ltimNoNorth, so we need to cut it to the correct valley
-                         # Not sure if I want to drop_geometry or not? Not much reason to keep it, really
-                         areas <- theseIndices %>% 
-                           mutate(area = as.numeric(st_area(.))) %>%
-                           st_drop_geometry() %>%
-                           select(area) %>%
-                           pull()
+                         # Aggregation setup
                          
                          # We do NOT want to area-weight here,
-                         # because we're just adding up total inundation, and
-                         # area or volume already takes care of all relevant
+                         # because we're just adding up total area, and
+                         # area already takes care of all relevant
                          # area effects
-                         inunAgg <- aggregate(theseInuns, 
-                                               by = thisPoly, 
-                                               FUN = sum, na.rm = TRUE)
-                         names(inunAgg) <- 'totalareainundated'
+                         # It only makes sense to aggregate the stars, NOT the sf of ANAEs
+                         # don't assume it's always last
+                         flatanaes <- which(purrr::map_lgl(thesedatas, \(x) inherits(x, 'sf')))
+                         dataAgg <- thesedatas[-flatanaes] %>% 
+                           purrr::map(\(x) aggregate(x, 
+                                              by = thisPoly, 
+                                              FUN = sum, na.rm = TRUE))
                          
                          # oneloopend <- proc.time()
                          # onelooptime <- oneloopend - oneloopstart
                          # print(paste0('finished loop ', i, '(', thisCatch, ')', 'time = ', onelooptime))
                          
-                         inunAgg
+                         dataAgg
                        }
+  
+  # Because these strictures are lists of stars, concatenate them
+  dataBasin <- purrr::pmap(dataBasin, ~c(..., along = 1))
   loopend <- proc.time()
   looptime <- loopend-loopstart
   looptime
   
   
   # Let's save that so we don't have to re-do the loop calcs
-  # Should we save this to the inundation folder?
-  save(inunBasin, 
-       file = file.path(scriptDatOut, paste0('inunCatchConcat_', summaryFun, '.rdata')))
+  thisobjname <- paste0(summaryFun, '_stricts_catchment')
+  assign(thisobjname, dataBasin)
+  
+  # Save the list
+  save(list = thisobjname, 
+       file = file.path(scriptDatOut, paste0('catchmentAggregated.rdata')))
   
 }
 
