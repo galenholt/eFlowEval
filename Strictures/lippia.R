@@ -254,6 +254,8 @@ lippiastricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
     rlang::abort("something is wrong with the sorting")
   }
   
+
+  
   # Cut the anaes off
   soilTemp <- soilTemp[-1]
   inunSurv <- inunSurv[-1]
@@ -262,7 +264,25 @@ lippiastricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
  
   # all(soilTemp$indices$UID == anaes$UID)
   # all(inunSurv$indices$UID == anaes$UID)
+  
+  # ## SOME FIXING AND TESTING- needs to be checked and done to all the data- make
+  # ## sure it's never larger than the polygons
+  # inunSurvarea <- as.numeric(st_area(anaes))
+  # inunSurv$aggdata[[1]] > inunSurvarea
+  # isfix <- inunSurv$aggdata
+  # 
+  # polyareas <- matrix(rep(inunSurvarea, 
+  #                         length(st_get_dimension_values(inunSurv$aggdata, which = 'time'))), 
+  #                     ncol = length(st_get_dimension_values(inunSurv$aggdata, which = 'time')))
+  # isfix[[1]] > polyareas
+  # # logical indexing is tricky, use which
+  # repind <- which(isfix[[1]] > polyareas)
+  # isfix[[1]][repind] <- polyareas[repind] 
+  # isfix[[1]] > polyareas
+  
 
+  inunSurv$aggdata <- clean_area(inunSurv$aggdata, anaes)
+  soilTemp$aggdata <- clean_area(soilTemp$aggdata, anaes)
   
   ### STRICTURE CALCS ###
   
@@ -289,6 +309,18 @@ lippiastricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   
   #The attribute needs a name for what it really is, not inherit from data
   names(germ_Lippia) <- 'area_lippia_germ'
+  
+ 
+  # Make a bimonthly germination to match the scale of the inundation
+  glt <- st_get_dimension_values(germ_Lippia, which = 'time')
+  ist <- st_get_dimension_values(inunSurv$aggdata, which = 'time')
+  
+   # aggregate to get germ in preceding bimonth, and aperm.
+  germ_bimonth <- tempaggregate(germ_Lippia, 
+                                by_t = ist[ist >= min(glt)], 
+                                FUN = maxna, dates_end_interval = TRUE) %>% 
+    aperm(c('geometry', 'time'))
+  
   
   # These multi-checks mean it does 3 logical tests. If need be later on, could
   # speed up with Rcpp. It's available in dplyr, but doesn't seem to work on
@@ -347,15 +379,22 @@ lippiastricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   # Lippia is a perennial, and I'm not sure life span. Maybe I'll say there
   # needs to have been successful germination in the last year?
   
-  # first, ask if there was germination in the last 365 days
-  germ_Lippia_prev_year <- germ_Lippia # initialize
+  # first, ask if there was germination in the last 365 days This should work
+  # with daily data, but something's up with the aggregation, so to make things
+  # easily testable, I'm using bimonthly.
+  # Test- the dims match
+  all(st_get_dimension_values(germ_bimonth, which = 'time') %in%
+        st_get_dimension_values(inunSurv$aggdata, which = 'time'))
+  
+  # germ_Lippia_prev_year <- germ_Lippia # initialize
+  germ_Lippia_prev_year <- germ_bimonth # initialize
   
   # 3-4 seconds
-  # Rolling mean instead of sum because adding up areas over 365 days
-  # potentially risks overflow, though unlikely.
-  system.time(germ_Lippia_prev_year[[1]] <- timeRoll(germ_Lippia[[1]], 
-                                                     FUN = RcppRoll::roll_mean, 
-                                                     rolln = 365, 
+  # Rolling max instead of sum because adding up areas over 365 days
+  # potentially risks overflow, though unlikely. All we need is whether there was any
+  system.time(germ_Lippia_prev_year[[1]] <- timeRoll(germ_bimonth[[1]], 
+                                                     FUN = RcppRoll::roll_max, 
+                                                     rolln = 6, # Was 365 for daily 
                                                      align = 'right',
                                                      na.rm = TRUE))
   # Then the stricture test is whether there was germ and soil moist
@@ -369,8 +408,8 @@ lippiastricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   # dates dont' use the same format and getting them to match is going to be a
   # pain.
   
-  glt <- st_get_dimension_values(germ_Lippia_prev_year, which = 'time')
-  ist <- st_get_dimension_values(inunSurv$aggdata, which = 'time')
+  # glt <- st_get_dimension_values(germ_Lippia_prev_year, which = 'time')
+  # ist <- st_get_dimension_values(inunSurv$aggdata, which = 'time')
   # Checking
   # matchg <- glt[glt %in% ist]
   # matchi <- ist[ist >= min(glt)]
@@ -381,8 +420,11 @@ lippiastricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   # shuffling anything. I tested using `tempaggregate` too, and it still got the
   # same error about dim 1 not matching.
   
-  matchgermprev <- germ_Lippia_prev_year[,,which(glt %in% ist)]
-  matchinun <- inunSurv$aggdata[,,which(ist >= min(glt))]
+  # Clip the inundation to just the same timespan
+  matchgermind <- which(st_get_dimension_values(inunSurv$aggdata, which = 'time') %in% st_get_dimension_values(germ_bimonth, which = 'time'))
+  matchinun <- inunSurv$aggdata[,,matchgermind]
+  # matchgermprev <- germ_Lippia_prev_year[,,which(glt %in% ist)]
+  # matchinun <- inunSurv$aggdata[,,which(ist >= min(glt))]
   
   # I really don't know why it's griping about dimension 1. Does it match?
   # geocheck <- diag(st_intersects(st_geometry(matchgermprev), 
@@ -401,7 +443,7 @@ lippiastricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   # inundation area is meaningful because it reflects the rasters
   germSurv_Lippia <- matchinun # initialise
   names(germSurv_Lippia) <- 'area_germ_and_surv' 
-  germSurv_Lippia[[1]] <- (matchgermprev > 0)[[1]] * matchinun[[1]]
+  germSurv_Lippia[[1]] <- as.numeric((germ_bimonth > 0)[[1]]) * matchinun[[1]]
   
   
   
@@ -418,8 +460,10 @@ lippiastricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   
   # we can just multiply, and we've checked the orders match on read-in.
   
-  germ_anae_lippia <- germ_Lippia * anaes$passed_anae
-  surv_anae_lippia <- inunSurv$aggdata * anaes$passed_anae
+  # and only return those with matching times.
+  
+  germ_anae_lippia <- germ_bimonth * anaes$passed_anae
+  surv_anae_lippia <- matchinun * anaes$passed_anae
   fullCycle_anae_lippia <- germSurv_Lippia * anaes$passed_anae
   
   # Not renaming these, they are still whether there was germ, surv, or both. just now that depends on anae
@@ -432,8 +476,8 @@ lippiastricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   # base, but skip stuff in the middle, because we can always re-calc that as needed
   lippiastricts <- tibble::lst(fullCycle_anae_lippia, 
                                germSurv_Lippia, 
-                               germ_Lippia,
-                               surv_Lippia = inunSurv$aggdata, 
+                               germ_Lippia = germ_bimonth,
+                               surv_Lippia = matchinun, 
                                anae_Lippia = anaes[,c('UID', 'ANAE_CODE', 'ValleyName', 'passed_anae')])
   
   if (savefile) {

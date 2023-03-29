@@ -10,7 +10,7 @@ propor <- function(x, na.rm = FALSE) {
 # TRUE) gives 0, but I need it to be NA. So define a function on the backend,
 # some of the code expects a na.rm so pass it I guess really, should make these
 # generic and accept the FUN, but not now
-maxna <- function(x, na.rm = TRUE) {
+sumna <- function(x, na.rm = TRUE) {
   ifelse(all(is.na(x)), NA, sum(x, na.rm = TRUE))
 }
 
@@ -304,7 +304,7 @@ sfandcatch <- function(starsObj, catches, newname) {
     st_as_sf() %>% 
     pivot_longer(cols = -Shape, names_to = 'date', values_to = {{newname}}) %>%
     mutate(date = as.Date(date)) %>%
-    st_join(ltimNoNorth, join = st_equals_exact, par = 1)
+    st_join(catches, join = st_equals_exact, par = 1)
 }
 
 
@@ -343,6 +343,17 @@ load_rename <- function(filepath, knownnames,
   
 }
 
+# Make sure areas aren't larger than areas of polygons. There are cases where
+# the rounding is an issue.
+clean_area <- function(starsObj, anaes) {
+  anaeareas <- as.numeric(st_area(anaes))
+  polyareas <- matrix(rep(anaeareas, 
+                          length(st_get_dimension_values(starsObj, which = 'time'))), 
+                      ncol = length(st_get_dimension_values(starsObj, which = 'time')))
+  repind <- which(starsObj[[1]] > polyareas)
+  starsObj[[1]][repind] <- polyareas[repind]
+  return(starsObj)
+}
 
 # Plot helpers (themes) ---------------------------------------------------
 pubtheme <- ggplot2::theme_bw(base_size = 11) + 
