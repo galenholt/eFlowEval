@@ -47,10 +47,10 @@ centipedastricts <- function(catchment,
   moist_path <- file.path(datOut, 'soilmoistureprocessed', 'areaCentipedaSurvive',
                          paste0(catchment, '_areaCentipedaSurvive.rdata')) 
   
-  moistSurv <- load_rename(filepath = moist_path, 
+  moistArea <- load_rename(filepath = moist_path, 
                           knownnames = moist_names,
                           newnames = c('aggdata', 'indices'))
-  names(moistSurv$aggdata) <- 'area_centipeda_survival'
+  names(moistArea$aggdata) <- 'area_centipeda_survival'
   
   
   # Read in presence by ANAE type -------------------------------------------
@@ -89,7 +89,7 @@ centipedastricts <- function(catchment,
   commonUID <- Reduce(intersect, list(anaes$UID, 
                                       soilTemp$indices$UID, 
                                       inunArea$indices$UID,
-                                      moistSurv$indices$UID,
+                                      moistArea$indices$UID,
                                       lippia$indices$UID)) # Should already match anaes, but check
   
   # typically would just logical-index rather than which, but we need to apply
@@ -98,7 +98,7 @@ centipedastricts <- function(catchment,
   anaedrop <- which(!(anaes$UID %in% commonUID))
   tempdrop <- which(!(soilTemp$indices$UID %in% commonUID))
   inundrop <- which(!(inunArea$indices$UID %in% commonUID))
-  moistdrop <- which(!(moistSurv$indices$UID %in% commonUID))
+  moistdrop <- which(!(moistArea$indices$UID %in% commonUID))
   lippiadrop <- which(!lippia$indices$UID %in% commonUID)
   
   # This all has to be conditional- a length-0 set drops everything.
@@ -115,8 +115,8 @@ centipedastricts <- function(catchment,
   }
   
   if (length(moistdrop) > 0) {
-    moistSurv$aggdata <- moistSurv$aggdata[,-moistdrop, ]
-    moistSurv$indices <- moistSurv$indices[-moistdrop, ]
+    moistArea$aggdata <- moistArea$aggdata[,-moistdrop, ]
+    moistArea$indices <- moistArea$indices[-moistdrop, ]
   }
   
   # For lippia, just use the fullCycle, but keep the lippia_anaes as the index too
@@ -144,11 +144,11 @@ centipedastricts <- function(catchment,
   anaeia <- inunArea$indices_anae
   
   # Soil moisture
-  moistSurv <- matchStarsIndex(index1 = anaes, stars1 = NULL,
-                              index2 = moistSurv$indices, stars2 = moistSurv$aggdata,
+  moistArea <- matchStarsIndex(index1 = anaes, stars1 = NULL,
+                              index2 = moistArea$indices, stars2 = moistArea$aggdata,
                               indexcol = c(1, 1), testfinal = FALSE, return1 = TRUE)
-  names(moistSurv) <- c('indices_anae', 'indices', 'aggdata')
-  anaems <- moistSurv$indices_anae
+  names(moistArea) <- c('indices_anae', 'indices', 'aggdata')
+  anaems <- moistArea$indices_anae
   
   # Lippia
   lippia <- matchStarsIndex(index1 = anaes, stars1 = NULL,
@@ -167,37 +167,24 @@ centipedastricts <- function(catchment,
   # Cut the anaes off
   soilTemp <- soilTemp[-1]
   inunArea <- inunArea[-1]
-  moistSurv <- moistSurv[-1]
+  moistArea <- moistArea[-1]
   lippia <- lippia[-1]
   # but keep them and use the cleaned versions
   anaes <- anaest
+  
+  # Clean up rounding errors with area
+  inunArea$aggdata <- clean_area(inunArea$aggdata, anaes)
+  soilTemp$aggdata <- clean_area(soilTemp$aggdata, anaes)
+  moistArea$aggdata <- clean_area(moistArea$aggdata, anaes)
+  # Lippia is checked on creation checked, but I guess check
+  lippia$aggdata <- clean_area(lippia$aggdata, anaes)
   
   
   ### STRICTURE CALCS ###
   
   ## Independent ## 
   
-  # Stricture 1: Germination requires inundation We have bimonth, so just use
-  # the area of inundation to give area of germination. The best the data can do
-  # is bimonthly, so if it was wet in the preceding bimonth, say germ passed.
-  # Thus, this is just directly inunArea. Go ahead and name it though.
-  
-  germ_centipeda <- inunArea$aggdata
-  names(germ_centipeda) <- 'area_centipeda_germ'
-  
-  
-  # Stricture 2: Soil moisture needs to be maintained for a certain period of
-  # time to enable fruiting and seed-set
-  # As above, no numbers for the moisture level or period of time.
-  # let's say they die if soil moisture is < 10% in the preceding 6-week growing
-  # period
-    # To demo raster-rolling we did this on the rasters, and then got the area.
-    # So, the area of survival is just moistSurv
-  surv_centipeda <- moistSurv$aggdata
-  names(surv_centipeda) <- 'area_centipeda_survive'
-
-  
-  # Stricture 3: Loss of seed viability at temps > 60
+  # Stricture 1: Loss of seed viability at temps > 60
   # Let's say the 60 degree condition can't have occurred in the last month (28
   # days)? No particular reason why I've chosen that duration.
   # To meet the "dead if temp > 60 in last month" condition, we need to check if
@@ -215,10 +202,10 @@ centipedastricts <- function(catchment,
   
   # How many of the last 28 days are > 60 (rolling sum of the logicals)
   system.time(seed_surv_centipeda[[1]] <- timeRoll(seed_surv_centipeda[[1]], 
-                                                 FUN = RcppRoll::roll_sum, 
-                                                 rolln = 28, 
-                                                 align = 'right',
-                                                 na.rm = TRUE))
+                                                   FUN = RcppRoll::roll_sum, 
+                                                   rolln = 28, 
+                                                   align = 'right',
+                                                   na.rm = TRUE))
   # are there 4 or fewer days to pass?
   seed_surv_centipeda <- seed_surv_centipeda <= 4
   # the area of seed survival
@@ -226,6 +213,24 @@ centipedastricts <- function(catchment,
   # The attribute needs a name for what it really is, not inherit from data
   names(seed_surv_centipeda) <- 'area_centipeda_seed_survival'
   
+  # Stricture 2: Germination requires inundation We have bimonth, so just use
+  # the area of inundation to give area of germination. The best the data can do
+  # is bimonthly, so if it was wet in the preceding bimonth, say germ passed.
+  # Thus, this is just directly inunArea. Go ahead and name it though.
+  
+  germ_centipeda <- inunArea$aggdata
+  names(germ_centipeda) <- 'area_centipeda_germ'
+  
+  
+  # Stricture 3: Soil moisture needs to be maintained for a certain period of
+  # time to enable fruiting and seed-set
+  # As above, no numbers for the moisture level or period of time.
+  # let's say they die if soil moisture is < 10% in the preceding 6-week growing
+  # period
+    # To demo raster-rolling we did this on the rasters, and then got the area.
+    # So, the area of survival is just moistArea
+  fruit_centipeda <- moistArea$aggdata
+  names(fruit_centipeda) <- 'area_centipeda_survive'
   
   # ANAE type ---------------------------------------------------------------
   # Not sure I want to keep more than the UID and ANAE cols, but might as well
@@ -234,8 +239,63 @@ centipedastricts <- function(catchment,
   anaes <- anaes %>% 
     mutate(passed_anae = ANAE_CODE %in% unique(centipeda_anae_types$ANAE_CODE))
   
-  ## DEPENDENT ##
   
+  ## MAKE BIMONTHLY AND MATCHED DATES ##
+  # As with lippia, need to make these all on the same set of timesteps to avoid
+  # weird issues with area gains
+  
+  # Get the time values for each
+  # seed surv is from soilTemp (daily)
+  sst <- st_get_dimension_values(seed_surv_centipeda, which = 'time')
+  # seed germ is from inun (bimonthly)
+  gst <- st_get_dimension_values(germ_centipeda, which = 'time')
+  # fruiting is from soilMoist (daily)
+  fst <- st_get_dimension_values(fruit_centipeda, which = 'time')
+  
+  # Clip the start times of all to the most recent start time
+  last_first <- max(c(min(fst), min(sst), min(gst)))
+  
+  seed_surv_match <- filter(seed_surv_centipeda, time >= last_first)
+  germ_match <- filter(germ_centipeda, time >= last_first)
+  fruit_match <- filter(fruit_centipeda, time >= last_first)
+  
+  # Make bimonthly if not already. Use min for seed survival and fruit, because
+  # they are both about survival, and dying is permanent, so the lowest survival
+  # is what matters.
+  bimsplits <- gst[gst >= last_first]
+  
+  germ_bimonth <- germ_match
+  
+  seed_surv_bimonth <- tempaggregate(seed_surv_match, 
+                                by_t = bimsplits, 
+                                FUN = minna, dates_end_interval = TRUE) %>% 
+    aperm(c('geometry', 'time'))
+  
+  fruit_bimonth <- tempaggregate(fruit_match, 
+                                     by_t = bimsplits, 
+                                     FUN = minna, dates_end_interval = TRUE) %>% 
+    aperm(c('geometry', 'time'))
+  
+  # I want this to be the same time length as inundation, but the aggregate
+  # drops a value (which is expected behavior, I just want dims to match to make
+  # later arithmetic easier) So, pad with a single leading date with NA (the one
+  # that got dropped)
+  napad <- seed_surv_bimonth[,,1]*NA
+  napad <- st_set_dimensions(napad, which = 'time', 
+                             values = st_get_dimension_values(germ_bimonth, which = 'time')[1])
+  seed_surv_bimonth <- c(napad, seed_surv_bimonth)
+  fruit_bimonth <- c(napad, fruit_bimonth)
+  names(fruit_bimonth) <- names(fruit_match)
+  lippia_bimonth <- c(napad, lippia$aggdata)
+  names(lippia_bimonth) <- names(lippia$aggdata)
+  
+  
+  # check
+  all(st_get_dimension_values(seed_surv_bimonth, which = 'time') == st_get_dimension_values(germ_bimonth, which = 'time'))
+  all(st_get_dimension_values(fruit_bimonth, which = 'time') == st_get_dimension_values(germ_bimonth, which = 'time'))
+  all(st_get_dimension_values(lippia_bimonth, which = 'time') == st_get_dimension_values(germ_bimonth, which = 'time'))
+  
+  ## DEPENDENT ##
   # D1. germination requires seed survival.
   
   # Survival has daily values because it's based on soilTemp, but germ has only
@@ -245,42 +305,38 @@ centipedastricts <- function(catchment,
   # germ really is anytime in that month. I guess let's say if any day had dead
   # seeds, it fails, e.g. ALL days have to pass the survival stricture. There
   # aren't many that won't, I don't think.
+
   
-  # How to calculate that? tempaggregate, I think.
-  ist <- st_get_dimension_values(inunArea$aggdata, which = 'time')
-  bimsurv <- function(x, na.rm = TRUE) {all(x > 0, na.rm = na.rm)}
-  survbimonth <- tempaggregate(seed_surv_centipeda, by_t = ist, FUN = bimsurv,
-                               dates_end_interval = TRUE) # because inundation is end
-  # Tempaggregate flips dims
-  if (attributes(st_dimensions(survbimonth))$name[1] != 'geometry') {
-    survbimonth <- aperm(survbimonth, c(2,1))
-  }
-  
-  # I want this to be the same time length as inundation, but the aggregate
-  # drops a value (which is expected behavior, I just want dims to match to make
-  # later arithmetic easier) So, pad with a single leading date with NA (the one
-  # that got dropped)
-  sbmNA <- survbimonth[,,1]*NA
-  sbmNA <- st_set_dimensions(sbmNA, which = 'time', values = ist[1])
-  survbimonth <- c(sbmNA, survbimonth)
-  
-  # check
-  sbmt <- st_get_dimension_values(survbimonth, which = 'time')
-  all(sbmt == ist)
   
   # Now I have whether seeds survived the preceding bimonth, and we see if they
   # did that and germinated
   # Just like lippia, this complains about dim 1, but it matches. Just force it
-  seedsurv_germ_centipeda <- germ_centipeda # initialise
-  # survbimoth is binary 0-1, germ_centipeda is area of germ. so multiplying gives the "and" and yields the area that both survived and germed
-  seedsurv_germ_centipeda[[1]] <- survbimonth[[1]] * germ_centipeda[[1]]
+  seedsurv_germ_centipeda <- germ_bimonth # initialise
+  # seed_surv_bimonth is area of seed survival, just from temp, and so polygon
+  # area. germ_bimonth is area of germ (inundated area). So we'll check seeds
+  # survived, and then give them the area germinated (e.g. area inundated given
+  # seed survival in the polygon)
+  seedsurv_germ_centipeda[[1]] <- as.numeric((seed_surv_bimonth > 0)[[1]]) * germ_bimonth[[1]]
   
   # The attribute needs a name for what it really is, not inherit from data
   names(seedsurv_germ_centipeda) <- 'area_surv_and_germ'
   
+  # Some checks- 
+  # This is postive, which is good
+  # seed_surv_bimonth[[1]] - seedsurv_germ_centipeda[[1]]
+  
+  # This is almost always 0, which is weird
+  # sum((germ_bimonth[[1]] - seedsurv_germ_centipeda[[1]]) > 0, na.rm = TRUE)
+  # none are below 0, so that's good
+  # sum((germ_bimonth[[1]] - seedsurv_germ_centipeda[[1]]) < 0, na.rm = TRUE)
+  
+  # It's because they nearly always survive, and so germ_bimonth is the main thing affecting seedsurv_germ. The seed_surv > 0 is always 1.
+  # min(as.numeric((seed_surv_bimonth > 0)[[1]]), na.rm = TRUE)
+  # sum(as.numeric((seed_surv_bimonth > 0)[[1]]) == 1, na.rm = TRUE)
+  
   
   # D2. Fruiting requires germination and subsequent soil moisture.
-  # I have rolled the soil moisture for 6 weeks in the raster, which is now in `surv_centipeda`
+  # I have rolled the soil moisture for 6 weeks in the raster, which is now in `fruit_centipeda`
   
   # Fruiting requires germination within the last ?? time period and sustained
   # soil moisture condition
@@ -288,7 +344,7 @@ centipedastricts <- function(catchment,
   # there are a few ways to do this
   # 1. Simplest: has there been germination in the last x days and has soil
   # moisture been above some threshold (10%) for that time?
-    # We have seedsurv_germ_centipeda with bimonthly germ, and surv_centipeda with
+    # We have seedsurv_germ_centipeda with bimonthly germ, and fruit_centipeda with
     # daily soil moisture
     # This is crude, since germ could have happened day before, for ex
   
@@ -319,46 +375,43 @@ centipedastricts <- function(catchment,
   seedsurv_germ_centipedayr[[1]] <- as.numeric(seedsurv_germ_centipedayr[[1]])
   
   # The attribute needs a name for what it really is, not inherit from data
-  names(seedsurv_germ_centipedayr) <- 'bimonthperiodsum'
+  names(seedsurv_germ_centipedayr) <- 'germ_in_last_year'
   
-  # Now, get soil moisture over the last bimonth using tempaggregate How to
-  # calculate that? tempaggregate, I think. I have `ist` (the time splits)
-  # already. Instead of bimsurv, I'm going to use `min` as the function, since
-  # that will give me the minimum area of sufficient moisture, and thus where
-  # survival was possible the whole time
-  moistbimonth <- tempaggregate(surv_centipeda, by_t = ist, FUN = min,
-                               dates_end_interval = TRUE) # because inundation is end
-  # Tempaggregate flips dims
-  if (attributes(st_dimensions(moistbimonth))$name[1] != 'geometry') {
-    moistbimonth <- aperm(moistbimonth, c(2,1))
-  }
-  
-  # Add the NA as above (just use the same NA pad stars)
-  moistbimonth <- c(sbmNA, moistbimonth)
-  
-  # check
-  mbmt <- st_get_dimension_values(moistbimonth, which = 'time')
-  all(mbmt == ist)
-  
-  # Now, the stricture is whether there was any germ in the last 12-2 months
-  # ago, multiplied by minimum moisture area in the last two months.
-  # Actually, needs to be the minimum of germ area and moisture area
+  # Now, the stricture is whether there was any successful germ in the last 12-2 months
+  # ago, multiplied by fruiting area in the last two months.
+  # Actually, needs to be the minimum of germ area and fruit area
   # initialise 
-  seedsurv_germ_fruit_centipeda <- seedsurv_germ_centipeda
+  seedsurv_germ_fruit_centipeda <- fruit_bimonth
   # germ area where there was germ
   seedsurv_germ_fruit_centipeda[[1]] <- (seedsurv_germ_centipedayr[[1]] * seedsurv_germ_centipeda[[1]]) 
-  seedsurv_germ_fruit_centipeda[[1]] <-  pmin(seedsurv_germ_fruit_centipeda[[1]], moistbimonth[[1]], na.rm = TRUE)
+  # at this point, there should never be more germ than germ
+  min(seedsurv_germ_centipeda[[1]] - seedsurv_germ_fruit_centipeda[[1]], na.rm = TRUE)
+  # Then make each value the min of germ and fruit. So this should never be larger than either of those
+  seedsurv_germ_fruit_centipeda[[1]] <-  pmin(seedsurv_germ_fruit_centipeda[[1]], fruit_bimonth[[1]]) # don't put na.rm on here, or it fills in NA with one of the values, when we dont know which is right.
   names(seedsurv_germ_fruit_centipeda) <- 'area_centipeda_germ_fruit'
   
-  
-  
-  
+  # # checks
+  # all((seedsurv_germ_centipeda[[1]] - seedsurv_germ_fruit_centipeda[[1]]) > 0, na.rm = TRUE)
+  # min((seedsurv_germ_centipeda[[1]] - seedsurv_germ_fruit_centipeda[[1]]), na.rm = TRUE)
+  # min((fruit_bimonth[[1]] - seedsurv_germ_fruit_centipeda[[1]]), na.rm = TRUE)
+  # sum((seedsurv_germ_centipeda[[1]] - seedsurv_germ_fruit_centipeda[[1]]) < 0, na.rm = TRUE)
+  # 
+  # which((seedsurv_germ_centipeda[[1]] - seedsurv_germ_fruit_centipeda[[1]]) < 0)
+  # diff(which((seedsurv_germ_centipeda[[1]] - seedsurv_germ_fruit_centipeda[[1]]) < 0))
+  # findmatindex(10445, nrow(seedsurv_germ_centipeda[[1]]))
+  # findmatindex(10432, nrow(seedsurv_germ_centipeda[[1]]))
+  # findmatindex(10477, nrow(seedsurv_germ_centipeda[[1]]))
+  # 
+  # seedsurv_germ_centipeda[[1]][1330:1375, 5]
+  # fruit_bimonth[[1]][1330:1375, 5]
+  # seedsurv_germ_fruit_centipeda[[1]][1330:1375, 5]
+   
   # Restrict all to ANAE -------------------------------
   
   # we can just multiply, and we've checked the orders match on read-in.
   # Only do them stepwise, not all combos
-  seed_surv_anae_centipeda <- seed_surv_centipeda * anaes$passed_anae
-  germ_anae_centipeda <- seedsurv_germ_centipeda * anaes$passed_anae
+  seed_surv_anae_centipeda <- seed_surv_bimonth * anaes$passed_anae
+  seedsurv_germ_anae_centipeda <- seedsurv_germ_centipeda * anaes$passed_anae
   fullCycle_anae_centipeda <- seedsurv_germ_fruit_centipeda * anaes$passed_anae
   
   ### LIPPIA dependence -------------------------------------------------------
@@ -369,7 +422,7 @@ centipedastricts <- function(catchment,
   # (or for lippiaThreshold of the last year (*area?)), fail.
   
   # Roll to get the max area occupied by lippia in the last year
-  lippiayr <- lippia$aggdata
+  lippiayr <- lippia_bimonth
   lippiayr[[1]] <-  timeRoll(lippiayr[[1]],
                         FUN = RcppRoll::roll_max,
                         rolln = 6,
@@ -379,17 +432,19 @@ centipedastricts <- function(catchment,
   lippiayr[[1]][is.infinite(lippiayr[[1]])] <-  NA
   
   # Now, let's say that's area not available for centipeda
-  # But we have *way* more centipeda data than lippia, so have to cut.
-  matchbims <- which(st_get_dimension_values(fullCycle_anae_centipeda, which = 'time') %in%
-                       st_get_dimension_values(lippiayr, which = 'time'))
-  
   # Do the calculation- subtract area
   # Have to initialise and force as usual
-  fullCycle_lippiaLimit_centipeda <- fullCycle_anae_centipeda[,,matchbims]
-  fullCycle_lippiaLimit_centipeda[[1]] <- fullCycle_anae_centipeda[,,matchbims][[1]] - 
+  fullCycle_lippiaLimit_centipeda <- fullCycle_anae_centipeda
+  fullCycle_lippiaLimit_centipeda[[1]] <- fullCycle_anae_centipeda[[1]] - 
     lippiayr[[1]]
-  # no negative areas
+  # no negative areas (which is just an artifact of lippia taking up more area than centipeda)
   fullCycle_lippiaLimit_centipeda[[1]][fullCycle_lippiaLimit_centipeda[[1]] < 0] <- 0
+  
+  # Test
+  all((seed_surv_bimonth[[1]] - seedsurv_germ_centipeda[[1]]) >= 0, na.rm = TRUE)
+  all((seedsurv_germ_centipeda[[1]] - seedsurv_germ_fruit_centipeda[[1]]) >= 0, na.rm = TRUE)
+  all((seedsurv_germ_fruit_centipeda[[1]] - fullCycle_anae_centipeda[[1]]) >= 0, na.rm = TRUE)
+  all((fullCycle_anae_centipeda[[1]] - fullCycle_lippiaLimit_centipeda[[1]]) >= 0, na.rm = TRUE)
   
   # # so, that doesn't change much. 146 cases in Avoca where there was > 0 centipeda and lippia.
   # sum(fullCycle_anae_centipeda[,,matchbims][[1]] > 0 & lippiayr[[1]] > 0, na.rm = TRUE)
@@ -409,9 +464,9 @@ centipedastricts <- function(catchment,
   # # and germ is just inundation, so that's not going to get any bigger.
   # sum(germ_centipeda[,,matchbims][[1]] > 0, na.rm = TRUE)
   # # survival is reasonably large
-  # sum(surv_centipeda[,,matchbims][[1]] > 0, na.rm = TRUE)
+  # sum(fruit_centipeda[,,matchbims][[1]] > 0, na.rm = TRUE)
   # # but gets cut a lot by germ (this is crude and not the same as the real calcs, but it's ballpark)
-  # sum(surv_centipeda[,,matchbims][[1]] > 0 & germ_centipeda[,,matchbims][[1]] > 0, na.rm = TRUE)
+  # sum(fruit_centipeda[,,matchbims][[1]] > 0 & germ_centipeda[,,matchbims][[1]] > 0, na.rm = TRUE)
   # 
   # Save those as a list, along with some of the constituents
   # this is fairly redundant. Do I actually want to do this? 
@@ -420,7 +475,7 @@ centipedastricts <- function(catchment,
   # base, but skip stuff in the middle, because we can always re-calc that as needed
   centipedastricts <- tibble::lst(fullCycle_lippiaLimit_centipeda, 
                                fullCycle_anae_centipeda, 
-                               seed_surv_centipeda, 
+                               seedsurv_centipeda = seed_surv_bimonth, 
                                seedsurv_germ_centipeda,
                                seedsurv_germ_fruit_centipeda, 
                                anae_centipeda = anaes[,c('UID', 'ANAE_CODE', 'ValleyName', 'passed_anae')])

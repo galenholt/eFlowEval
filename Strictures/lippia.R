@@ -321,6 +321,23 @@ lippiastricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
                                 FUN = maxna, dates_end_interval = TRUE) %>% 
     aperm(c('geometry', 'time'))
   
+  # Clip the inundation to just the same timespan
+  matchgermind <- which(st_get_dimension_values(inunSurv$aggdata, which = 'time') %in% 
+                          st_get_dimension_values(germ_bimonth, which = 'time'))
+  matchinun <- inunSurv$aggdata[,,matchgermind]
+  
+  # # Test- there's a dropped level in front (expected), so pad
+  # napad <- germ_bimonth[,,1]*NA
+  # napad <- st_set_dimensions(napad, which = 'time', 
+  #                            values = st_get_dimension_values(matchinun, which = 'time')[1])
+  # germ_bimonth <- c(napad, germ_bimonth, along = 'time')
+  # 
+  
+  all(st_get_dimension_values(germ_bimonth, which = 'time') %in%
+        st_get_dimension_values(matchinun, which = 'time'))
+  
+  all(st_get_dimension_values(germ_bimonth, which = 'time') ==
+        st_get_dimension_values(matchinun, which = 'time'))
   
   # These multi-checks mean it does 3 logical tests. If need be later on, could
   # speed up with Rcpp. It's available in dplyr, but doesn't seem to work on
@@ -382,9 +399,6 @@ lippiastricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   # first, ask if there was germination in the last 365 days This should work
   # with daily data, but something's up with the aggregation, so to make things
   # easily testable, I'm using bimonthly.
-  # Test- the dims match
-  all(st_get_dimension_values(germ_bimonth, which = 'time') %in%
-        st_get_dimension_values(inunSurv$aggdata, which = 'time'))
   
   # germ_Lippia_prev_year <- germ_Lippia # initialize
   germ_Lippia_prev_year <- germ_bimonth # initialize
@@ -420,9 +434,7 @@ lippiastricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   # shuffling anything. I tested using `tempaggregate` too, and it still got the
   # same error about dim 1 not matching.
   
-  # Clip the inundation to just the same timespan
-  matchgermind <- which(st_get_dimension_values(inunSurv$aggdata, which = 'time') %in% st_get_dimension_values(germ_bimonth, which = 'time'))
-  matchinun <- inunSurv$aggdata[,,matchgermind]
+
   # matchgermprev <- germ_Lippia_prev_year[,,which(glt %in% ist)]
   # matchinun <- inunSurv$aggdata[,,which(ist >= min(glt))]
   

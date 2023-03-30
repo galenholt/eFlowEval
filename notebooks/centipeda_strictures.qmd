@@ -138,7 +138,7 @@ Can I make a quick plot of some \> 0?
 Logical indexing gives vector index, but we have a matrix
 
 ```{r}
-vecind <- which(centipedastricts$fullCycle_lippiaLimit_centipeda[[1]] > 0)
+# vecind <- which(centipedastricts$fullCycle_lippiaLimit_centipeda[[1]] > 0)
 ```
 
 Indexing goes down cols
@@ -154,7 +154,7 @@ which(a < 2)
 Can we get the row, col indices?
 
 ```{r}
-dim(centipedastricts$fullCycle_lippiaLimit_centipeda[[1]])
+# dim(centipedastricts$fullCycle_lippiaLimit_centipeda[[1]])
 ```
 
 So there are 10370 rows.
@@ -181,17 +181,17 @@ findmatindex(6,3)
 Use this to get in te ballpark of a section with a few
 
 ```{r}
-findmatindex(vecind[950], as.numeric(nrow(centipedastricts$fullCycle_lippiaLimit_centipeda)))
+# findmatindex(vecind[950], as.numeric(nrow(centipedastricts$fullCycle_lippiaLimit_centipeda)))
 ```
 
 ```{r}
-plot(centipedastricts$fullCycle_lippiaLimit_centipeda[,2600:3000, 39])
+# plot(centipedastricts$fullCycle_lippiaLimit_centipeda[,2600:3000, 39])
 ```
 
 That's hard to see, but it's in there (along with some others above.)
 
 ```{r}
-plot(centipedastricts$fullCycle_lippiaLimit_centipeda[,2670:2680, 39])
+# plot(centipedastricts$fullCycle_lippiaLimit_centipeda[,2670:2680, 39])
 ```
 
 OK, on to analyses.
