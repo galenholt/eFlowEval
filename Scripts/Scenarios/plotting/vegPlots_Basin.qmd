@@ -499,3 +499,12 @@ c_5 <- comp_L_an %>%
 ```
 
 Ok, so that is working, but the hit at step 1 is so big it's hard to see what's happening with a common scale. I guess scrap the common scale?
+
+Quickly, how about some bars? I think maybe don't need to use the calculated values here. Look at proportion wetlands.
+
+```{r}
+veg_catch$centipeda$centipedadf_cat %>% 
+  mutate(strict_level = factor(strict_level, levels = c('seedsurv_centipeda', 'seedsurv_germ_centipeda', 'seedsurv_germ_fruit_centipeda', 'fullCycle_anae_centipeda', 'fullCycle_lippiaLimit_centipeda') )) %>% 
+ggplot() + 
+  geom_col(mapping = aes(x = ValleyName, fill = strict_level, y = proportion_wetlands), position = position_dodge())
+```
