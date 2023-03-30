@@ -22,6 +22,10 @@ maxna <- function(x, na.rm = TRUE) {
   ifelse(all(is.na(x)), NA, max(x, na.rm = TRUE))
 }
 
+minna <- function(x, na.rm = TRUE) {
+  ifelse(all(is.na(x)), NA, min(x, na.rm = TRUE))
+}
+
 
 # Aggregation and plotting in the catchment -------------------------------
 

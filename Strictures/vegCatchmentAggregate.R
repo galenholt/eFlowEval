@@ -48,7 +48,7 @@ veg_catch_agg <- function(datOut, summaryFuns, whichcrs = 3577) {
     # for (i in 1:2) {
     loopstart <- proc.time()
     # don't .combine these strictures, because they are lists of stars, not single stars
-    dataBasin <- foreach(i = 1:length(catchNames), # length(catchNames)
+    dataBasin <- foreach(i = 1:length(catchNames),
                          # .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
                          # .multicombine=TRUE,
                          .inorder = TRUE, .packages = c('sf', 'stars', 'dplyr')) %dorng% { # dopar now seems to work with .packages
@@ -107,19 +107,43 @@ veg_catch_agg <- function(datOut, summaryFuns, whichcrs = 3577) {
                            # It only makes sense to aggregate the stars, NOT the sf of ANAEs
                            # don't assume it's always last
                            flatanaes <- which(purrr::map_lgl(thesedatas, \(x) inherits(x, 'sf')))
-                           dataAgg <- thesedatas[-flatanaes] %>% 
+                           
+                           # turn the sf of anae passing into a very simple
+                           # stars, so it can go into the rest of the processing
+                           # in parallel with the other stars
+                             # In hindsight, I really should leave this an sf in
+                             # vegCatchmentAggregate, and peeled it back off in
+                             # vegPlotSetup_basin, since i have to peel it
+                             # anyway
+                           thesedatas[[flatanaes]] <- thesedatas[[flatanaes]] %>%
+                             mutate(wetland_area = st_area(geometry),
+                                    habitat_area = wetland_area * as.numeric(passed_anae)) %>% 
+                             select(wetland_area, habitat_area) %>% 
+                             st_as_stars()
+                             
+                           
+                           # dataAgg <- thesedatas[-flatanaes] %>% 
+                           dataAgg <- thesedatas %>% 
                              purrr::map(\(x) aggregate(x, 
                                                        by = thisPoly, 
                                                        FUN = sum, na.rm = TRUE))
                            
-                           # oneloopend <- proc.time()
-                           # onelooptime <- oneloopend - oneloopstart
-                           # print(paste0('finished loop ', i, '(', thisCatch, ')', 'time = ', onelooptime))
+                           # # also deal with the sf of anaes- get the summary, then turn into stars so later processing is the same as the other stars. Not starring first and then running through the above, 
+                           # anaesf <- thesedatas[[flatanaes]] %>% 
+                           #   mutate(area = st_area(geometry),
+                           #          passed_area = area * as.numeric(passed_anae)) %>%
+                           #   group_by(ValleyName) %>% # Shouldn't really be necessary, but it's an easy way to keep ValleyName
+                           #   summarise(area_wetlands = sum(area, na.rm = TRUE),
+                           #             area_habitat = sum(passed_area, na.rm = TRUE)) %>% 
+                           #   ungroup()
+                           # 
+                           # dataAgg <- c(dataAgg, list(anaesf))
+                           # names(dataAgg)[length(dataAgg)] <- names(flatanaes)
                            
-                           dataAgg
                          }
     
     # Because these strictures are lists of stars, concatenate them
+    # The anae sf in there is screwing things up, because it needs to be concatted a different way. I think peel it off and reattach (as in the loop)
     dataBasin <- purrr::pmap(dataBasin, ~c(..., along = 1))
     loopend <- proc.time()
     looptime <- loopend-loopstart
