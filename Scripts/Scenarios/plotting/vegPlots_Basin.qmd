@@ -1,0 +1,751 @@
+---
+title: "Veg Strictures"
+author: "Galen Holt"
+format: 
+  html:
+    embed-resources: true
+editor: visual
+execute: 
+  echo: false
+---
+
+```{r setup}
+# set the root to the project directory, not the rmd directory
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+```{r}
+#| message: false
+# libraries
+library(tidyverse)
+library(sf)
+library(stars)
+library(colorspace)
+library(patchwork)
+library(units)
+```
+
+```{r}
+#| output: false
+#| message: FALSE
+# source in the data management
+
+source('directorySet.R')
+source(file.path('Scripts', 'Scenarios', 'plotting', 'vegPlotSetup_Basin.R'))
+# Directory to export TO
+scriptOut <- file.path('strictOut', 'vegetation', 'basin')
+if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
+```
+
+```{r}
+#| message: false
+# Get the data in- run the prep function
+veg_catch <- veg_yr_prep(datOut = datOut)
+```
+
+```{r}
+# I think I can do all of this with the *_cat dataframes, so make my life easier, and order strict_level as a factor and cut off the surv_Lippia because I'm just interested in the sequential steps for now, I think.If we want the individual strictures, we should return all of them, not just this one.
+
+lippia <- veg_catch$lippia$lippiadf_cat %>% 
+  filter(strict_level != 'surv_Lippia') %>% 
+  mutate(strict_level_F = case_when(strict_level == 'germ_Lippia' ~ "Germ",
+                                    strict_level == 'germSurv_Lippia' ~ "Germ and surv",
+                                    strict_level == 'fullCycle_anae_lippia' ~ "Germ, surv, habitat")) %>% 
+  mutate(strict_level_F = factor(strict_level_F, 
+                               levels = c('Germ', 
+                                          'Germ and surv',
+                                          'Germ, surv, habitat') ))
+
+centipeda <- veg_catch$centipeda$centipedadf_cat %>%
+  mutate(strict_level_F = case_when(strict_level == 'seedsurv_centipeda' ~ "Seed surv",
+                                     strict_level == 'seedsurv_germ_centipeda' ~ 'Seed surv and germ',
+                                     strict_level == 'seedsurv_germ_fruit_centipeda' ~ 'Seed surv, germ, fruit',
+                                     strict_level == 'fullCycle_anae_centipeda' ~ 'Seed surv, germ, fruit, habitat',
+                                     strict_level == 'fullCycle_lippiaLimit_centipeda' ~ 'All and lippia competition')) %>% 
+  mutate(strict_level_F = factor(strict_level_F, 
+                               levels = c('Seed surv',
+                                          'Seed surv and germ',
+                                          'Seed surv, germ, fruit',
+                                          'Seed surv, germ, fruit, habitat',
+                                          'All and lippia competition') ))
+```
+
+# Impact of dependent strictures
+
+For both *Lippia* and *Centipeda cunninghamii*, we consider a set of strictures, many of which are dependent. We present this dependence here- how do limitations compound through the life cycle? For example, conditions might be good for germination, but are subsequent conditions good for survival until fruiting? To do this, we look at the strictures as they build up through the cycle, assessing how overall favourability is reduced at each stage, and identifying the most sensitive stages.
+
+I don't do the later stages alone (though I probably should at least show each stricture alone in the appendix). It gets factorially complex to start doing different combinations, so I didn't. For lippia it doesn't really matter- it's not like the germ stricture there is masking the importance of anything else. But it is possible that a really strong first stricture and weak second would yield misleading outcomes for the limitation. Kind of. We'd still say the first is strongest unless there was a complex interaction where the first cut off all the good areas for the second or something. From a management perspective, do we need to get into this? E.g. if we manage for survival, but there's no germination, that's the same issue as managing for germination and then there's no survival. I don't know that we need to get into that level of detail though- we can probably just say it.
+
+```{r}
+demo_year <- 2016
+catch_subset <- c('Avoca', 'Lachlan', 'Lower Murray', 'Paroo', 'Wimmera')
+```
+
+I'll do all the demos except timeseries for water year `r demo_year`, chosen because it is in the middle of the range, and a set of example catchments `r catch_subset` chosen across the basin.
+
+## Lippia
+
+### Area and proportion of favourability
+
+The area of lippia success gives the total area of lippia favourability across the basin, and so is a good measure of something like its biomass or total production. We see that the area of favourability varies dramatically among catchments. Area of success is largely the same as we add strictures, indicating that each additional level of dependency through the life cycle does not restrict the area of favourability much.
+
+```{r}
+lippia %>% 
+  filter(waterYear == demo_year) %>% 
+ggplot() +
+  geom_sf(mapping = aes(fill = area_passing/10000)) +
+  facet_wrap('strict_level_F') +
+  scale_fill_continuous_sequential(palette = 'Turku', trans = 'log10') +
+  labs(fill = 'Hectares\npassing') +
+  theme(legend.position = 'bottom')
+```
+
+To better understand the biology underlying this total amount of lippia success, we can recognise that the area of wetland habitat limits the potential area, and this area of wetland habitat varies across the basin (with catchment size and other factors).
+
+Through the first two strictures (germination and survival), nearly 100% of the wetlands across the basin are successful. The third stricture (habitat type) reduces success some, but predominantly in the smaller basins, and even the 'worst' catchments have 60% of their wetlands favourable for *Lippia* with these strictures. And as we see above, these smaller catchments contribute little to the total *Lippia* success in the basin.
+
+```{r}
+lippia %>% 
+  filter(waterYear == demo_year) %>% 
+ggplot() +
+  geom_sf(mapping = aes(fill = proportion_wetlands)) +
+  facet_wrap('strict_level_F') +
+  scale_fill_continuous_sequential(palette = 'YlGnBu') + 
+  labs(fill = 'Proportion\nwetland area\nsuccessful') +
+  theme(legend.position = 'bottom')
+```
+
+We can also make bar plots of this data, which helps see small differences.
+
+-   Plot notes- Use palletteer here for better discrete palettes? Cut to a subset? The full set actually kind of works better than I expected.
+
+This plot is ordered by catchment area on the x-axis, and we see that there is a clear correlation, but by no means perfectly- some of the larger catchments don't have similarly large areas of wetlands.
+
+```{r}
+lippia %>% 
+  filter(waterYear == demo_year) %>% 
+ggplot() +
+  geom_col(mapping = aes(x = fct_reorder(ValleyName, catchment_area), 
+                         y = area_passing/10000, 
+                         fill = strict_level_F),
+           position = position_dodge()) +
+  scale_fill_discrete_qualitative(palette = 'Dark2') +
+  labs(fill = 'Stricture', y = 'Hectares passing', x = NULL) +
+  theme(legend.position = 'bottom') +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+```
+
+If we do sort by wetland area, the correlation is much clearer
+
+```{r}
+lippia %>% 
+  filter(waterYear == demo_year) %>% 
+ggplot() +
+  geom_col(mapping = aes(x = fct_reorder(ValleyName, wetland_area), 
+                         y = area_passing/10000, 
+                         fill = strict_level_F),
+           position = position_dodge()) +
+  scale_fill_discrete_qualitative(palette = 'Dark2') +
+  labs(fill = 'Stricture', y = 'Hectares passing', x = NULL) +
+  theme(legend.position = 'bottom') +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+```
+
+And to continue beating this dead horse, we see there is quite a lot of noise in the relationship between catchment area and wetland area.
+
+```{r}
+lippia %>% 
+  distinct(ValleyName, catchment_area, wetland_area) %>% 
+ggplot(mapping = aes(x = catchment_area, y = wetland_area)) + geom_point()
+```
+
+Now, if we look at the proportion of wetlands favourable for *Lippia*, we can clearly see the same message as the maps- nearly all wetlands are favourable for *Lippia* based on germination and survival conditions, but they differ in the fraction of those wetlands that are of a favourable habitat type.
+
+```{r}
+lippia %>% 
+  filter(waterYear == demo_year) %>% 
+ggplot() +
+  geom_col(mapping = aes(x = fct_reorder(ValleyName, wetland_area), 
+                         y = proportion_wetlands, 
+                         fill = strict_level_F),
+           position = position_dodge()) +
+  scale_fill_discrete_qualitative(palette = 'Dark2') +
+  labs(fill = 'Stricture', y = 'Proportion wetland area\nsuccessful', x = NULL) +
+  theme(legend.position = 'bottom') +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+```
+
+### Compounding strictures
+
+To better understand the compounding of strictures, we can look at the proportional loss of area between strictures- e.g. instead of looking at the proportion of wetland area utilized, we can look at the wetland area utilised as a fraction of that used in the preceding step.
+
+```{r}
+# We already have everything proportional to wetlands in `proportion_wetlands` column
+
+# These are sequential loss
+comp_gs_g <- lippia  %>% 
+  baseline(comp_col = strict_level, baselev = 'germ_Lippia', groupers = c(date, ValleyName), val_col = area_passing, FUN = relative) %>% 
+  filter(strict_level == 'germSurv_Lippia')
+
+names(comp_gs_g)[str_detect(names(comp_gs_g), 'relative')] <- 'Proportional_area'
+
+comp_f_gs <- lippia  %>% 
+  baseline(comp_col = strict_level, baselev = 'germSurv_Lippia', groupers = c(date, ValleyName), val_col = area_passing, FUN = relative) %>% 
+  filter(strict_level == 'fullCycle_anae_lippia')
+
+names(comp_f_gs)[str_detect(names(comp_f_gs), 'relative')] <- 'Proportional_area'
+
+# This doesn't do a date subset. But we could if it's all part of a setup function.
+commonlims <- c(min(c(lippia$proportion_wetlands, 
+                      comp_gs_g$Proportional_area, 
+                      comp_f_gs$Proportional_area), 
+                    na.rm = TRUE), 
+                max(c(lippia$proportion_wetlands, 
+                      comp_gs_g$Proportional_area, 
+                      comp_f_gs$Proportional_area), 
+                    na.rm = TRUE))
+```
+
+We already have shown how the proportional area changes relative to the total wetland area. The point here is the sequential loss- e.g. what proportion of area remaining is lost with each subsequent stricture (e.g. the conditional loss).
+
+```{r}
+# Two different areas
+wetarea <- lippia %>%
+  filter(waterYear == demo_year) %>% 
+  # Just single record per valley
+  distinct(ValleyName, .keep_all = TRUE) %>% 
+  ggplot() + 
+  geom_sf(mapping = aes(fill = as.numeric(wetland_area)/10000)) +
+  scale_fill_continuous_sequential(palette = 'Turku', trans = 'log10') + 
+  labs(fill = 'Hectares\nwetlands') + 
+  ggtitle('Wetlands')
+
+l_1_a <- lippia  %>% 
+  filter(waterYear == demo_year) %>% 
+  filter(strict_level == 'germ_Lippia') %>% 
+  ggplot() +
+  geom_sf(mapping = aes(fill = area_passing/10000)) +
+  scale_fill_continuous_sequential(palette = 'Turku', trans = 'log10') + 
+  labs(fill = 'Hectares\npassing') + 
+  ggtitle('Germ area')
+
+l_1 <- lippia  %>% 
+  filter(waterYear == demo_year) %>% 
+  filter(strict_level == 'germ_Lippia') %>% 
+  select(Proportional_area = proportion_wetlands, everything()) %>% 
+  ggplot() +
+  geom_sf(mapping = aes(fill = Proportional_area)) +
+  scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE, limits = commonlims) + 
+  labs(fill = 'Proportional\narea') + 
+  ggtitle('Germ')
+
+l_2 <- comp_gs_g %>% 
+  filter(waterYear == demo_year) %>% 
+  ggplot() +
+  geom_sf(mapping = aes(fill = Proportional_area)) +
+  scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE, limits = commonlims) + 
+  labs(fill = 'Proportional\narea') + 
+  ggtitle('Germ and surv')
+
+l_3 <- comp_f_gs %>% 
+  filter(waterYear == demo_year) %>% 
+  ggplot() +
+  geom_sf(mapping = aes(fill = Proportional_area)) +
+  scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE, limits = commonlims) + 
+  labs(fill = 'Proportional\narea') + 
+  ggtitle('Germ, survive, habitat')
+
+
+```
+
+We see that germination and survival don't reduce the area of favourability much, but habitat does remove some of that favourability, and does so differently across catchments. The iterative/conditional point here isn't super interesting, but it is for *Centipeda* (below).
+
+```{r}
+wetarea + l_1 + l_2  + l_3 + 
+        plot_layout(guides = 'collect') & theme(legend.position = 'bottom')
+```
+
+Maybe we don't need the area plot? Just the last three, showing stepwise reductions
+
+```{r}
+# Mostly just a bind_rows, but need to modify step 1, since we didn't rebuild that frame above
+sequential_lippia <- lippia  %>% 
+  filter(strict_level == 'germ_Lippia') %>% 
+  select(Proportional_area = proportion_wetlands, everything()) %>% 
+  bind_rows(comp_gs_g, comp_f_gs)
+```
+
+```{r}
+sequential_lippia %>% 
+  filter(waterYear == demo_year) %>% 
+ggplot() +
+  geom_sf(mapping = aes(fill = Proportional_area)) +
+  scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE) + 
+  labs(fill = 'Proportional\narea') + 
+  facet_wrap('strict_level_F') + 
+  theme(legend.position = 'bottom')
+```
+
+### Timeseries
+
+In addition to varying across the basin, the impact of strictures also varies in time. Further, they vary spatio-temporally. The trajectory through time differs between catchments.
+
+```{r}
+lippia %>% 
+  filter(ValleyName %in% c('Macquarie', 'Lachlan', 'Lower Murray', 
+                           'Border Rivers', 'Paroo')) %>% 
+ggplot(mapping = aes(x = waterYear, 
+                     y = proportion_wetlands, 
+                     color = strict_level_F)) +
+  geom_line() +
+  geom_point() +
+  scale_color_discrete_qualitative(palette = 'Dark2') +
+  facet_grid('ValleyName') +
+  labs(color = 'Stricture\nlevel', x = 'Water Year', y = 'Proportion of wetlands favourable')
+```
+
+Plotting all catchments is possible, but labelling catchments is horrible.
+
+```{r}
+lippia %>% 
+ggplot(mapping = aes(x = waterYear, 
+                     y = proportion_wetlands, 
+                     color = ValleyName)) +
+  geom_line() +
+  geom_point() +
+  scale_color_discrete_qualitative(palette = 'Dark2') +
+  facet_grid('strict_level_F') +
+  labs(color = 'Catchment', x = 'Water Year', y = 'Proportion of wetlands favourable') + theme(legend.position = 'none')
+```
+
+## Centipeda
+
+### Area and proportion
+
+We see a dropoff in area of favourability with each stricture for centipeda, and that this is spatially variable.
+
+-   use different colours than lippia? Or keep the same for each measure (outcome, proportion, iterative proportion?)
+
+    -   What about scale?
+
+-   plots- is there a logical way to facet this? need to get the legend up in the missing space
+
+```{r}
+centipeda %>% 
+  filter(waterYear == demo_year) %>% 
+ggplot() +
+  geom_sf(mapping = aes(fill = area_passing/10000)) +
+  facet_wrap('strict_level_F') +
+  scale_fill_continuous_sequential(palette = 'Turku', trans = 'log10') +
+  labs(fill = 'Hectares\npassing') +
+  theme(legend.position = c(0.9, 0.25))
+```
+
+When we look at the proportion of wetlands that are favourable for each stricture, we see that seed survival passes almost everywhere, but the germination stricture causes a huge dropoff. It's a bit hard to see what happens after that, so we'll use the sequential/iterative view in a bit.
+
+```{r}
+centipeda %>% 
+  filter(waterYear == demo_year) %>% 
+ggplot() +
+  geom_sf(mapping = aes(fill = proportion_wetlands)) +
+  facet_wrap('strict_level_F') +
+  scale_fill_continuous_sequential(palette = 'YlGnBu') + 
+  labs(fill = 'Proportion\nwetland area\nsuccessful') +
+  theme(legend.position = c(0.9, 0.25))
+```
+
+Plot q- the above has no transform on the color. If we log it, small changes are easier to see, but it's less striking that almost nowhere is good.
+
+```{r}
+proparea_cent_success <- centipeda %>% 
+  filter(waterYear == demo_year) %>% 
+ggplot() +
+  geom_sf(mapping = aes(fill = proportion_wetlands)) +
+  facet_wrap('strict_level_F') +
+  scale_fill_continuous_sequential(palette = 'YlGnBu', trans = 'log10') + 
+  labs(fill = 'Proportion\nwetland area\nsuccessful')  +
+  theme(legend.position = c(0.9, 0.25))
+
+proparea_cent_success
+```
+
+With a bar plot, we can see that the proportion of successes is always 1 for seed survival.
+
+Most importantly, the different impacts of the other strictures across catchments is striking, especially when we look at a plot with seed survival removed.
+
+```{r}
+centipeda %>% 
+  filter(waterYear == demo_year) %>% 
+ggplot() +
+  geom_col(mapping = aes(x = fct_reorder(ValleyName, wetland_area), 
+                         y = proportion_wetlands, 
+                         fill = strict_level_F),
+           position = position_dodge()) +
+  scale_fill_discrete_qualitative(palette = 'Dark2') +
+  labs(fill = 'Stricture', y = 'Proportion wetland area\nsuccessful', x = NULL) +
+  theme(legend.position = 'bottom') +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+```
+
+The same plot but without seed survival is clearer, since seed survival is always approximately 1.
+
+-   Plot notes- do a setNames and scale_fill_manual to keep the colors the same with the names (and different to the lippia)
+
+-   kinda silly legend. need to make that look better
+
+```{r}
+cent_bar_no_seeds <- centipeda %>% 
+  filter(waterYear == demo_year) %>% 
+  filter(strict_level != 'seedsurv_centipeda') %>% 
+ggplot() +
+  geom_col(mapping = aes(x = fct_reorder(ValleyName, wetland_area), 
+                         y = proportion_wetlands, 
+                         fill = strict_level_F),
+           position = position_dodge()) +
+  scale_fill_discrete_qualitative(palette = 'Dark2') +
+  labs(fill = 'Stricture', y = 'Proportion wetland area\nsuccessful', x = NULL) +
+  theme(legend.position = 'bottom') +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  guides(fill = guide_legend(title.position = 'top', label.position = 'bottom'))
+
+cent_bar_no_seeds
+```
+
+### Compounding/iterative
+
+```{r}
+#| output: false
+# Why don't I bind_rows these and then use facets?
+# We already have everything proportional to wetlands in `proportion_wetlands` column
+
+# These are sequential loss
+comp_gss_ss <- centipeda  %>% 
+  baseline(comp_col = strict_level, baselev = 'seedsurv_centipeda', 
+           groupers = c(date, ValleyName), 
+           val_col = area_passing, FUN = relative) %>% 
+  filter(strict_level == 'seedsurv_germ_centipeda')
+
+names(comp_gss_ss)[str_detect(names(comp_gss_ss), 'relative')] <- 'Proportional_area'
+
+comp_f_gss <- centipeda  %>% 
+  baseline(comp_col = strict_level, baselev = 'seedsurv_germ_centipeda', groupers = c(date, ValleyName), val_col = area_passing, FUN = relative) %>% 
+  filter(strict_level == 'seedsurv_germ_fruit_centipeda')
+
+names(comp_f_gss)[str_detect(names(comp_f_gss), 'relative')] <- 'Proportional_area'
+
+comp_an_f <- centipeda  %>% 
+  baseline(comp_col = strict_level, baselev = 'seedsurv_germ_fruit_centipeda', groupers = c(date, ValleyName), val_col = area_passing, FUN = relative) %>% 
+  filter(strict_level == 'fullCycle_anae_centipeda')
+
+names(comp_an_f)[str_detect(names(comp_an_f), 'relative')] <- 'Proportional_area'
+
+comp_l_an <- centipeda  %>% 
+  baseline(comp_col = strict_level, baselev = 'fullCycle_anae_centipeda', groupers = c(date, ValleyName), val_col = area_passing, FUN = relative) %>% 
+  filter(strict_level == 'fullCycle_lippiaLimit_centipeda')
+
+names(comp_l_an)[str_detect(names(comp_l_an), 'relative')] <- 'Proportional_area'
+
+# This doesn't do a date subset. But we could if it's all part of a setup function.
+commonlims <- c(min(c(centipeda$proportion_wetlands, 
+                      comp_gss_ss$Proportional_area, 
+                      comp_f_gss$Proportional_area,
+                      comp_an_f$Proportional_area,
+                      comp_l_an$Proportional_area), 
+                    na.rm = TRUE), 
+                max(c(centipeda$proportion_wetlands, 
+                      comp_gss_ss$Proportional_area, 
+                      comp_f_gss$Proportional_area,
+                      comp_an_f$Proportional_area,
+                      comp_l_an$Proportional_area), 
+                    na.rm = TRUE))
+```
+
+```{r}
+# Two different areas
+wetarea <- centipeda %>% 
+  filter(waterYear == demo_year) %>%
+  # Just single record per valley
+  distinct(ValleyName, .keep_all = TRUE) %>% 
+  ggplot() + 
+  geom_sf(mapping = aes(fill = as.numeric(wetland_area)/10000)) +
+  scale_fill_continuous_sequential(palette = 'Turku', trans = 'log10') + 
+  labs(fill = 'Hectares\nwetlands') + 
+  ggtitle('Wetlands')
+
+c_1_a <- centipeda %>% 
+  filter(waterYear == demo_year) %>% 
+  filter(strict_level == 'seedsurv_centipeda') %>% 
+  ggplot() +
+  geom_sf(mapping = aes(fill = area_passing/10000)) +
+  scale_fill_continuous_sequential(palette = 'Turku', trans = 'log10') + 
+  labs(fill = 'Hectares\npassing') + 
+  ggtitle('Seed surv area')
+
+c_1 <- centipeda %>% 
+  filter(waterYear == demo_year) %>% 
+  filter(strict_level == 'seedsurv_centipeda') %>% 
+  select(Proportional_area = proportion_wetlands, everything()) %>% 
+  ggplot() +
+  geom_sf(mapping = aes(fill = Proportional_area)) +
+  scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE, limits = commonlims) + 
+  labs(fill = 'Proportional\narea') + 
+  ggtitle('Seed surv')
+
+c_2 <- comp_gss_ss %>% 
+  filter(waterYear == demo_year) %>% 
+  ggplot() +
+  geom_sf(mapping = aes(fill = Proportional_area)) +
+  scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE, limits = commonlims) + 
+  labs(fill = 'Proportional\narea') + 
+  ggtitle('Seed surv and germ')
+
+c_3 <- comp_f_gss %>% 
+  filter(waterYear == demo_year) %>% 
+  ggplot() +
+  geom_sf(mapping = aes(fill = Proportional_area)) +
+  scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE, limits = commonlims) + 
+  labs(fill = 'Proportional\narea') + 
+  ggtitle('Seed surv, germ, fruit')
+
+c_4 <- comp_an_f %>% 
+  filter(waterYear == demo_year) %>% 
+  ggplot() +
+  geom_sf(mapping = aes(fill = Proportional_area)) +
+  scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE, limits = commonlims) + 
+  labs(fill = 'Proportional\narea') + 
+  ggtitle('Seed surv, germ, fruit, habitat')
+
+c_5 <- comp_l_an %>% 
+  filter(waterYear == demo_year) %>% 
+  ggplot() +
+  geom_sf(mapping = aes(fill = Proportional_area)) +
+  scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE, limits = commonlims) + 
+  labs(fill = 'Proportional\narea') + 
+  ggtitle('All and lippia competition')
+
+
+```
+
+When we look at the stepwise reduction in favourability, we see that germination strictures cause a massive loss across the basin. Of the remaining favourability, fruiting strictures cause appreciable losses, but this is highly spatially-variable. Habitat strictures only cause additional losses in a few catchments. Competition from *Lippia* causes large losses of the area that would otherwise be favourable through all other strictures.
+
+```{r}
+wetarea + c_1 + c_2  + c_3 + c_4 + c_5 +
+        plot_layout(guides = 'collect') & theme(legend.position = 'bottom')
+```
+
+If we don't worry about the wetland area panel, we can make the plot simpler.
+
+```{r}
+# Mostly just a bind_rows, but need to modify step 1, since we didn't rebuild that frame above
+sequential_cent <- centipeda  %>% 
+  filter(strict_level == 'seedsurv_centipeda') %>% 
+  select(Proportional_area = proportion_wetlands, everything()) %>% 
+  bind_rows(comp_gss_ss, comp_f_gss, comp_an_f, comp_l_an)
+
+
+
+```
+
+```{r}
+sequential_cent_plot <- sequential_cent %>% 
+  filter(waterYear == demo_year) %>% 
+ggplot() +
+  geom_sf(mapping = aes(fill = Proportional_area)) +
+  scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE) + 
+  labs(fill = 'Proportional\narea') + 
+  facet_wrap('strict_level_F') + 
+  theme(legend.position = c(0.9, 0.25))
+
+sequential_cent_plot
+```
+
+### Timeseries
+
+The stricture impacts vary across time and space. This is easiest to see when we remove seed survival, which is always approximately 1.
+
+```{r}
+centipeda %>% 
+  filter(ValleyName %in% c('Macquarie', 'Lachlan', 'Lower Murray', 
+                           'Border Rivers', 'Paroo')) %>% 
+ggplot(mapping = aes(x = waterYear, 
+                     y = proportion_wetlands, 
+                     color = strict_level_F)) +
+  geom_line() +
+  geom_point() +
+  scale_color_discrete_qualitative(palette = 'Dark2') +
+  facet_grid('ValleyName') +
+  labs(color = 'Stricture\nlevel', x = 'Water Year', y = 'Proportion of wetlands favourable')
+```
+
+Once again, we drop seed survival since it's always 1, and we see that not only are there years that reduce the impacts of germination and fruiting strictures, these shifts happen differently across catchments.
+
+```{r}
+centipeda %>% 
+  filter(ValleyName %in% c('Macquarie', 'Lachlan', 'Lower Murray', 
+                           'Border Rivers', 'Paroo') & 
+           strict_level != "seedsurv_centipeda") %>% 
+ggplot(mapping = aes(x = waterYear, 
+                     y = proportion_wetlands, 
+                     color = strict_level_F)) +
+  geom_line() +
+  geom_point() +
+  scale_color_discrete_qualitative(palette = 'Dark2') +
+  facet_grid('ValleyName') +
+  labs(color = 'Stricture\nlevel', x = 'Water Year', y = 'Proportion of wetlands favourable')
+```
+
+And, this will be hard to describe, I think, but if we look at the sequenced proportionals (e.g. the conditionals).
+
+It's actually really interesting though- the impact of the different strictures differs between years and locations. For example, both the Lachlan and Paroo show a shift from high lippia impact and low fruit impact in 2016 to low lippia impact and high fruit impact in 2018.
+
+```{r}
+sequential_conditional_timeseries <- sequential_cent %>% 
+  filter(ValleyName %in% c('Macquarie', 'Lachlan', 'Lower Murray', 
+                           'Border Rivers', 'Paroo')) %>% 
+ggplot(mapping = aes(x = waterYear, 
+                     y = Proportional_area, 
+                     color = strict_level_F)) +
+  geom_line() +
+  geom_point() +
+  scale_color_discrete_qualitative(palette = 'Dark2') +
+  facet_grid('ValleyName') +
+  labs(color = 'Stricture\nlevel', x = 'Water Year', y = 'Proportion\nremaining area')
+
+sequential_conditional_timeseries
+```
+
+A map is actually pretty good at showing this variation.
+
+-   should we clip to just some of the strictures?
+
+    -   maybe drop seed surv and germ, since not much changes?
+
+    -   Or is having some with little change actually good?
+
+-   Plot notes- scale, color palette, make facet labels readable.
+
+    -   Grey areas are NA because divide by 0
+
+```{r}
+timeseries_map <- sequential_cent %>% 
+ggplot() +
+  geom_sf(mapping = aes(fill = Proportional_area)) +
+  scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE) + 
+  labs(fill = 'Proportional\narea') + 
+  facet_grid(strict_level_F ~ waterYear) 
+
+timeseries_map
+```
+
+# To paper- notes etc
+
+Favourable conditions for life cycle completion require each stricture to be met in turn- adults cannot fruit if they didn't germinate in the first place. Likewise, managing for success at a single life stage may be undermined by strictures in later stages. We focus here on the ability of the eFlowEval framework to model this conditionality and yield insight into the impact of life cycle processes and species interactions. How does each successive stricture (or promoter) change the amount of favourable habitat to yield the total favourability over the life cycle? In doing this, we can model not only overall outcomes, but also identify 'pinch points' that are limiting life cycle successes and potentialy undermining success in other life stages.
+
+Not only are strictures and promoters dependent within the life cycle of a given species, they may also depend on the life cycles of other species- perhaps prey are promoters, while predators and competitors can reduce favourability.
+
+For this demonstration, we develop two species of vegetation, each with a sequence of life-cycle strictures that determine favourable locations. Further, one species is a dominant competitor, and so its presence reduces the favourability for the second. To demonstrate the modelling approach, utility, and outcomes, we focus here on the dependence between strictures for the weaker competitor. This species is modelled loosely around the characteristics of *Centipeda cunninghamii*, a native Aster, while the competitive dominant is based on the characteristics of *Lippia spp*, an invasive Verbena with large impact throughout the basin. For details of the underlying stricture definitions for *Centipeda*, as well as the *Lippia* strictures and outcomes, see Appendix ??.
+
+The first four strictures represent intraspecific life cycle requirements for seed survival, germination, survival until fruiting, and habitat type. The fifth stricture represents the competitive impact of the invasive dominant *Lippia*, and so any loss of habitat at this stage is a reduction from where *Centipeda* would be in the absence of the *Lippia* invasion.
+
+**Just going to write these as results for now. Will need to edit so it's more about model capability and less about actual vegetation**
+
+To assess the utilisation of wetlands by *Centipeda* across the basin, we plot the proportion of wetland area favourable to *Centipeda* after each stricture in turn (top row, @fig-cent_strict_stack ). The first stricture (seed survival) is nearly always met, while later strictures dramatically reduce the amount of area favourable to *Centipeda*. This reduction is not uniform across the basin, with some catchments having a much higher proportion of favourable wetlands than others.
+
+Identifying 'pinch points' where strictures most reduce the remaining area of favourability is critical. The eFlowEval framework provides the ability to assess the impact of each stricture by considering its impact on the remaining favourable habitat after all preceding strictures (middle, @fig-cent_strict_stack ). For this, we calculate the amount of favourable habitat after each stricture relative to the amount of habitat remaining after the preceding stricture. Here, we can see, as in the top row, that the germination stricture greatly reduces the amount of habitat favourable for *Centipeda*. Now, because we rescale at each step, it is much easier to see that the fruiting stricture has highly variable impacts across the basin, with large reductions in the remaining favourability in the northern basin and Lower Murray, while the middle of the basin is relatively unaffected. The habitat stricture has little further impact, while competition from *Lippia* has a dramatic impact on the remaining area of favourability, except in a few small southern catchments where *Lippia* performance is low (Appendix ??).
+
+The spatially-variable nature of the dominant strictures is apparent in the bottom row of @fig-cent_strict_stack, where we examine the proportion of favourable wetland habitat (as in the top row). The initial drop in area from the germination stricture is large everywhere but variable, and subsequent drops are dominated by different strictures in different catchments, with Avoca showing little additional reductions from any stricture, Wimmera showing even reductions, Lower Murray is heavily impacted by the fruiting stricture, and the Lachlan and Paroo experience large reductions from *Lippia* (but not fruiting or habitat). This variation in stricture limitations is not just spatial- there is a strong temporal component as well, with the patterns of favourability varying across the basin and through time (Appendix ?? map timeseries). Depending on the sequence of strictures and the underlying biology, releasing the limitation of one stricture may increase the relative limitation of another (Appendix ?? timeseries lines). The eFlowEval framework, along with the underlying stricture models, provides critical ability to assess these outcomes and how they arise- critical information for management targeting alleviating strictures.
+
+```{r}
+
+proparea_cent_success_1 <- centipeda %>% 
+  filter(waterYear == demo_year) %>% 
+ggplot() +
+  geom_sf(mapping = aes(fill = proportion_wetlands)) +
+  facet_grid(.~strict_level_F, 
+             labeller = labeller(strict_level_F = label_wrap_gen(20))) +
+  scale_fill_continuous_sequential(palette = 'YlGnBu', trans = 'log10') + 
+  labs(fill = 'Proportion\nwetland area\nsuccessful')
+
+sequential_cent_plot_1 <- sequential_cent %>% 
+  filter(waterYear == demo_year) %>% 
+ggplot() +
+  geom_sf(mapping = aes(fill = Proportional_area)) +
+  scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE) + 
+  labs(fill = 'Proportional\narea') + 
+  facet_grid(.~strict_level_F, 
+             labeller = labeller(strict_level_F = label_wrap_gen(20)))
+
+
+```
+
+```{r}
+cent_bar_no_seeds_cut <- centipeda %>% 
+  filter(waterYear == demo_year) %>% 
+  filter(ValleyName %in% catch_subset) %>% 
+  filter(strict_level != 'seedsurv_centipeda') %>% 
+ggplot() +
+  geom_col(mapping = aes(x = fct_reorder(ValleyName, wetland_area), 
+                         y = proportion_wetlands, 
+                         fill = strict_level_F),
+           position = position_dodge()) +
+  scale_fill_discrete_qualitative(palette = 'Dark2') +
+  labs(fill = 'Stricture', y = 'Proportion wetland\narea successful', x = NULL) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+ 
+```
+
+```{r}
+#| label: fig-cent_strict_stack
+#| fig-cap: Proportion of wetland area favourable for *Centipeda cunninghamii* after each stricture (panels). Note logarithmic color scale. Nearly all wetlands are favourable for seed survival, but a much lower proportion are favourable for subsequent strictures.
+stackveg <- ggpubr::ggarrange(proparea_cent_success_1 +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')), 
+    
+                  sequential_cent_plot_1 +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')), 
+    
+                  cent_bar_no_seeds_cut +
+    theme_grey(base_size = 8) + 
+    theme(legend.position = 'right', 
+          legend.background = element_blank(),
+          legend.key.size = unit(0.3, 'cm')), 
+    nrow = 3, heights = c(2,2,1))
+
+pdf(file = file.path(scriptOut, 'Veg_area_prop_bar.pdf'), 
+    width = 16/2.54, height = 12/2.54)
+stackveg
+dev.off()
+
+stackveg
+```
+
+```{r}
+
+cent_bar_no_seeds
+```
+
+```{r}
+
+sequential_cent_plot
+```
+
+```{r}
+sequential_conditional_timeseries
+```
+
+```{r}
+timeseries_map
+```
+
+# Notes/points
+
+Each of these steps shows the potential area of favourability. They all need to be met. But others might reduce that success- managing for one could miss failing others.
+
+Finding the most restrictive can help identify pinch points where the life cycle is most sensitive, targets for conservation/management, and areas of future research (maybe those are just not well-documented).
+
+It's hard not to present *results*, as opposed to *demonstrations*, particularly in how we describe the plots- we need to do a better job of saying how the plots show the way strictures and the framework operates, and less about what they say about *Lippia* and *Centipeda*
