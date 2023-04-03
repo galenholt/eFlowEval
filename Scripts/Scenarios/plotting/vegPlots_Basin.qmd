@@ -236,7 +236,7 @@ l_1 <- lippia  %>%
   ggplot() +
   geom_sf(mapping = aes(fill = Proportional_area)) +
   scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE, limits = commonlims) + 
-  labs(fill = 'Proportional\narea') + 
+  labs(fill = 'Proportion\nremaining area') + 
   ggtitle('Germ')
 
 l_2 <- comp_gs_g %>% 
@@ -244,7 +244,7 @@ l_2 <- comp_gs_g %>%
   ggplot() +
   geom_sf(mapping = aes(fill = Proportional_area)) +
   scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE, limits = commonlims) + 
-  labs(fill = 'Proportional\narea') + 
+  labs(fill = 'Proportion\nremaining area') + 
   ggtitle('Germ and surv')
 
 l_3 <- comp_f_gs %>% 
@@ -252,7 +252,7 @@ l_3 <- comp_f_gs %>%
   ggplot() +
   geom_sf(mapping = aes(fill = Proportional_area)) +
   scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE, limits = commonlims) + 
-  labs(fill = 'Proportional\narea') + 
+  labs(fill = 'Proportion\nremaining area') + 
   ggtitle('Germ, survive, habitat')
 
 
@@ -281,7 +281,7 @@ sequential_lippia %>%
 ggplot() +
   geom_sf(mapping = aes(fill = Proportional_area)) +
   scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE) + 
-  labs(fill = 'Proportional\narea') + 
+  labs(fill = 'Proportion\nremaining area') + 
   facet_wrap('strict_level_F') + 
   theme(legend.position = 'bottom')
 ```
@@ -488,7 +488,7 @@ c_1 <- centipeda %>%
   ggplot() +
   geom_sf(mapping = aes(fill = Proportional_area)) +
   scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE, limits = commonlims) + 
-  labs(fill = 'Proportional\narea') + 
+  labs(fill = 'Proportion\nremaining area') + 
   ggtitle('Seed surv')
 
 c_2 <- comp_gss_ss %>% 
@@ -496,7 +496,7 @@ c_2 <- comp_gss_ss %>%
   ggplot() +
   geom_sf(mapping = aes(fill = Proportional_area)) +
   scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE, limits = commonlims) + 
-  labs(fill = 'Proportional\narea') + 
+  labs(fill = 'Proportion\nremaining area') + 
   ggtitle('Seed surv and germ')
 
 c_3 <- comp_f_gss %>% 
@@ -504,7 +504,7 @@ c_3 <- comp_f_gss %>%
   ggplot() +
   geom_sf(mapping = aes(fill = Proportional_area)) +
   scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE, limits = commonlims) + 
-  labs(fill = 'Proportional\narea') + 
+  labs(fill = 'Proportion\nremaining area') + 
   ggtitle('Seed surv, germ, fruit')
 
 c_4 <- comp_an_f %>% 
@@ -512,7 +512,7 @@ c_4 <- comp_an_f %>%
   ggplot() +
   geom_sf(mapping = aes(fill = Proportional_area)) +
   scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE, limits = commonlims) + 
-  labs(fill = 'Proportional\narea') + 
+  labs(fill = 'Proportion\nremaining area') + 
   ggtitle('Seed surv, germ, fruit, habitat')
 
 c_5 <- comp_l_an %>% 
@@ -520,7 +520,7 @@ c_5 <- comp_l_an %>%
   ggplot() +
   geom_sf(mapping = aes(fill = Proportional_area)) +
   scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE, limits = commonlims) + 
-  labs(fill = 'Proportional\narea') + 
+  labs(fill = 'Proportion\nremaining area') + 
   ggtitle('All and lippia competition')
 
 
@@ -552,7 +552,7 @@ sequential_cent_plot <- sequential_cent %>%
 ggplot() +
   geom_sf(mapping = aes(fill = Proportional_area)) +
   scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE) + 
-  labs(fill = 'Proportional\narea') + 
+  labs(fill = 'Proportion\nremaining area') + 
   facet_wrap('strict_level_F') + 
   theme(legend.position = c(0.9, 0.25))
 
@@ -631,7 +631,7 @@ timeseries_map <- sequential_cent %>%
 ggplot() +
   geom_sf(mapping = aes(fill = Proportional_area)) +
   scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE) + 
-  labs(fill = 'Proportional\narea') + 
+  labs(fill = 'Proportion\nremaining area') + 
   facet_grid(strict_level_F ~ waterYear) 
 
 timeseries_map
@@ -671,7 +671,7 @@ sequential_cent_plot_1 <- sequential_cent %>%
 ggplot() +
   geom_sf(mapping = aes(fill = Proportional_area)) +
   scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE) + 
-  labs(fill = 'Proportional\narea') + 
+  labs(fill = 'Proportion\nremaining area') + 
   facet_grid(.~strict_level_F, 
              labeller = labeller(strict_level_F = label_wrap_gen(20)))
 
@@ -716,10 +716,17 @@ stackveg <- ggpubr::ggarrange(proparea_cent_success_1 +
           legend.key.size = unit(0.3, 'cm')), 
     nrow = 3, heights = c(2,2,1))
 
-pdf(file = file.path(scriptOut, 'Veg_area_prop_bar.pdf'), 
-    width = 16/2.54, height = 12/2.54)
-stackveg
-dev.off()
+
+ggsave(file.path(scriptOut, 'Veg_area_prop_bar.pdf'),
+       plot = stackveg,
+       width = 16, height = 12, units = 'cm')
+ggsave(file.path(scriptOut, 'Veg_area_prop_bar.png'),
+       plot = stackveg,
+       width = 16, height = 12, units = 'cm')
+# pdf(file = file.path(scriptOut, 'Veg_area_prop_bar.pdf'), 
+#     width = 16/2.54, height = 12/2.54)
+# stackveg
+# dev.off()
 
 stackveg
 ```
