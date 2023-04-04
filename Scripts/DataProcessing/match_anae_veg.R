@@ -13,7 +13,7 @@ galah_config(email = "g.holt@deakin.edu.au", atlas = "Australia")
 
 # Data acquisition --------------------------------------------------------
 
-# according to the website, lippi has a synonym- phyla nodiflora. Get both
+# according to the website, lippia has a synonym- phyla nodiflora. Get both
 lippia_phyla <- galah_call() |>
   galah_identify(c("lippia", 'phyla nodiflora')) |>
   atlas_occurrences()
