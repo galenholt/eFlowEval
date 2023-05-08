@@ -366,3 +366,11 @@ pubtheme <- ggplot2::theme_bw(base_size = 11) +
         panel.grid.major = ggplot2::element_blank(),
         panel.grid.minor = ggplot2::element_blank())
 
+theme_pub <- function(base_size = 8, ...) {
+  ggplot2::theme_bw(base_size = base_size) +
+    theme(strip.background = element_blank(),
+          plot.background = element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(), 
+          ...)
+}

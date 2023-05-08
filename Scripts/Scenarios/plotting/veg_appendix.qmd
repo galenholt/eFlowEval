@@ -203,7 +203,7 @@ To continue the life cycle, seeds that survive need to germinate, which requires
 
 #### Stricture 3: Survival until fruiting
 
-The final life-cycle stricture for *C. cunninghamii* requires soil moisture persistence during a growing period to allow the growing plants to reach maturity. The underlying dataset is obtained from the Australian Bureau of Meterorology AWRA-L soil moisture model, @australi . This dataset provides daily raster values for percent soil moisture in the root zone with pixels of 0.05 degrees on a side. Considered independently, this stricture requires soil moisture above 10% for 42 days as an estimate of a minimum growing period. WHERE ON EARTH DID 42 DAYS COME FROM? To demonstrate eFlowEval capability, these rolling lookback calculations were done on the input raster data itself, rather than after the raster data was aggregated into polygons (as is done elsewhere with rolling lookbacks). This yielded a raster grid with daily values of minimum soil moisture over the preceding 42 days. These were then given passing values if they were above 10%, and aggregated into ANAE polygons to give the area of passing raster cells within each polygon. Like the seed survival stricture, to prepare these strictures for dependence, we aggregate them to the bimonthly scale of the inundation data with the minimum. Death at any point during the two-month period yields a failure for the period.
+The final life-cycle stricture for *C. cunninghamii* requires soil moisture persistence during a growing period to allow the growing plants to reach maturity. The underlying dataset is obtained from the Australian Bureau of Meterorology AWRA-L soil moisture model, [@australi]. This dataset provides daily raster values for percent soil moisture in the root zone with pixels of 0.05 degrees on a side. Considered independently, this stricture requires soil moisture above 10% for 42 days as an estimate of a minimum growing period (six weeks). To demonstrate eFlowEval capability, these rolling lookback calculations were done on the input raster data itself, rather than after the raster data was aggregated into polygons (as is done elsewhere with rolling lookbacks). This yielded a raster grid with daily values of minimum soil moisture over the preceding 42 days. These were then given passing values if they were above 10%, and aggregated into ANAE polygons to give the area of passing raster cells within each polygon. Like the seed survival stricture, to prepare these strictures for dependence, we aggregate them to the bimonthly scale of the inundation data with the minimum. Death at any point during the two-month period yields a failure for the period.
 
 #### Stricture 4: Habitat type
 
@@ -262,7 +262,7 @@ ggplot() +
   facet_wrap('strict_level_F') +
   scale_fill_continuous_sequential(palette = 'Turku', trans = 'log10') +
   labs(fill = 'Hectares\npassing') +
-  theme(legend.position = 'bottom')
+  theme_pub(legend.position = 'bottom')
 
 ggsave(file.path(scriptOut, 'lippia_area.pdf'),
        plot = lippia_area,
@@ -288,16 +288,16 @@ ggplot() +
            position = position_dodge()) +
   scale_fill_discrete_qualitative(palette = 'Dark2') +
   labs(fill = 'Stricture', y = 'Hectares passing', x = NULL) +
-  theme(legend.position = 'bottom') +
-  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+  theme_pub(legend.position = 'bottom',
+            axis.text.x = element_text(angle = 60, hjust = 1))
 
 
 ggsave(file.path(scriptOut, 'lippia_area_bar.pdf'),
        plot = lippia_area_bar,
-       width = 12, height = 6, units = 'cm')
+       width = 12, height = 8, units = 'cm')
 ggsave(file.path(scriptOut, 'lippia_area_bar.png'),
        plot = lippia_area_bar,
-       width = 12, height = 6, units = 'cm')
+       width = 12, height = 8, units = 'cm')
 
 lippia_area_bar
 ```
@@ -317,7 +317,7 @@ ggplot() +
   facet_wrap('strict_level_F') +
   scale_fill_continuous_sequential(palette = 'YlGnBu') + 
   labs(fill = 'Proportion\nwetland area\nsuccessful') +
-  theme(legend.position = 'bottom')
+  theme_pub(legend.position = 'bottom')
 
 
 ggsave(file.path(scriptOut, 'lippia_prop.pdf'),
@@ -344,16 +344,16 @@ ggplot() +
                          fill = strict_level_F),
            position = position_dodge()) +
   scale_fill_discrete_qualitative(palette = 'Dark2') +
-  labs(fill = 'Stricture', y = 'Proportion wetland area\nsuccessful', x = NULL) +
-  theme(legend.position = 'bottom') +
-  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+  labs(fill = 'Stricture', y = 'Proportion wetland area\nsuccessful', x = NULL)  +
+  theme_pub(legend.position = 'bottom', 
+            axis.text.x = element_text(angle = 60, hjust = 1))
 
 ggsave(file.path(scriptOut, 'lippia_prop_bar.pdf'),
        plot = lippia_prop_bar,
-       width = 12, height = 6, units = 'cm')
+       width = 12, height = 8, units = 'cm')
 ggsave(file.path(scriptOut, 'lippia_prop_bar.png'),
        plot = lippia_prop_bar,
-       width = 12, height = 6, units = 'cm')
+       width = 12, height = 8, units = 'cm')
 
 
 lippia_prop_bar
@@ -370,8 +370,8 @@ ggplot() +
   geom_sf(mapping = aes(fill = Proportional_area)) +
   scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE) + 
   labs(fill = 'Proportion\nremaining area') + 
-  facet_wrap('strict_level_F') + 
-  theme(legend.position = 'bottom')
+  facet_wrap('strict_level_F') +
+  theme_pub(legend.position = 'bottom')
 
 ggsave(file.path(scriptOut, 'seq_lippia.pdf'),
        plot = seq_lippia,
@@ -397,7 +397,8 @@ ggplot(mapping = aes(x = waterYear,
   geom_point() +
   scale_color_discrete_qualitative(palette = 'Dark2') +
   facet_grid('ValleyName') +
-  labs(color = 'Stricture\nlevel', x = 'Water Year', y = 'Proportion of wetlands favourable')
+  labs(color = 'Stricture\nlevel', x = 'Water Year', y = 'Proportion of wetlands favourable') + 
+  theme_pub()
 
 ggsave(file.path(scriptOut, 'lippia_time.pdf'),
        plot = lippia_time,
@@ -418,14 +419,15 @@ ggplot() +
   scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE) + 
   labs(fill = 'Proportion\nremaining area') + 
   facet_grid(strict_level_F ~ waterYear, 
-             labeller = labeller(strict_level_F = label_wrap_gen(10))) 
+             labeller = labeller(strict_level_F = label_wrap_gen(10)))  + 
+  theme_pub(legend.position = 'bottom')
 
 ggsave(file.path(scriptOut, 'lippia_time_map.pdf'),
        plot = lippia_time_map,
-       width = 12, height = 12, units = 'cm')
+       width = 12, height = 8, units = 'cm')
 ggsave(file.path(scriptOut, 'lippia_time_map.png'),
        plot = lippia_time_map,
-       width = 12, height = 12, units = 'cm')
+       width = 12, height = 8, units = 'cm')
 
 lippia_time_map
 ```
@@ -446,8 +448,8 @@ ggplot() +
   facet_grid(. ~ strict_level_F, 
              labeller = labeller(strict_level_F = label_wrap_gen(15))) +
   scale_fill_continuous_sequential(palette = 'Turku', trans = 'log10') +
-  labs(fill = 'Hectares\npassing') +
-  theme(legend.position = 'bottom')
+  labs(fill = 'Hectares\npassing') + 
+  theme_pub(legend.position = 'bottom')
 
 ggsave(file.path(scriptOut, 'cent_area.pdf'),
        plot = cent_area,
@@ -472,17 +474,17 @@ ggplot() +
            position = position_dodge()) +
   scale_fill_discrete_qualitative(palette = 'Dark2') +
   labs(fill = 'Stricture', y = 'Hectares passing', x = NULL) +
-  theme(legend.position = 'bottom') +
-  theme(axis.text.x = element_text(angle = 60, hjust = 1))+
+  theme_pub(legend.position = 'bottom', 
+            axis.text.x = element_text(angle = 60, hjust = 1))+
   guides(fill = guide_legend(title.position = 'top', label.position = 'bottom'))
 
 
 ggsave(file.path(scriptOut, 'cent_area_bar.pdf'),
        plot = cent_area_bar,
-       width = 12, height = 6, units = 'cm')
+       width = 12, height = 8, units = 'cm')
 ggsave(file.path(scriptOut, 'cent_area_bar.png'),
        plot = cent_area_bar,
-       width = 12, height = 6, units = 'cm')
+       width = 12, height = 8, units = 'cm')
 
 cent_area_bar
 ```
@@ -501,17 +503,17 @@ ggplot() +
                          fill = strict_level_F),
            position = position_dodge()) +
   scale_fill_discrete_qualitative(palette = 'Dark2') +
-  labs(fill = 'Stricture', y = 'Proportion wetland area\nsuccessful', x = NULL) +
-  theme(legend.position = 'bottom') +
-  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(fill = 'Stricture', y = 'Proportion\nwetland area\nsuccessful', x = NULL) +
+  theme_pub(legend.position = 'bottom',
+            axis.text.x = element_text(angle = 60, hjust = 1)) +
   guides(fill = guide_legend(title.position = 'top', label.position = 'bottom'))
 
 ggsave(file.path(scriptOut, 'cent_bar_no_seeds.pdf'),
        plot = cent_bar_no_seeds,
-       width = 16, height = 6, units = 'cm')
+       width = 16, height = 8, units = 'cm')
 ggsave(file.path(scriptOut, 'cent_bar_no_seeds.png'),
        plot = cent_bar_no_seeds,
-       width = 16, height = 6, units = 'cm')
+       width = 16, height = 8, units = 'cm')
 
 cent_bar_no_seeds
 ```
@@ -532,7 +534,8 @@ ggplot(mapping = aes(x = waterYear,
   geom_point() +
   scale_color_discrete_qualitative(palette = 'Dark2') +
   facet_grid('ValleyName') +
-  labs(color = 'Stricture\nlevel', x = 'Water Year', y = 'Proportion of wetlands favourable')
+  labs(color = 'Stricture\nlevel', x = 'Water Year', y = 'Proportion of wetlands favourable') + 
+  theme_pub()
 
 ggsave(file.path(scriptOut, 'cent_time.pdf'),
        plot = cent_time,
@@ -559,7 +562,8 @@ ggplot(mapping = aes(x = waterYear,
   geom_point() +
   scale_color_discrete_qualitative(palette = 'Dark2') +
   facet_grid('ValleyName') +
-  labs(color = 'Stricture\nlevel', x = 'Water Year', y = 'Proportion\nremaining area')
+  labs(color = 'Stricture\nlevel', x = 'Water Year', y = 'Proportion\nremaining area') + 
+  theme_pub()
 
 ggsave(file.path(scriptOut, 'sequential_conditional_timeseries.pdf'),
        plot = sequential_conditional_timeseries,
@@ -582,7 +586,8 @@ ggplot() +
   geom_sf(mapping = aes(fill = Proportional_area)) +
   scale_fill_continuous_sequential(palette = 'Heat', rev = FALSE) + 
   labs(fill = 'Proportion\nremaining area') + 
-  facet_grid(strict_level_F ~ waterYear) 
+  facet_grid(strict_level_F ~ waterYear)  + 
+  theme_pub(legend.position = 'bottom')
 
 
 ggsave(file.path(scriptOut, 'timeseries_map.pdf'),
@@ -629,30 +634,27 @@ ggplot() +
                          fill = strict_level_F),
            position = position_dodge()) +
   scale_fill_discrete_qualitative(palette = 'Dark2') +
-  labs(fill = 'Stricture', y = 'Proportion wetland\narea successful', x = NULL) +
+  labs(fill = 'Stricture', y = 'Proportion\nwetland area\nsuccessful', x = NULL) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1))
 ```
 
 ```{r}
 
 stackveg <- ggpubr::ggarrange(proparea_cent_success_1 +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
-          legend.background = element_blank(),
-          legend.key.size = unit(0.3, 'cm')), 
-    
-                  sequential_cent_plot_1 +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
-          legend.background = element_blank(),
-          legend.key.size = unit(0.3, 'cm')), 
-    
-                  cent_bar_no_seeds_cut +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
-          legend.background = element_blank(),
-          legend.key.size = unit(0.3, 'cm')), 
-    nrow = 3, heights = c(2,2,1))
+                                theme_pub(legend.position = 'right', 
+                                          legend.background = element_blank(),
+                                          legend.key.size = unit(0.3, 'cm')), 
+                              
+                              sequential_cent_plot_1 +
+                                theme_pub(legend.position = 'right', 
+                                          legend.background = element_blank(),
+                                          legend.key.size = unit(0.3, 'cm')), 
+                              
+                              cent_bar_no_seeds_cut +
+                                theme_pub(legend.position = 'right', 
+                                          legend.background = element_blank(),
+                                          legend.key.size = unit(0.3, 'cm')), 
+                              nrow = 3, heights = c(2,2,1))
 
 
 ggsave(file.path(scriptOut, 'Veg_area_prop_bar.pdf'),

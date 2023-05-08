@@ -105,7 +105,7 @@ prefix in the call in case I change my mind.
 # The auto-titling just stuffs "Two months preceding" on there, which is wrong
 temp_gg <- tempfun(temperatureannual, 1, datewanted, plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year beginning ', 
                    colorchoice = 'grey50', forcelegend = 'Yearly mean\ntemp C')
-temp_gg
+temp_gg 
 ```
 
 So, since tmap isn't adding anything useful for the static plots, I'm
@@ -160,25 +160,25 @@ Make those a grid a la the local version
 gridIO <- ggpubr::ggarrange(
   temp_gg +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')),
   inun_gg +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')),
   gpp_gg +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')),
   er_gg +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')),
@@ -198,29 +198,25 @@ different size.I keep hearing good things about patchwork?
 ```{r}
 gridIO_p <- (temp_gg +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
   
   inun_gg +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
   
   gpp_gg +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
   
   er_gg +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) + 
   plot_annotation(title = paste0('Water year beginning ', datewanted)))
@@ -237,7 +233,7 @@ print(gridIO_p)
 dev.off()
 
 png(file.path(scriptOut, 'InputOutput.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(gridIO_p)
 dev.off()
 ```
@@ -258,12 +254,12 @@ clean factor of 10 breaks is nice though.
 
 ```{r}
 gpp_gg_v <- gppfun(logGPPdaysvalleysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year beginning ', 
-                   colorchoice = 'grey50', forcelegend = 'Maximum yearly GPP\n(tonnes O2)', forcemin = 1000, forcemax = 10000000)
+                   colorchoice = 'grey50', forcelegend = 'Maximum yearly GPP\n(tonnes O2)', forcemin = 1000, forcemax = 10000000) + theme_pub()
 gpp_gg_v
 
 
 er_gg_v <- erfun(logERdaysvalleysannual/1000, 1, datewanted, units = 'tonnes', plotPkg = 'ggplot', titled = FALSE, titlePrefix = 'Water year beginning ', 
-                   colorchoice = 'grey50', forcelegend = 'Maximum yearly ER\n(tonnes O2)', forcemin = 1000, forcemax = 10000000)
+                   colorchoice = 'grey50', forcelegend = 'Maximum yearly ER\n(tonnes O2)', forcemin = 1000, forcemax = 10000000) + theme_pub()
 er_gg_v
 
 ```
@@ -273,14 +269,12 @@ We could package that up as a two-panel,
 ```{r}
 uncertain2 <- gpp_gg_v +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
   er_gg_v +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) + 
   plot_annotation(title = paste0('Water year beginning ', datewanted))
@@ -292,27 +286,23 @@ But it might be better to directly compare? either for both
 ```{r}
 bothuncertain <- gpp_gg +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
   
   er_gg +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
   gpp_gg_v +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
   er_gg_v +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) + 
   plot_annotation(title = paste0('Water year beginning ', datewanted))
@@ -327,15 +317,13 @@ Or a single outcome to keep figure sizes down
 ```{r}
 gppuncertain <- gpp_gg +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
   
   gpp_gg_v +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
   
@@ -352,15 +340,13 @@ ER is actually a better example because they're more clearly different.
 ```{r}
 eruncertain <- er_gg +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
   
   er_gg_v +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
   
@@ -379,7 +365,7 @@ print(eruncertain)
 dev.off()
 
 png(file.path(scriptOut, 'ValleyTermER.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(eruncertain)
 dev.off()
 ```
@@ -392,14 +378,12 @@ input-output figure and do it all at once?
   gridIO_p +
   gpp_gg_v +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
   er_gg_v +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) + 
   # guides = collect almost works, but shoves them all to te side
@@ -411,43 +395,37 @@ Trying better legends
 ```{r}
 tempplot <- temp_gg +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm'))
   
 inunplot <-  inun_gg +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm'))
   
 gppplot <- gpp_gg +
   guides(fill = guide_legend(title.position = 'top')) +
-  theme_grey(base_size = 8) + 
-  theme(legend.position = 'right', 
+  theme_pub(legend.position = 'right', 
         legend.background = element_blank(),
         legend.key.size = unit(0.3, 'cm')) 
   
 gpp_vplot <-  gpp_gg_v +
   guides(fill = guide_legend(title.position = 'top')) +
-  theme_grey(base_size = 8) + 
-  theme(legend.position = 'right', 
+  theme_pub(legend.position = 'right', 
         legend.background = element_blank(),
         legend.key.size = unit(0.3, 'cm'))
   
 erplot <- er_gg +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) 
 
 er_vplot <- er_gg_v +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
-    theme(legend.position = 'right', 
+    theme_pub(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm'))
 
@@ -486,7 +464,7 @@ print((tempplot + inunplot) /
 dev.off()
 
 png(file.path(scriptOut, 'InputOutputValleys.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print((tempplot + inunplot) / 
   ((gppplot + gpp_vplot + 
      plot_layout(nrow = 2, guides = 'collect')) |
@@ -541,7 +519,7 @@ print(GPPER_valleys)
 dev.off()
 
 png(file.path(scriptOut, 'GPPER_valleys.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(GPPER_valleys)
 dev.off()
 ```
@@ -851,13 +829,15 @@ changes in the visual editor.
 ```{r}
 #| fig-width: 6.3
 #| fig-height: 4.72
-gpp_leg <- gpp_gg_YG_L$plot + 
+gpp_leg <- gpp_gg_YG_L$plot +
+  theme_pub() +
   inset_element((gpp_gg_YG_L$legend +
                    theme(axis.text = element_text(size = 6),
                          title = element_text(size = 6))),
                 left = 0.01, bottom = 0.55, right = 0.48, top = 1)
 
-er_leg <- er_gg_PO_L$plot + 
+er_leg <- er_gg_PO_L$plot +
+  theme_pub() + 
   inset_element((er_gg_PO_L$legend +
                    theme(axis.text = element_text(size = 6),
                          title = element_text(size = 6))),
@@ -879,7 +859,7 @@ print(gpp_leg + er_leg)
 dev.off()
 
 png(file.path(scriptOut, 'fadedUncertainty.png'),
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(gpp_leg + er_leg)
 dev.off()
 ```
@@ -926,8 +906,7 @@ eryrs <- erfun(logERdaysannual/1000, 1, datewanted = as.character(availDays[2:4]
                colorchoice = 'grey50', forcelegend = 'Maximum yearly ER\n(tonnes O2)', 
                forcemin = 1000, forcemax = 10000000) + 
   guides(fill = guide_legend(title.position = 'top')) +
-  theme_grey(base_size = 8) + 
-  theme(legend.position = 'bottom', 
+  theme_pub(legend.position = 'bottom', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))
 
@@ -943,8 +922,7 @@ tempyrs <- tempfun(temperatureannual, 1, datewanted = as.character(availDays[2:4
                titlePrefix = 'Water year beginning ',
                colorchoice = 'grey50', forcelegend = 'Yearly mean\ntemp C') + 
   guides(fill = guide_legend(title.position = 'top')) +
-  theme_grey(base_size = 8) + 
-  theme(legend.position = 'bottom', 
+  theme_pub(legend.position = 'bottom', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))
 
@@ -956,8 +934,7 @@ inunyrs <- inunfun(inundationannual/1000, 1, datewanted = as.character(availDays
                    colorchoice = 'grey50', forcelegend = 'Maximum yearly inundation\n(Gl)', 
                    forcemin = 1000, forcemax = 10000000) + 
   guides(fill = guide_legend(title.position = 'top')) +
-  theme_grey(base_size = 8) + 
-  theme(legend.position = 'bottom', 
+  theme_pub(legend.position = 'bottom', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))
 
@@ -969,8 +946,7 @@ gppyrs <- gppfun(logERdaysannual/1000, 1, datewanted = as.character(availDays[2:
                colorchoice = 'grey50', forcelegend = 'Maximum yearly GPP\n(tonnes O2)', 
                forcemin = 1000, forcemax = 10000000) + 
   guides(fill = guide_legend(title.position = 'top')) +
-  theme_grey(base_size = 8) + 
-  theme(legend.position = 'bottom', 
+  theme_pub(legend.position = 'bottom', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))
 
@@ -1006,7 +982,7 @@ print(tempyrs)
 dev.off()
 
 png(file.path(scriptOut, 'YearTemp.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(tempyrs)
 dev.off()
 
@@ -1016,7 +992,7 @@ print(inunyrs)
 dev.off()
 
 png(file.path(scriptOut, 'Yearinun.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(inunyrs)
 dev.off()
 
@@ -1026,7 +1002,7 @@ print(gppyrs)
 dev.off()
 
 png(file.path(scriptOut, 'YearGPP.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(gppyrs)
 dev.off()
 
@@ -1036,7 +1012,7 @@ print(eryrs)
 dev.off()
 
 png(file.path(scriptOut, 'YearER.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(eryrs)
 dev.off()
 ```
@@ -1057,7 +1033,7 @@ print((tempyrs + theme(legend.position = 'right') +
 dev.off()
 
 png(file.path(scriptOut, 'YearAll.png'), 
-    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print((tempyrs + theme(legend.position = 'right') +
    guides(fill = guide_legend(title.position = 'top', nrow = 4, byrow = TRUE)))/
   (inunyrs + theme(legend.position = 'right') +
@@ -1117,28 +1093,28 @@ er_5
 ```{r}
 gridIO_5 <- temp_5 +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
   
   inun_5 +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
   
   gpp_5 +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
   
   er_5 +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) #+ 
@@ -1156,7 +1132,7 @@ print(gridIO_5)
 dev.off()
 
 png(file.path(scriptOut, 'InputOutput5year.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(gridIO_5)
 dev.off()
 ```
@@ -1253,7 +1229,7 @@ t5bar <- ggplot(temp5df, aes(x = fct_reorder(ValleyName, latpos), y = Temp, fill
                     labels = tC$templabels,
                     guide = 'legend', 
                     name = temp5label) +
-  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  theme_pub(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = NULL, y = temp5label)
 t5bar
 ```
@@ -1289,7 +1265,7 @@ i5bar <- ggplot(inun5df, aes(x = fct_reorder(ValleyName, latpos),
                     limits = c(0, max(iC$inunbreaks)),
                     labels = format(10^yiC, big.mark=",",
                                     scientific=FALSE, trim = TRUE, digits = 1))+
-  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  theme_pub(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = NULL, y = inun5label)
 i5bar
 ```
@@ -1313,7 +1289,7 @@ gpp5bar <- ggplot(gpp5df, aes(x = fct_reorder(ValleyName, latpos),
                     limits = c(0, max(gC$gppbreaks)),
                     labels = format(10^giC, big.mark=",",
                                     scientific=FALSE, trim = TRUE, digits = 1))+
-  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  theme_pub(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = NULL, y = gpp5label)
 gpp5bar
 ```
@@ -1338,7 +1314,7 @@ er5bar <- ggplot(er5df, aes(x = fct_reorder(ValleyName, latpos),
                     # limits = c(min(eC$erbreaks), max(eC$erbreaks)),
                     labels = format(10^eiC, big.mark=",",
                                     scientific=FALSE, trim = TRUE, digits = 1))+
-  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  theme_pub(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = NULL, y = er5label)
 er5bar
 ```
@@ -1396,7 +1372,7 @@ combobar <- ggplot(filter(gluedata, variable != 'Temp'),
                     # limits = c(min(eC$erbreaks), max(eC$erbreaks)),
                     labels = format(10^eiC, big.mark=",",
                                     scientific=FALSE, trim = TRUE, digits = 1))+
-  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  theme_pub(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = NULL, y = NULL)
 combobar
 ```
@@ -1410,7 +1386,7 @@ print(t5bar)
 dev.off()
 
 png(file.path(scriptOut, 'temp5bar.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(t5bar)
 dev.off()
 
@@ -1420,7 +1396,7 @@ print(i5bar)
 dev.off()
 
 png(file.path(scriptOut, 'inun5bar.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(i5bar)
 dev.off()
 
@@ -1430,7 +1406,7 @@ print(gpp5bar)
 dev.off()
 
 png(file.path(scriptOut, 'gpp5bar.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(gpp5bar)
 dev.off()
 
@@ -1440,7 +1416,7 @@ print(t5bar)
 dev.off()
 
 png(file.path(scriptOut, 'er5bar.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(er5bar)
 dev.off()
 
@@ -1455,7 +1431,7 @@ print((t5bar + theme(legend.position = 'none')) +
 dev.off()
 
 png(file.path(scriptOut, 'panel5bar.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print((t5bar + theme(legend.position = 'none')) + 
   (i5bar  + theme(legend.position = 'none')) +
   (gpp5bar + theme(legend.position = 'none')) + 
@@ -1469,7 +1445,7 @@ print(combobar)
 dev.off()
 
 png(file.path(scriptOut, 'ige5bar.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(combobar)
 dev.off()
 
@@ -1626,7 +1602,7 @@ erAseriesLabel <- erAseriesAll +
                                                c('Goulburn', 'Castlereagh'))),
                             aes(label = ValleyName), 
                            size = 3, label.size = 0.1) +   
-  theme_grey(base_size = 8) +
+  theme_pub(base_size = 8) +
   theme(legend.position = 'none')
 
 erAseriesLabel
@@ -1636,7 +1612,7 @@ erAseriesLegend <- erAseriesAll +
     scale_color_discrete_qualitative(palette = 'Dark2',
                        limits = selectedCatches,
                        breaks = selectedCatches) +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'bottom', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'),
@@ -1667,7 +1643,7 @@ print(ggpubr::ggarrange(gridIO_5,
 dev.off()
 
 png(file.path(scriptOut, 'InputOutputBar5.png'), 
-    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(ggpubr::ggarrange(gridIO_5,
                   combobar, nrow = 2, heights = c(2,1)))
 dev.off()
@@ -1737,7 +1713,8 @@ basintime <- gluedataA %>%
                     name = NULL) +
   scale_y_continuous(labels = scales::comma) +
   # theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-  labs(x = 'Water year', y = NULL)
+  labs(x = 'Water year', y = NULL) +
+  theme_pub()
 basintime
 ```
 
@@ -1766,7 +1743,7 @@ print(ggpubr::ggarrange(gridIO_5,
 dev.off()
 
 png(file.path(scriptOut, 'InputOutputTime5.png'), 
-    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(ggpubr::ggarrange(gridIO_5,
                   basintime, nrow = 2, heights = c(2,1)))
 dev.off()
@@ -1784,7 +1761,7 @@ print(ggpubr::ggarrange(gridIO_5,
 dev.off()
 
 png(file.path(scriptOut, 'InputOutputBarTime5.png'), 
-    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(ggpubr::ggarrange(gridIO_5,
                   combobar, 
                   basintime, 
@@ -1805,7 +1782,7 @@ inunyrsAll <- inunfun(inundationannual[,,1:5]/1000, 1, datewanted = as.character
                colorchoice = 'grey50', forcelegend = 'Maximum yearly inundation\n(Gl)', 
                forcemin = 1000, forcemax = 10000000) + 
   guides(fill = guide_legend(title.position = 'top')) +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'top', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))+ 
@@ -1821,7 +1798,7 @@ gppyrsAll <- gppfun(logGPPdaysannual[,,1:5]/1000, 1, datewanted = as.character(a
                colorchoice = 'grey50', forcelegend = 'Maximum yearly GPP\n(tonnes O2)', 
                forcemin = 1000, forcemax = 10000000) + 
   guides(fill = guide_legend(title.position = 'top')) +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'top', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))+ 
@@ -1837,7 +1814,7 @@ eryrsAll <- erfun(logERdaysannual[,,1:5]/1000, 1, datewanted = as.character(avai
                colorchoice = 'grey50', forcelegend = 'Maximum yearly ER\n(tonnes O2)', 
                forcemin = 1000, forcemax = 10000000) + 
   guides(fill = guide_legend(title.position = 'top')) +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'top', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))+ 
@@ -1866,12 +1843,12 @@ ermapandtime
 
 ```{r}
 pdf(file.path(scriptOut, 'AnnualERMapandTime.pdf'), 
-    onefile = FALSE, height = 12/2.54, width = 16/2.54, useDingbats = FALSE)
+    onefile = FALSE, height = 9/2.54, width = 16/2.54, useDingbats = FALSE)
 print(ermapandtime)
 dev.off()
 
 png(file.path(scriptOut, 'AnnualERMapandTime.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 9/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(ermapandtime)
 dev.off()
 ```
@@ -1880,22 +1857,22 @@ What about the basin-scale summaries of the catchments?
 
 ```{r}
 timemapsandseries <- (inunyrsAll +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'right', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))) /
   (gppyrsAll +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'right', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))) /
   (eryrsAll +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'right', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))) / 
   (basintime +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'right', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))) 
@@ -1912,7 +1889,7 @@ print(timemapsandseries)
 dev.off()
 
 png(file.path(scriptOut, 'AnnualMapsandTime.png'), 
-    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(timemapsandseries)
 dev.off()
 ```
@@ -1945,7 +1922,7 @@ gppBase_5 <- gppfun(logGPPdays5/1000, 1,
                  titled = FALSE,  
                  colorchoice = 'grey50', forcelegend = gpp5label, 
                  forcemin = 1000, forcemax = 10000000)  +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'right', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))
@@ -1959,7 +1936,7 @@ gppClim_5 <- gppfun(logGPPdaysCLIM5/1000, 1,
                  titled = FALSE,  
                  colorchoice = 'grey50', forcelegend = gpp5label, 
                  forcemin = 1000, forcemax = 10000000)  +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'right', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))
@@ -1973,7 +1950,7 @@ gpp10p_5 <- gppfun(logGPPdays10p5/1000, 1,
                  titled = FALSE, 
                  colorchoice = 'grey50', forcelegend = gpp5label, 
                  forcemin = 1000, forcemax = 10000000)  +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'right', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))
@@ -1987,7 +1964,7 @@ gpp10pClim_5 <- gppfun(logGPPdays10pCLIM5/1000, 1,
                  titled = FALSE, 
                  colorchoice = 'grey50', forcelegend = gpp5label, 
                  forcemin = 1000, forcemax = 10000000)  +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'right', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))
@@ -2014,7 +1991,7 @@ erBase_5 <- erfun(logERdays5/1000, 1,
                  titled = FALSE, 
                  colorchoice = 'grey50', forcelegend = er5label, 
                  forcemin = 1000, forcemax = 10000000)  +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'right', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))
@@ -2028,7 +2005,7 @@ erClim_5 <- erfun(logERdaysCLIM5/1000, 1,
                  titled = FALSE, 
                  colorchoice = 'grey50', forcelegend = er5label, 
                  forcemin = 1000, forcemax = 10000000)  +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'right', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))
@@ -2042,7 +2019,7 @@ er10p_5 <- erfun(logERdays10p5/1000, 1,
                  titled = FALSE, 
                  colorchoice = 'grey50', forcelegend = er5label, 
                  forcemin = 1000, forcemax = 10000000)  +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'right', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))
@@ -2056,7 +2033,7 @@ er10pClim_5 <- erfun(logERdays10pCLIM5/1000, 1,
                  titled = FALSE, 
                  colorchoice = 'grey50', forcelegend = er5label, 
                  forcemin = 1000, forcemax = 10000000)  +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'right', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))
@@ -2082,7 +2059,7 @@ Can I put the temp and inundations on there too?
 tempBase_5 <- tempfun(temperature5, 1, date5, plotPkg = 'ggplot', 
                   titled = FALSE, 
                    colorchoice = 'grey50', forcelegend = temp5label) +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'right', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))
@@ -2092,7 +2069,7 @@ tempBase_5
 tempClim_5 <- tempfun(climate5, 1, date5, plotPkg = 'ggplot', 
                   titled = FALSE,
                    colorchoice = 'grey50', forcelegend = temp5label) +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'right', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))
@@ -2103,7 +2080,7 @@ inunBase_5 <- inunfun(inundation5/1000, 1, date5, units = 'Gl', plotPkg = 'ggplo
                   titled = FALSE,
                    colorchoice = 'grey50', forcelegend = inun5label, 
                   forcemin = 1000, forcemax = 10000000) +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'right', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))
@@ -2113,7 +2090,7 @@ inun10p_5 <- inunfun(inundation10p5/1000, 1, date5, units = 'Gl', plotPkg = 'ggp
                   titled = FALSE, 
                    colorchoice = 'grey50', forcelegend = inun5label, 
                   forcemin = 1000, forcemax = 10000000) +
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   theme(legend.position = 'right', 
        legend.background = element_blank(),
        legend.key.size = unit(0.3, 'cm'))
@@ -2153,7 +2130,7 @@ print(gppScene)
 dev.off()
 
 png(file.path(scriptOut, 'gppScene.png'), 
-    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(gppScene)
 dev.off()
 ```
@@ -2183,7 +2160,7 @@ print(erScene)
 dev.off()
 
 png(file.path(scriptOut, 'erScene.png'), 
-    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(erScene)
 dev.off()
 ```
@@ -2237,7 +2214,7 @@ scenebar_gpp <- ggplot(bind5gpp,
   # theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = NULL, y = NULL, fill = NULL) +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm'),
@@ -2263,7 +2240,7 @@ scenebar_gppCUT <- ggplot(filter(bind5gpp, ValleyName %in% c('Murrumbidgee', 'La
   # theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = NULL, y = NULL, fill = NULL) +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
@@ -2290,7 +2267,7 @@ print(ggpubr::ggarrange(gppScene,
 dev.off()
 
 png(file.path(scriptOut, 'gppSceneandBar.png'), 
-    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(ggpubr::ggarrange(gppScene,
                   scenebar_gpp ,
     nrow = 2, heights = c(2,1)))
@@ -2306,7 +2283,7 @@ print(scenebar_gpp)
 dev.off()
 
 png(file.path(scriptOut, 'gppBarScene.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(scenebar_gpp)
 dev.off()
 ```
@@ -2318,7 +2295,7 @@ print(scenebar_gppCUT)
 dev.off()
 
 png(file.path(scriptOut, 'gppBarScene_cut.png'), 
-    height = 8/2.54, width = 12/2.54, units = 'in', res = 300)
+    height = 8/2.54, width = 12/2.54, units = 'in', res = 300, type = 'cairo')
 print(scenebar_gppCUT)
 dev.off()
 ```
@@ -2360,7 +2337,7 @@ scenebar_gppR <- ggplot(bind5gpp,
   # theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = NULL, y = NULL, fill = NULL) +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm'),
@@ -2386,7 +2363,7 @@ sceneline_gppR <- ggplot(bind5gpp,
   # theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = NULL, y = NULL, fill = NULL) +
     guides(color = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm'),
@@ -2413,7 +2390,7 @@ scenebar_gppM <- ggplot(bind5gpp,
   # theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = NULL, y = NULL, fill = NULL) +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm'),
@@ -2444,7 +2421,7 @@ scenebar_gppCUT2 <- ggplot(filter(bind5gpp, ValleyName %in% c('Murrumbidgee', 'L
   # theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = NULL, y = NULL, fill = NULL) +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
@@ -2471,7 +2448,7 @@ scenebar_gppCUT2 <- ggplot(filter(bind5gpp, ValleyName %in% c('Murrumbidgee', 'L
   # theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = NULL, y = NULL, fill = NULL) +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
@@ -2540,7 +2517,7 @@ gppSceneseries2 <- ggplot(filter(gppannualscenes, ValleyName %in% selectedCatche
                                              selectedCatches2)),
                             aes(label = ValleyName), color = 'black', 
                            size = 3, label.size = 0.1) +   
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   xlim(c(2014, 2018))
 #+
   # theme(legend.position = 'none')
@@ -2591,7 +2568,7 @@ gppSceneseriesLin <- ggplot(filter(gppannualscenes, ValleyName %in% selectedCatc
                                              selectedCatches)),
                             aes(label = ValleyName), color = 'black', 
                            size = 3, label.size = 0.1) +   
-  theme_grey(base_size = 8) + 
+  theme_pub(base_size = 8) + 
   xlim(c(2014, 2018))
 #+
   # theme(legend.position = 'none')
@@ -2604,7 +2581,8 @@ So, let's package that up as one figure
 
 ```{r}
 
-scenecutbartime <- ggpubr::ggarrange(gppSceneseriesLin+theme(legend.position = 'none'), scenebar_gppCUT2)
+scenecutbartime <- ggpubr::ggarrange(gppSceneseriesLin+theme(legend.position = 'none'), scenebar_gppCUT2, 
+                                     widths = c(1, 1.5))
 scenecutbartime
 
 scenemapbartime <- ggpubr::ggarrange(gppScene,
@@ -2621,7 +2599,7 @@ print(scenemapbartime)
 dev.off()
 
 png(file.path(scriptOut, 'gppSceneCatchBarTime.png'), 
-    height = 20/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 20/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(scenemapbartime)
 dev.off()
 ```
@@ -2636,7 +2614,7 @@ print(scenecutbartime)
 dev.off()
 
 png(file.path(scriptOut, 'gppSceneSubsetTimeBar.png'), 
-    height = 6/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 6/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(scenecutbartime)
 dev.off()
 ```
@@ -2658,7 +2636,7 @@ scenebar_er <- ggplot(bind5er,
   # theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = NULL, y = NULL, fill = NULL) +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm'),
@@ -2686,7 +2664,7 @@ print(ggpubr::ggarrange(erScene,
 dev.off()
 
 png(file.path(scriptOut, 'erSceneandBar.png'), 
-    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(ggpubr::ggarrange(erScene,
                   scenebar_er ,
     nrow = 2, heights = c(2,1)))
@@ -2708,7 +2686,7 @@ scenebar_erCUT <- ggplot(filter(bind5er, ValleyName %in% c('Murrumbidgee', 'Lach
   # theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = NULL, y = NULL, fill = NULL) +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
@@ -2725,7 +2703,7 @@ print(scenebar_er)
 dev.off()
 
 png(file.path(scriptOut, 'erBarScene.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(scenebar_er)
 dev.off()
 ```
@@ -2737,7 +2715,7 @@ print(scenebar_erCUT)
 dev.off()
 
 png(file.path(scriptOut, 'erBarScene_cut.png'), 
-    height = 8/2.54, width = 12/2.54, units = 'in', res = 300)
+    height = 8/2.54, width = 12/2.54, units = 'in', res = 300, type = 'cairo')
 print(scenebar_erCUT)
 dev.off()
 ```
@@ -2778,7 +2756,7 @@ scenebar_basin <- ggplot(basinscene,
   # theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   # labs(x = NULL, y = NULL, fill = NULL) +
   #   guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')) +
@@ -2804,7 +2782,7 @@ print(sceneandpoints)
 dev.off()
 
 png(file.path(scriptOut, 'ScenepointBasin.png'), 
-    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(sceneandpoints)
 dev.off()
 ```
@@ -2849,7 +2827,7 @@ print(superScene)
 dev.off()
 
 png(file.path(scriptOut, 'superScene.png'), 
-    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(superScene)
 dev.off()
 
@@ -2859,7 +2837,7 @@ print(supersceneandpoints)
 dev.off()
 
 png(file.path(scriptOut, 'superScene_points.png'), 
-    height = 16/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 16/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(supersceneandpoints)
 dev.off()
 ```
@@ -2967,14 +2945,14 @@ Plots
 ```{r}
 gppUnc <- gppSingle +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm'),
           axis.text.x = element_text(angle = 60, hjust = 1))
 erUnc <- erSingle +
     guides(fill = guide_legend(title.position = 'top')) +
-    theme_grey(base_size = 8) + 
+    theme_pub(base_size = 8) + 
     theme(legend.position = 'right', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm'),
@@ -3026,7 +3004,7 @@ combobar_U <- ggplot(filter(bothuncertain, date == datewantedB),
                     # limits = c(min(eC$erbreaks), max(eC$erbreaks)),
                     labels = format(10^eiC, big.mark=",",
                                     scientific=FALSE, trim = TRUE, digits = 1))+
-  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  theme_pub(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = NULL, y = 'Tonnes O2/day\nat max extent')
 combobar_U
 ```
@@ -3045,7 +3023,7 @@ print(gppUnc)
 dev.off()
 
 png(file.path(scriptOut, 'GPPuncertain.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(gppUnc)
 dev.off()
 
@@ -3056,7 +3034,7 @@ print(erUnc)
 dev.off()
 
 png(file.path(scriptOut, 'ERuncertain.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(erUnc)
 dev.off()
 
@@ -3067,7 +3045,7 @@ print(gppUnc/erUnc)
 dev.off()
 
 png(file.path(scriptOut, 'GPPERuncertain.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(gppUnc/erUnc)
 dev.off()
 
@@ -3077,7 +3055,7 @@ print(combobar_U)
 dev.off()
 
 png(file.path(scriptOut, 'GPPERuncertain2.png'), 
-    height = 12/2.54, width = 16/2.54, units = 'in', res = 300)
+    height = 12/2.54, width = 16/2.54, units = 'in', res = 300, type = 'cairo')
 print(combobar_U)
 dev.off()
 
