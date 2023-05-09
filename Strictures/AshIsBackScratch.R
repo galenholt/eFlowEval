@@ -47,7 +47,7 @@ load(file.path(scriptOut, "ramsarBoundsMDB.rdata"))
 
 # read in point observations for breeding
 breedObsRSB <- scan(
-  file.path(myhome, "Deakin University/QAEL - MER/Model/dataStrict/BreedingObservationsRoyalSpoonbill.txt"), 
+  file.path(dataBase, "dataStrict/BreedingObservationsRoyalSpoonbill.txt"), 
   skip = 2)
 # breedObsRSB <- unlist(breedObsRSB)
 
@@ -168,7 +168,7 @@ system.time(breed_Sbill_sum3[[1]] <- timeRoll(breed_Sbill[[1]],
 # McGinness, Langston and Brooks (2020) VEWH Prioritisation Project: Stage 2 Final Report
 # Royal Spoonbill (Platalea regia) requirements, distribution and habitat mapping
 breedANAE <- read.table(
-  file.path(myhome, "Deakin University/QAEL - MER/Model/dataStrict/BreedingANAEcolonialBirds.txt"), 
+  file.path(dataBase, "dataStrict/BreedingANAEcolonialBirds.txt"), 
                         skip = 2, sep = ":", header = TRUE)
 
 # Foraging strictures ----------------------------------------------------
@@ -185,7 +185,7 @@ load(file.path("C:/Users/amacq/Source/datOut/Inundationprocessed/areaSpoonbillFo
 # McGinness, Langston and Brooks (2020) VEWH Prioritisation Project: Stage 2 Final Report
 # Royal Spoonbill (Platalea regia) requirements, distribution and habitat mapping
 forageEtcANAE <- read.table(
-  file.path(myhome, "Deakin University/QAEL - MER/Model/dataStrict/ForagingEtcANAEcolonialBirds.txt"), 
+  file.path(dataBase, "dataStrict/ForagingEtcANAEcolonialBirds.txt"), 
                             skip = 2, sep = ":", header = TRUE)
 
 # set a minimum inundated area of ecological significance for foraging by quantile

@@ -14,14 +14,10 @@ library(sf)
 library(tidyverse)
 
 
-registerDoFuture()
-plan(multicore)
-
-
 # Setup -------------------------------------------------------------------
 
 # Make a sub-directory for the subchunk
-scriptOut <- file.path(datOut, 'Spoonbill', 'Breed')
+scriptOut <- file.path(datOut, 'Strictures', 'Spoonbill')
 if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
 
 # chunksize in n anae polygons
@@ -39,15 +35,12 @@ print(thisCatch)
 
 # preliminaries --------------------------------------------------
 
-myhome <- paste0('C:/Users/', Sys.getenv("USERNAME"))
-
-
 # Read in data ------------------------------------------------------------
 
 # read in Ramsar boundaries
 # load(file.path(scriptOut, "ramsarMDB.rdata"))
 load(file.path(datOut, 'WetlandBoundaries', "ramsarBoundsMDB.rdata"))
-ramsarBoundsMDB <- sf::st_as_sf(ramsarBoundsMDB)
+# ramsarBoundsMDB <- sf::st_as_sf(ramsarBoundsMDB)
 # ramsarBoundsMDB <- st_transform(ramsarBoundsMDB, whichcrs)
 
 
@@ -56,10 +49,10 @@ ramsarBoundsMDB <- sf::st_as_sf(ramsarBoundsMDB)
 # McGinness, Langston and Brooks (2020) VEWH Prioritisation Project: Stage 2 Final Report
 # Royal Spoonbill (Platalea regia) requirements, distribution and habitat mapping
 breedANAEcodes <- read.table(
-  file.path(myhome, "Deakin University/QAEL - MER/Model/dataStrict/BreedingANAERoyalSpoonBill.txt"), 
+  file.path(datDir, "dataStrict/BreedingANAERoyalSpoonBill.txt"), 
   skip = 2, sep = ":", header = TRUE)
 forageANAEcodes <- read.table(
-  file.path(myhome, "Deakin University/QAEL - MER/Model/dataStrict/ForagingANAERoyalSpoonBill.txt"), 
+  file.path(datDir, "dataStrict/ForagingANAERoyalSpoonBill.txt"), 
   skip = 2, sep = ":", header = TRUE)
 
 
@@ -76,9 +69,9 @@ catchForageFiles <- list.files(depthInForage, pattern = '.rdata')
 
 
 
-load(file = file.path(depthInBreed, catchBreedFiles[which(thisCatch == catchNames)])) 
-whichcrs <- st_crs(EdwardWakool_areaSpoonbillBreed) #GDA94  EPSG:3577
-load(file = file.path(depthInForage, catchForageFiles[which(thisCatch == catchNames)]))
+load(file = file.path(depthInBreed, catchBreedFiles[grepl(thisCatch, catchBreedFiles)])) 
+# whichcrs <- st_crs(EdwardWakool_areaSpoonbillBreed) #GDA94  EPSG:3577
+load(file = file.path(depthInForage, catchForageFiles[grepl(thisCatch, catchForageFiles)]))
 
 # load ANAE for ANAE code matching on veg type for depth stars 
 # anae 
@@ -177,12 +170,17 @@ breedAreaByWetland <- aggregate(breedStrict, ramsarBoundEdwa,f )
 # calculate historical max area of inundation 
 
 by_t <- dim(breedAreaByWetland)["time"]*2 #number of months in dataset
-maxWetlandInunArea <- aggregate(breedAreaByWetland, by = paste(by_t,"months"), max, na.rm = TRUE )
+maxWetlandInunArea <- aggregate(breedAreaByWetland, by = paste(by_t,"months"), max, na.rm = TRUE ) %>%
+  aperm(c('geometry', 'time'))
 
 areaPC <- 0.7 # proportion of max inundation as threshold for breeding
 
 areaStricture <- breedAreaByWetland
-areaStricture[[1]] <- breedAreaByWetland > areaPC*maxWetlandInunArea
+
+areaStricture[[1]] <- breedAreaByWetland[[1]] > 
+  areaPC*matrix(rep(maxWetlandInunArea[[1]], 
+                    dim(breedAreaByWetland)[2]), 
+                ncol = dim(breedAreaByWetland)[2])
 dim(areaStricture)
 sum(areaStricture$Area)
 
@@ -247,12 +245,18 @@ sum(forageAreaByWetlandBuffer$Area) - sum(forageAreaByWetland$Area) # 198468638
 # calculate historical max area of inundation matching foraging habitat
 
 by_t <- dim(forageAreaByWetland)["time"]*2 #number of months in dataset
-maxWetlandForageArea <- aggregate(forageAreaByWetland, by = paste(by_t,"months"), max, na.rm = TRUE )
+maxWetlandForageArea <- aggregate(forageAreaByWetland, 
+                                  by = paste(by_t,"months"), max, na.rm = TRUE ) %>%
+  aperm(c('geometry', 'time'))
 
 forageAreaPC <- 0.05 # proportion of max inundation as threshold for foraging
 
 forageAreaStricture <- forageAreaByWetland
-forageAreaStricture[[1]] <- forageAreaByWetland > forageAreaPC*maxWetlandInunArea
+forageAreaStricture[[1]] <- forageAreaByWetland[[1]] > 
+  forageAreaPC*matrix(rep(maxWetlandInunArea[[1]], 
+                    dim(breedAreaByWetland)[2]), 
+                ncol = dim(breedAreaByWetland)[2])
+# forageAreaStricture[[1]] <- forageAreaByWetland > forageAreaPC*maxWetlandInunArea
 dim(forageAreaStricture)
 sum(forageAreaStricture$Area) #125
 
@@ -276,7 +280,11 @@ ggplot()+
   geom_stars(data = forageAreaStricture[,,194]) # all false
 
 
-
+# The objects needed for the plots. should be cleaned up into a list and saved as RDS
+save(breedStrict, forageAreaByWetland, forageAreaByWetlandBuffer, 
+     breedAreaByWetland, numBreedEvents, forageANAEstrict, breedANAEstrict,
+     breedDepth, areaStricture, forageBreedStricture,
+     file = file.path(scriptOut, 'spoonbill_strictures.rdata'))
 
 # Next steps
 # 
