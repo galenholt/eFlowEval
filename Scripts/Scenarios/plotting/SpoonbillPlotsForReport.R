@@ -177,9 +177,10 @@ ggplot(data = forageAreaSF, aes(x=lubridate::year(Date), y = Breed, group = Wetl
   labs(x=element_blank(), y = "Forgaing habitat (ha)")+
   # place legend over the top of plot area to save space
   # values are x and y position as a proportion e.g. 0.5 is halfway across
-  theme(legend.position = c(0.55, 0.8))
+  theme_pub(legend.position = c(0.55, 0.8))
 
-ggsave(file.path(scriptOut, "EdwardWakoolAreaForageInlcude10kBufferPointAndLineLegend.png"))
+ggsave(file.path(scriptOut, "EdwardWakoolAreaForageInlcude10kBufferPointAndLineLegend.png"),
+       height = 8, width = 16, units = 'cm', dpi = 300)
 
   
 # ---- redo breed plots for eddywak ----

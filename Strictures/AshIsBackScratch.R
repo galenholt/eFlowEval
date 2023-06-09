@@ -1,53 +1,54 @@
 
-
-renv::restore()
-
-a <- renv::status()
-
-a$library[[1]]
-
-b <- bind_rows(a)
-renvpackageList28_09_21 <- read.table(
-  "C:/Users/amacq/Source/.Rproj.user/shared/notebooks/renvpackageList28_09_21.txt",
-  quote="\"", comment.char="")
-packlist<- (renvpackageList28_09_21)
-n=6
-for(n in 10:length(packlist)){
-  renv::install(packlist$V1[n])
-}
-library(brew)
-
-renv::install(packlist$V1[10])
-
-install.packages("data.table")
-
-renv::install("readr@2.0.2", type = "binary")
-
-renv::install("lwgeom@0.2-6")
-renv::install("microbenchmark@1.4-7")
-renv::install("modelr@0.1.8")
-renv::install("ncdf4@1.17")
-renv::install("raster@3.4-10")
-renv::install("sf@1.0-0")
-renv::install("stars@0.5-3")
-renv::install("tidyverse@1.3.1")
-renv::install("tmap@3.3-2")
-renv::install("transformr@0.1.3")
-
-# preliminaries --------------------------------------------------
-
-myhome <- paste0('C:/Users/', Sys.getenv("USERNAME"))
+source('directorySet.R')
+# renv::restore()
+# 
+# a <- renv::status()
+# 
+# a$library[[1]]
+# 
+# b <- bind_rows(a)
+# renvpackageList28_09_21 <- read.table(
+#   "C:/Users/amacq/Source/.Rproj.user/shared/notebooks/renvpackageList28_09_21.txt",
+#   quote="\"", comment.char="")
+# packlist<- (renvpackageList28_09_21)
+# n=6
+# for(n in 10:length(packlist)){
+#   renv::install(packlist$V1[n])
+# }
+# library(brew)
+# 
+# renv::install(packlist$V1[10])
+# 
+# install.packages("data.table")
+# 
+# renv::install("readr@2.0.2", type = "binary")
+# 
+# renv::install("lwgeom@0.2-6")
+# renv::install("microbenchmark@1.4-7")
+# renv::install("modelr@0.1.8")
+# renv::install("ncdf4@1.17")
+# renv::install("raster@3.4-10")
+# renv::install("sf@1.0-0")
+# renv::install("stars@0.5-3")
+# renv::install("tidyverse@1.3.1")
+# renv::install("tmap@3.3-2")
+# renv::install("transformr@0.1.3")
+# 
+# # preliminaries --------------------------------------------------
+# 
+# myhome <- paste0('C:/Users/', Sys.getenv("USERNAME"))
 
 # ------- spoonbill strictures ---------------------------------------------------
 
 # read in Ramsar boundaries -----------------
 
 # load(file.path(scriptOut, "ramsarMDB.rdata"))
-load(file.path(scriptOut, "ramsarBoundsMDB.rdata"))
+# load(file.path(scriptOut, "ramsarBoundsMDB.rdata"))
+load(file.path(datOut, 'WetlandBoundaries', "ramsarBoundsMDB.rdata"))
 
 # read in point observations for breeding
 breedObsRSB <- scan(
-  file.path(dataBase, "dataStrict/BreedingObservationsRoyalSpoonbill.txt"), 
+  file.path(datDir, "dataStrict/BreedingObservationsRoyalSpoonbill.txt"), 
   skip = 2)
 # breedObsRSB <- unlist(breedObsRSB)
 
@@ -55,8 +56,29 @@ breedObsRSB <- scan(
 breedObsRSB <- matrix(data = breedObsRSB, ncol = 2, nrow = length(breedObsRSB)/2, byrow = TRUE)
 breedObsRSB <- as.data.frame(breedObsRSB)
 names(breedObsRSB) <- c("Lat", "Long")
-#subset wetland boundaries to those with breeding observations
 
+# do those hit the ramsars?
+breedsf <- sf::st_as_sf(breedObsRSB, coords = c('Lat', 'Long'), crs = 4326)
+
+
+#subset wetland boundaries to those with breeding observations
+load(file.path(datOut, 'ANAEprocessed', 'ltimNoNorth.rdata'))
+library(ggplot2)
+ggplot() + geom_sf(data = ltimNoNorth) + geom_sf(data = breedsf)
+# Thos are in the right place, now what ramsars do they hit?
+
+ggplot() + 
+  geom_sf(data = ltimNoNorth) + 
+  geom_sf(data = ramsarBoundsMDB, mapping = aes(fill = Wetland)) +
+  geom_sf(data = breedsf) + theme(legend.position = 'none')
+
+# and a check of the examples
+ggplot() +
+  geom_sf(data = dplyr::filter(ramsarBoundsMDB, 
+                               grepl('werai|perri|mille', Wetland, ignore.case = TRUE)), 
+          mapping = aes(fill = Wetland)) +
+  geom_sf(data = breedsf) +
+  coord_sf(xlim = c(143, 146), ylim = c(-35, -37), crs = 4326)
 
 # read in ANAEv3 
 
