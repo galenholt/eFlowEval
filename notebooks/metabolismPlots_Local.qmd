@@ -32,7 +32,7 @@ library(latex2exp)
 
 # Kind of hacky check to only run if needed
 if (!('weraiCropInun' %in% ls())) {
-    source(file.path(here::here(), 'Scripts', 'Scenarios', 'plotting', 'metabPlotSetup_Local.R'))
+    source(file.path(here::here(), 'Scripts', 'plotting', 'metabPlotSetup_Local.R'))
 }
 
 ```

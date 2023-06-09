@@ -3,7 +3,7 @@
 Testing/
 .Rproj.user/
 *.tif
-TestScratch/TestGeoData/
+Scratch/TestGeoData/
 datOut/
 *.err
 *.out

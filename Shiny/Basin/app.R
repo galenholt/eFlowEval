@@ -12,7 +12,7 @@ setwd(here::here())
 
 # Kind of hacky check to only run if needed
 if (!('logGPPdays' %in% ls())) {
-  source(file.path(here::here(), 'Scripts', 'Scenarios', 'plotting', 'metabPlotSetup_Basin.R'))
+  source(file.path(here::here(), 'Scripts', 'plotting', 'metabPlotSetup_Basin.R'))
 }
 
 # need the plotting libraries that don't get loaded in the data script

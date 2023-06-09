@@ -40,7 +40,7 @@ library(knitr)
 # source in the data management
 
 source('directorySet.R')
-source(file.path('Scripts', 'Scenarios', 'plotting', 'vegPlotSetup_Basin.R'))
+source(file.path('Scripts', 'plotting', 'vegPlotSetup_Basin.R'))
 # Directory to export TO
 scriptOut <- file.path('strictOut', 'vegetation', 'basin')
 if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
