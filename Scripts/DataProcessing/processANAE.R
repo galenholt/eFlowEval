@@ -188,7 +188,7 @@ while (any(duplicated(bothANAE$SYS2))) {
 
 # # Projecting doesn't fix the self-intersect, but should we do it anyway for the intersects? I kind of think not
 # # 3577 doesn't fix it
-# transcode <- 3577 # 3577 is albers equal area, 3112 is lambert conformal, 3395 is worldwide mercator (no zones, etc. Would be shit but maybe a good test)
+# transcode <- 3577 # 3577 is albers equal area, 3112 is lambert conformal, 3395 is worldwide mercator (no zones, etc. Would be bad but maybe a good test)
 # kopCutT <- st_transform(kopCut, crs = transcode)
 # ltimNoNorthT <- st_transform(ltimNoNorth, crs = transcode)
 # 

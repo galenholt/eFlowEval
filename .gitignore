@@ -15,3 +15,6 @@ datOut/
 *.docx
 
 *_files/
+
+# Ignore testing and figuring things out
+Scratch/
