@@ -1068,7 +1068,7 @@ er5label <- 'Max ER (tonnes O2)\nWater years 2014-2018'
 ```{r}
 date5 <- as.character(st_get_dimension_values(temperature5, which = 'time'))
 
-temp_5 <- tempfun(temperature5/1000, 1, date5, plotPkg = 'ggplot', 
+temp_5 <- tempfun(temperature5, 1, date5, plotPkg = 'ggplot', 
                   titled = FALSE, titlePrefix = 'Water year beginning ', 
                    colorchoice = 'grey50', forcelegend = temp5label)
 temp_5

@@ -13,3 +13,5 @@ datOut/
 *.html
 
 *.docx
+
+*_files/

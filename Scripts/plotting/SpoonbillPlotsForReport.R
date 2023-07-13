@@ -311,6 +311,10 @@ ggsave(plot = breed_tile/forage_breed_tile + plot_annotation(tag_levels = 'a'),
        filename = file.path(scriptOut, "spoonbill_tile_panels.png"), 
        height=6, width=12, units = 'cm', dpi=300)
 
+ggsave(plot = breed_tile/forage_breed_tile + plot_annotation(tag_levels = 'a'), 
+       filename = file.path(scriptOut, "spoonbill_tile_panels.pdf"), 
+       height=6, width=12, units = 'cm')
+
 #  graph to demonstrate lookaround on foraging ---- 
 # a. Individual polygons with foraging areas
 # b. area scaled to wetland
