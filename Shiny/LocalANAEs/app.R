@@ -21,8 +21,7 @@ source(file.path('Scripts', 'plotting', 'metabPlotSetup_Local.R'))
 library(tmap)
 library(colorspace)
 
-# Can I actually allow the area to be user-chosen?
-# The user would then have to wait while it generates the plots
+# If I pre-generate the plots, this would be much faster, I think.
 
 # Can we make a scenario comparison version, where the user can choose which
 # scenarios to look at?
@@ -42,12 +41,10 @@ ltimNoNorth <- load_rename(catchpath, returnOne ='ltimNoNorth')
 # 
 # metab_local <- setup_local_metab(sub_poly = werai_one)
 
-# temp until we can pass it around.
+# We can pass this around with the uiOutput code that's commented out, but that always starts with an error and then we have to choose a date. so easier to hardcode for now.
 availDays <- c('2014-01-01', '2014-03-01', '2014-05-01', '2014-07-01', '2014-09-01', '2014-11-01', '2015-01-01', '2015-03-01', '2015-05-01', '2015-07-01', '2015-09-01', '2015-11-01', '2016-01-01', '2016-03-01', '2016-05-01', '2016-07-01', '2016-09-01', '2016-11-01', '2017-01-01', '2017-03-01', '2017-05-01', '2017-07-01', '2017-09-01', '2017-11-01', '2018-01-01', '2018-03-01', '2018-05-01', '2018-07-01', '2018-09-01', '2018-11-01', '2019-01-01', '2019-03-01', '2019-05-01', '2019-07-01', '2019-09-01', '2019-11-01', '2020-01-01', '2020-03-01', '2020-05-01', '2020-07-01', '2020-09-01')
   
   # st_get_dimension_values(metab_local$temp_anae, which = 'time')
-
-# print(datOut)
 
 # Can I make a UI with columns?
 ui <- fluidPage(
@@ -58,12 +55,15 @@ ui <- fluidPage(
         column(4, 
                selectInput("ramsar_site", "Ramsar site", 
                            choices = sort(unique(ramsarMDB$WNAME)), 
-                           selected = "Werai Forest")),
+                           selected = "Great Cumbungi Swamp")),
+        # column(2,
+        #        h4("Two months following: ")
+        #        ),
         column(4,
-               h4("Two months following: ")
-               ),
-        column(4,
-               selectInput("datewanted", "Bimonth start", choices = availDays)
+               # uiOutput('dates') # This works, but always starts with error until everything loads.
+               selectInput("datewanted", "Bimonth start", 
+                           choices = availDays,
+                           selected = '2019-11-01')
                )
     ),
     
@@ -90,28 +90,7 @@ ui <- fluidPage(
     )
 )
 
-# # Define UI
-# ui <- fluidPage(
-# 
-#     # Application title
-#     titlePanel("Local Example: Werai Forest"),
-#     
-#     # Sidebar with a slider input for number of bins
-#     sidebarLayout(
-#         sidebarPanel(
-#             selectInput("datewanted", "Bimonth end", choices = availDays)
-#         ),
-#         
-#         # Show a plot of the generated distribution
-#         mainPanel(
-#             # tmap::tmapOutput("invars"),
-#             tmap::tmapOutput("temp"),
-#             tmap::tmapOutput("inun"),
-#             tmap::tmapOutput("gpp"),
-#             tmap::tmapOutput("er"),
-#         )
-#     )
-# )
+
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
@@ -123,6 +102,13 @@ server <- function(input, output) {
                       datOut = here::here(datOut))
   })
   
+  # This makes the dates reactive, but always starts with an error
+  # output$dates <- renderUI({
+  #   metab_local <- ml_react()
+  #   selectInput("datewanted", "Two months following", 
+  #               choices = st_get_dimension_values(metab_local$temp_anae, which = 'time'),
+  #               selected = '2014-01-01')
+  # })
   
 
     output$temp <- tmap::renderTmap({
