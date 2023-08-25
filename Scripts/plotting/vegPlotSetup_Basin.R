@@ -85,22 +85,6 @@ veg_yr_prep <- function(datOut, species = NULL, whichcrs = 3577) {
   centipedayr <- centipeda_stricts_catchment[-whichanaeC] %>% 
     purrr::map(aggandflip)
   
-  ## TESTING- why is there MORE area with the germSurv than germ alone?
-    # THIS SHOULD NOT BE NEGATIVE
-  lippiayr$germ_Lippia[[1]] - lippiayr$germSurv_Lippia[[1]]
-    # THIS SHOULD BE FALSE
-  lippiayr$germSurv_Lippia[[1]] > as.numeric(st_area(st_as_sf(lippia_stricts_catchment$anae_Lippia)))
-  lippiayr$germ_Lippia[[1]] > as.numeric(st_area(st_as_sf(lippia_stricts_catchment$anae_Lippia)))
-  # There is *not* more area than with surv alone. 
-  lippiayr$surv_Lippia[[1]] - lippiayr$germSurv_Lippia[[1]]
-  # I cannot figure out how this is happening- the stricture is if germ, then
-  # get surv area. So it makes no sense that it could be ADDING area. I think
-  # I'll need to go back to the strictures and explicitly build bimonthly germ
-  # and surv data, use that in the stricts, and return it in the list. Then
-  # we'll be able to test directly. The only thing I can think is that somehow
-  # that time rolling that happens stuffs thigns up. but its all limited to max,
-  # and comes down to survival if germ, so there's no way to ADD area
-  
   ## make dataframes for bar/line etc plots
   # can sometimes pipe in the purr, but it's fragile. Make a function
   catch_and_pos <- function(x) {
