@@ -303,12 +303,18 @@ crscheck <- function(obj, whichcrs) {
 
 # turn a stars into a stacked sf with date col and add the catchme --------
 
-sfandcatch <- function(starsObj, catches, newname) {
-  starsObj %>%
+sfandcatch <- function(starsObj, catches = NULL, newname) {
+  starsObj <- starsObj %>%
     st_as_sf() %>% 
-    pivot_longer(cols = -Shape, names_to = 'date', values_to = {{newname}}) %>%
-    mutate(date = as.Date(date)) %>%
-    st_join(catches, join = st_equals_exact, par = 1)
+    pivot_longer(cols = -any_of(c('Shape', 'geometry')), names_to = 'date', values_to = {{newname}}) %>%
+    mutate(date = as.Date(date))
+  
+  if (!is.null(catches)) {
+    starsObj <- starsObj %>%
+      st_join(catches, join = st_equals_exact, par = 1)
+  }
+  
+  return(starsObj)
 }
 
 

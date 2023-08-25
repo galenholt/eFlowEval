@@ -1,0 +1,222 @@
+---
+title: "Veg Local"
+author: "Galen Holt"
+format: html
+editor: visual
+---
+
+```{r}
+# libraries
+library(tidyverse)
+library(sf)
+library(stars)
+library(tmap)
+# library(viridis)
+library(colorspace)
+# library(patchwork)
+# library(latex2exp)
+# library(foreach)
+```
+
+Comment out the function while i build it
+
+```{r}
+source('directorySet.R')
+source(file.path('Scripts', 'plotting', 'setup_local_veg.R'))
+
+```
+
+```{r}
+# choose a sub_poly
+ramsarpath <- file.path(datOut, 'WetlandBoundaries', 'ramsarMDB.rdata')
+ # We know the name, so this is silly, but I really hate reading data in and
+ # having to remember the name. save/readRDS would fix this.
+ramsarMDB <- load_rename(ramsarpath, returnOne = 'ramsarMDB')
+
+cumbung_one <- filter(ramsarMDB, WNAME == 'Great Cumbungi Swamp') %>% 
+  summarise()
+
+```
+
+```{r}
+# where are we going to want to save?
+scriptOut <- file.path('strictOut', 'veg', 'local', 'cumbung')
+if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
+```
+
+Prep the data
+
+```{r}
+veg_local <- setup_local_veg(sub_poly = cumbung_one, catchment = 'auto')
+
+```
+
+```{r}
+availDays <- st_get_dimension_values(veg_local$lippiastricts$fullCycle_anae_lippia, which = 'time')
+datewanted <- as.character(availDays[18])
+```
+
+## Plots
+
+Unlike the basin-scale plots that end up with issues of changing area due to which wetlands are successful in a given year, the *individual* wetlands are mostly 1 or 0. So we can just plot that directly (though I suppose it's worth confirming that as well. That would also change if we were looking at a water year.
+
+### Bimonth
+
+Area- this is not very informative, since we're really just plotting the size of the wetland, but we'll do it anyway.
+
+```{r}
+lippia_area <- veg_local$lippiadf %>% 
+  filter(date == datewanted) %>% 
+ggplot() +
+  geom_sf(mapping = aes(fill = area_passing/10000)) +
+  facet_wrap('strict_level_F') +
+  scale_fill_continuous_sequential(palette = 'Turku', trans = 'log10') +
+  labs(fill = 'Hectares\npassing') +
+  theme_pub(legend.position = 'bottom')
+
+# ggsave(file.path(scriptOut, 'lippia_area.pdf'),
+#        plot = lippia_area,
+#        width = 12, height = 6, units = 'cm')
+# ggsave(file.path(scriptOut, 'lippia_area.png'),
+#        plot = lippia_area,
+#        width = 12, height = 6, units = 'cm')
+
+lippia_area
+```
+
+And centipeda, though this is super uninformative- we're just plotting wetland area here, really.
+
+```{r}
+cent_area <- veg_local$centipedadf %>% 
+  filter(date == datewanted) %>% 
+ggplot() +
+  geom_sf(mapping = aes(fill = area_passing/10000)) +
+  facet_grid(. ~ strict_level_F, 
+             labeller = labeller(strict_level_F = label_wrap_gen(15))) +
+  scale_fill_continuous_sequential(palette = 'Turku', trans = 'log10') +
+  labs(fill = 'Hectares\npassing') + 
+  theme_pub(legend.position = 'bottom')
+
+# ggsave(file.path(scriptOut, 'cent_area.pdf'),
+#        plot = cent_area,
+#        width = 16, height = 6, units = 'cm')
+# ggsave(file.path(scriptOut, 'cent_area.png'),
+#        plot = cent_area,
+#        width = 16, height = 6, units = 'cm')
+
+
+cent_area
+```
+
+#### Proportion
+
+The outcome is basically 1/0, but we can calculate proportion passing, which will allow intermediate values if there are any. Explicitly include limits here to make them consistent across plots as we move forward.
+
+```{r}
+veg_local$lippiadf <- veg_local$lippiadf %>% 
+  mutate(prop_passing = area_passing/as.numeric(area))
+veg_local$centipedadf <- veg_local$centipedadf %>% 
+  mutate(prop_passing = area_passing/as.numeric(area))
+
+veg_local$lippiayrdf <- veg_local$lippiayrdf %>% 
+  mutate(prop_passing = area_passing/as.numeric(area))
+veg_local$centipedayrdf <- veg_local$centipedayrdf %>% 
+  mutate(prop_passing = area_passing/as.numeric(area))
+```
+
+Lippia- use the plot function
+
+```{r}
+# lippia_prop <- veg_local$lippiadf %>% 
+#   filter(date == datewanted) %>% 
+# ggplot() +
+#   geom_sf(mapping = aes(fill = prop_passing)) +
+#   facet_grid(.~strict_level_F, 
+#              labeller = labeller(strict_level_F = label_wrap_gen(20))) +
+#   scale_fill_continuous_sequential(palette = 'YlGnBu', limits = c(0,1)) + 
+#   labs(fill = 'Proportion\nwetland area\nsuccessful') +
+#   theme(legend.position = 'bottom')
+
+lippia_prop <- local_veg_plot(veg_local$lippiadf, datewanted, plotPkg = 'ggplot')
+
+lippia_prop + pubtheme + theme(legend.position = 'bottom')
+```
+
+Centipeda
+
+```{r}
+centipeda <- local_veg_plot(veg_local$centipedadf, datewanted, plotPkg = 'ggplot')
+
+centipeda_prop + pubtheme + theme(legend.position = 'bottom')
+```
+
+Try the tmap versions
+
+```{r}
+lippia_prop_tm <- local_veg_plot(veg_local$lippiadf, datewanted, plotPkg = 'tmap')
+
+lippia_prop_tm
+```
+
+```{r}
+centipeda_prop_tm <- local_veg_plot(veg_local$centipedadf, datewanted, plotPkg = 'tmap')
+
+centipeda_prop_tm
+```
+
+Is there value in doing the sequential loss that I do at the basin scale? Less so, since here it's more obvious when we lose wetlands.
+
+We could relatively easily serve those as a shiny where we choose the bimonth. Basically just have a plot function that produces a tmap like for gpp and er.
+
+### Yearly
+
+The proportions might get more interesting yearly, and we could even facet by years to see temporal change (as we did in the basin-scale).
+
+```{r}
+lippia_prop_yr <- local_veg_plot(veg_local$lippiayrdf, 
+                                 datewanted = unique(veg_local$lippiayrdf$date),
+                                 plotPkg = 'ggplot')
+
+lippia_prop_yr + pubtheme
+```
+
+```{r}
+centipeda_prop_yr <- local_veg_plot(veg_local$centipedayrdf, 
+                                 datewanted = unique(veg_local$centipedayrdf$date),
+                                 plotPkg = 'ggplot')
+
+
+centipeda_prop_yr+ pubtheme
+```
+
+And the tmap versions
+
+```{r}
+lippia_prop_yr_tm <- local_veg_plot(veg_local$lippiayrdf, 
+                                 datewanted = unique(veg_local$lippiayrdf$date),
+                                 plotPkg = 'tmap')
+
+lippia_prop_yr_tm 
+```
+
+```{r}
+centipeda_prop_yr_tm <- local_veg_plot(veg_local$centipedayrdf, 
+                                 datewanted = unique(veg_local$centipedayrdf$date),
+                                 plotPkg = 'tmap')
+
+
+centipeda_prop_yr_tm
+```
+
+Can I plot that with a different tmap mode? Just plot the interesting year.
+
+```{r}
+tmap_mode('view')
+
+centipeda_prop_yr_tm_v <- local_veg_plot(veg_local$centipedayrdf, 
+                                 datewanted = "2016-06-29",
+                                 plotPkg = 'tmap')
+
+
+centipeda_prop_yr_tm_v
+```

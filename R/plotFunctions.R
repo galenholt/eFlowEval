@@ -654,6 +654,67 @@ allfun <- function(tempObj, tempAtt = 1,
 }
 
 
+# Local Veg Functions -----------------------------------------------------
+
+local_veg_plot <- function(vegsf, datewanted, plotPkg,
+                           titled = TRUE, titlePrefix = NULL, titleSuffix = NULL) {
+  
+  # Title prefix and suffix lets us add bits around the date
+  if (titled) {
+    thistitle <- paste0(titlePrefix, datewanted, titleSuffix)
+  }
+  
+  vegsf <- vegsf %>% 
+    dplyr::filter(date == datewanted)
+  
+  if (plotPkg == 'ggplot') {
+    vegplot <- vegsf %>% 
+      ggplot() +
+      geom_sf(mapping = aes(fill = prop_passing)) +
+      scale_fill_continuous_sequential(palette = 'YlGnBu', limits = c(0,1)) + 
+      labs(fill = 'Proportion\nwetland area\nsuccessful') +
+      theme(legend.position = 'bottom')
+    
+    if (length(datewanted) > 1) {
+      vegplot <- vegplot + 
+        facet_grid(date~strict_level_F, 
+                   labeller = labeller(strict_level_F = label_wrap_gen(20)))
+    } else {
+      vegplot <- vegplot + 
+        facet_grid(.~strict_level_F, 
+                   labeller = labeller(strict_level_F = label_wrap_gen(20)))
+    }
+    
+    if (titled) {
+      vegplot <- vegplot + 
+        ggtitle(thistitle)
+    }
+    return(vegplot)
+    
+  }
+  
+  if (plotPkg == 'tmap') {
+    
+    vegplot <- vegsf %>%
+      tm_shape() +
+      tm_fill(col = 'prop_passing', palette = 'YlGnBu',
+              title = 'Proportion\nwetland area\nsuccessful',
+              style = 'cont',
+              breaks = c(0, 0.25, 0.5, 0.75, 1))
+    if (titled) {
+      vegplot <- vegplot + 
+        tm_layout(title = thistitle)
+    }
+    
+    if (length(datewanted) > 1) {
+      vegplot <- vegplot + tm_facets(by = c('date', 'strict_level_F'))  
+    } else {
+      vegplot <- vegplot + tm_facets(by = 'strict_level_F') 
+    }
+    
+    return(vegplot)
+  }
+}
 # TESTING -----------------------------------------------------------------
 
 
