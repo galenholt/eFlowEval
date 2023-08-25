@@ -31,15 +31,23 @@ library(colorspace)
 ramsarpath <- file.path(datOut, 'WetlandBoundaries', 'ramsarMDB.rdata')
 # We know the name, so this is silly, but I really hate reading data in and
 # having to remember the name. save/readRDS would fix this.
-ramsarMDB <- load_rename(ramsarpath, returnOne = 'ramsarMDB')
+ramsarMDB <- load_rename(ramsarpath, returnOne = 'ramsarMDB') %>% 
+  mutate(WNAME = stringr::str_remove_all(WNAME, pattern = "\""))
 
-werai_one <- filter(ramsarMDB, WNAME == 'Werai Forest') %>% 
-  summarise()
+catchpath <- file.path(datOut, 'ANAEprocessed', 'ltimNoNorth.rdata')
+ltimNoNorth <- load_rename(catchpath, returnOne ='ltimNoNorth')
 
-metab_local <- setup_local_metab(sub_poly = werai_one)
+# werai_one <- filter(ramsarMDB, WNAME == 'Werai Forest') %>% 
+#   summarise()
+# 
+# metab_local <- setup_local_metab(sub_poly = werai_one)
 
+# temp until we can pass it around.
+availDays <- c('2014-01-01', '2014-03-01', '2014-05-01', '2014-07-01', '2014-09-01', '2014-11-01', '2015-01-01', '2015-03-01', '2015-05-01', '2015-07-01', '2015-09-01', '2015-11-01', '2016-01-01', '2016-03-01', '2016-05-01', '2016-07-01', '2016-09-01', '2016-11-01', '2017-01-01', '2017-03-01', '2017-05-01', '2017-07-01', '2017-09-01', '2017-11-01', '2018-01-01', '2018-03-01', '2018-05-01', '2018-07-01', '2018-09-01', '2018-11-01', '2019-01-01', '2019-03-01', '2019-05-01', '2019-07-01', '2019-09-01', '2019-11-01', '2020-01-01', '2020-03-01', '2020-05-01', '2020-07-01', '2020-09-01')
+  
+  # st_get_dimension_values(metab_local$temp_anae, which = 'time')
 
-availDays <- st_get_dimension_values(metab_local$temp_anae, which = 'time')
+# print(datOut)
 
 # Can I make a UI with columns?
 ui <- fluidPage(
@@ -47,6 +55,10 @@ ui <- fluidPage(
     titlePanel("Individual wetlands"),
     
     fluidRow(
+        column(4, 
+               selectInput("ramsar_site", "Ramsar site", 
+                           choices = sort(unique(ramsarMDB$WNAME)), 
+                           selected = "Werai Forest")),
         column(4,
                h4("Two months following: ")
                ),
@@ -103,8 +115,18 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
+  
+  ml_react <- reactive({
+    ramsar_one <- filter(ramsarMDB, WNAME == input$ramsar_site) %>% 
+      summarise()
+    setup_local_metab(sub_poly = ramsar_one, 
+                      datOut = here::here(datOut))
+  })
+  
+  
 
     output$temp <- tmap::renderTmap({
+      metab_local <- ml_react()
         # Works. the others might work, if I do something reactive?
         # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
         tempfun(metab_local$temp_anae, 1, input$datewanted, titled = TRUE, titlePrefix = 'Two months following')
@@ -113,6 +135,7 @@ server <- function(input, output) {
     })
     
     output$inun <- tmap::renderTmap({
+      metab_local <- ml_react()
         # Works. the others might work, if I do something reactive?
         # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
         inunfun(metab_local$inun_anae, 1, input$datewanted, titled = FALSE)
@@ -122,6 +145,7 @@ server <- function(input, output) {
     })
     
     output$gpp <- tmap::renderTmap({
+      metab_local <- ml_react()
         # Works. the others might work, if I do something reactive?
         # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
         gppfun(metab_local$predGPP, 1, input$datewanted, titled = FALSE)
@@ -131,6 +155,7 @@ server <- function(input, output) {
     })
     
     output$er <- tmap::renderTmap({
+      metab_local <- ml_react()
         # Works. the others might work, if I do something reactive?
         # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
         erfun(metab_local$predER, 1, input$datewanted, titled = FALSE)

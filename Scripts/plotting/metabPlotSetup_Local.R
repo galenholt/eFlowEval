@@ -1,7 +1,8 @@
 # local plots of metabolism (and maybe a few other static plots)
 
 
-setup_local_metab <- function(sub_poly, catchment = 'auto', whichcrs = 3577, interDates = 'default') {
+setup_local_metab <- function(sub_poly, catchment = 'auto', whichcrs = 3577, interDates = 'default',
+                              catchsf = NULL, datOut = 'datOut') {
   
   if (interDates == 'default') {
     interDates <- c("2014-06-30", "2015-06-30", "2016-06-30", "2017-06-30", "2018-06-30", "2019-06-30")
@@ -14,19 +15,24 @@ setup_local_metab <- function(sub_poly, catchment = 'auto', whichcrs = 3577, int
   # allow auto-catchment from the sub_poly
   if (catchment == 'auto') {
     # this is dangerous- we should send in the path without relying on knowing datOut
-    catchpath <- file.path(datOut, 'ANAEprocessed', 'ltimNoNorth.rdata')
-    ltimNoNorth <- load_rename(catchpath, returnOne ='ltimNoNorth') %>% 
+    # Now we can at least send an sf
+    if (is.null(catchsf)) {
+      catchpath <- file.path(datOut, 'ANAEprocessed', 'ltimNoNorth.rdata')
+      catchsf <- load_rename(catchpath, returnOne ='ltimNoNorth')
+    }
+    
+     catchsf <- catchsf %>% 
       crscheck(whichcrs)
     
-    catchment <- ltimNoNorth[which(st_intersects(sub_poly, 
-                                                  ltimNoNorth, sparse = FALSE)),
+    catchment <- catchsf[which(st_intersects(sub_poly, 
+                                                  catchsf, sparse = FALSE)),
                               'ValleyName'] %>% 
       st_drop_geometry() %>% 
       stringr::str_remove_all(' ')
     
     if (length(catchment) > 1) {
       # Choose the biggest intersection
-      inter <- st_intersection(sub_poly, ltimNoNorth) %>% 
+      inter <- st_intersection(sub_poly, catchsf) %>% 
         dplyr::mutate(area = st_area(geometry)) %>% 
         filter(area == max(area))
       
