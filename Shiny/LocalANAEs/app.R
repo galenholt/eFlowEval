@@ -8,22 +8,43 @@
 #
 
 library(shiny)
+library(sf)
+library(dplyr)
+# Shiny sets the wd to the app directory
 setwd(here::here())
 
 # Kind of hacky check to only run if needed
-if (!('weraiCropInun' %in% ls())) {
-    source(file.path(here::here(), 'Scripts', 'plotting', 'metabPlotSetup_Local.R'))
-}
-
+# re-create the data
+source('directorySet.R')
+source(file.path('Scripts', 'plotting', 'metabPlotSetup_Local.R'))
 # need the plotting libraries that don't get loaded in the data script
 library(tmap)
 library(colorspace)
-availDays <- st_get_dimension_values(weraiCropTemp, which = 'time')
+
+# Can I actually allow the area to be user-chosen?
+# The user would then have to wait while it generates the plots
+
+# Can we make a scenario comparison version, where the user can choose which
+# scenarios to look at?
+
+# choose a sub_poly
+ramsarpath <- file.path(datOut, 'WetlandBoundaries', 'ramsarMDB.rdata')
+# We know the name, so this is silly, but I really hate reading data in and
+# having to remember the name. save/readRDS would fix this.
+ramsarMDB <- load_rename(ramsarpath, returnOne = 'ramsarMDB')
+
+werai_one <- filter(ramsarMDB, WNAME == 'Werai Forest') %>% 
+  summarise()
+
+metab_local <- setup_local_metab(sub_poly = werai_one)
+
+
+availDays <- st_get_dimension_values(metab_local$temp_anae, which = 'time')
 
 # Can I make a UI with columns?
 ui <- fluidPage(
     # Application title
-    titlePanel("Local Example: Werai Forest"),
+    titlePanel("Individual wetlands"),
     
     fluidRow(
         column(4,
@@ -86,7 +107,7 @@ server <- function(input, output) {
     output$temp <- tmap::renderTmap({
         # Works. the others might work, if I do something reactive?
         # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
-        tempfun(weraiCropTemp, 1, input$datewanted, titled = TRUE, titlePrefix = 'Two months following')
+        tempfun(metab_local$temp_anae, 1, input$datewanted, titled = TRUE, titlePrefix = 'Two months following')
         # tmap_leaflet(inputsfun(input$datewanted), in.shiny = TRUE)
         # tmap_leaflet(tempfun(input$datewanted), in.shiny = TRUE)
     })
@@ -94,7 +115,7 @@ server <- function(input, output) {
     output$inun <- tmap::renderTmap({
         # Works. the others might work, if I do something reactive?
         # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
-        inunfun(weraiCropInun, 1, input$datewanted, titled = FALSE)
+        inunfun(metab_local$inun_anae, 1, input$datewanted, titled = FALSE)
         # fastgrab(input$datewanted)
         # tmap_leaflet(inputsfun(input$datewanted), in.shiny = TRUE)
         # tmap_leaflet(tempfun(input$datewanted), in.shiny = TRUE)
@@ -103,7 +124,7 @@ server <- function(input, output) {
     output$gpp <- tmap::renderTmap({
         # Works. the others might work, if I do something reactive?
         # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
-        gppfun(weraiCropPredGPP, 1, input$datewanted, titled = FALSE)
+        gppfun(metab_local$predGPP, 1, input$datewanted, titled = FALSE)
         # fastgrab(input$datewanted)
         # tmap_leaflet(inputsfun(input$datewanted), in.shiny = TRUE)
         # tmap_leaflet(tempfun(input$datewanted), in.shiny = TRUE)
@@ -112,7 +133,7 @@ server <- function(input, output) {
     output$er <- tmap::renderTmap({
         # Works. the others might work, if I do something reactive?
         # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
-        erfun(weraiCropPredER, 1, input$datewanted, titled = FALSE)
+        erfun(metab_local$predER, 1, input$datewanted, titled = FALSE)
         # fastgrab(input$datewanted)
         # tmap_leaflet(inputsfun(input$datewanted), in.shiny = TRUE)
         # tmap_leaflet(tempfun(input$datewanted), in.shiny = TRUE)

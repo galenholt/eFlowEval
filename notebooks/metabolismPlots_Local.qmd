@@ -24,16 +24,69 @@ library(viridis)
 library(colorspace)
 library(patchwork)
 library(latex2exp)
+library(foreach)
 ```
+
+```{r}
+source('directorySet.R')
+
+```
+
+I haven't moved the function to `\R` yet, so 
+```{r}
+source(file.path('Scripts', 'plotting', 'metabPlotSetup_Local.R'))
+```
+
+I pulled the saving to here, since the function doesn't auto-print. Do we want it to? Probably not, since we end up tweaking everything here.
+
+```{r}
+# where are we going to want to save?
+scriptOut <- file.path('strictOut', 'metabolism', 'local', 'werai')
+if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
+```
+
+
+New- use a function to make this general. That means for a particular situation, we need to set up where it runs and what it uses.
+
+```{r}
+# choose a sub_poly
+ramsarpath <- file.path(datOut, 'WetlandBoundaries', 'ramsarMDB.rdata')
+ # We know the name, so this is silly, but I really hate reading data in and
+ # having to remember the name. save/readRDS would fix this.
+ramsarMDB <- load_rename(ramsarpath, returnOne = 'ramsarMDB')
+
+werai_one <- filter(ramsarMDB, WNAME == 'Werai Forest') %>% 
+  summarise()
+
+```
+
+```{r}
+metab_local <- setup_local_metab(sub_poly = werai_one, catchment = 'auto')
+
+```
+
+We could read in some other useful shapefiles here (basin and ltimNoNorth), but we might not actually use them here.
+
+```{r}
+# Basin boundary, for clipping rasters; though likely will start with lachlan
+basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'MDB_Boundary') %>%
+  st_cast("MULTIPOLYGON")  %>% # cleans up an issue with multisurfaces
+  dplyr::select(LEVEL2NAME)# no need for other info
+
+# Catchments
+catchpath <- file.path(datOut, 'ANAEprocessed', 'ltimNoNorth.rdata')
+ltimNoNorth <- load_rename(catchpath, 'ltimNoNorth')[[1]]
+```
+
 
 ```{r}
 #| message = FALSE
 # source in the data management
 
-# Kind of hacky check to only run if needed
-if (!('weraiCropInun' %in% ls())) {
-    source(file.path(here::here(), 'Scripts', 'plotting', 'metabPlotSetup_Local.R'))
-}
+# # Kind of hacky check to only run if needed
+# if (!('metab_local$inun_anae' %in% ls())) {
+#     source(file.path(here::here(), 'Scripts', 'plotting', 'metabPlotSetup_Local.R'))
+# }
 
 ```
 
@@ -55,7 +108,7 @@ periods.
 Set the date for examples
 
 ```{r}
-availDays <- st_get_dimension_values(weraiCropTemp, which = 'time')
+availDays <- st_get_dimension_values(metab_local$temp_anae, which = 'time')
 datewanted <- as.character(availDays[18])
 ```
 
@@ -66,10 +119,10 @@ Make a static version using the tmap functions
 ```{r}
 suppressMessages(tmap_mode('plot'))
 
-# allfun(tempObj = weraiCropTemp, tempAtt = 1,
-#                    inunObj = weraiCropInun, inunAtt = 1,
-#                    gppObj = weraiCropPredGPP, gppAtt = 1,
-#                    erObj = weraiCropPredER, erAtt = 1,
+# allfun(tempObj = metab_local$temp_anae, tempAtt = 1,
+#                    inunObj = metab_local$inun_anae, inunAtt = 1,
+#                    gppObj = metab_local$predGPP, gppAtt = 1,
+#                    erObj = metab_local$predER, erAtt = 1,
 #                    datewanted)
 
 ```
@@ -78,13 +131,13 @@ Clean that up just a bit, with a grey background. probably pull the
 title off but it's nice to have as reference while i'm making these
 
 ```{r}
-tm_grid_static <- tmap_arrange(tempfun(weraiCropTemp, 1, datewanted) +
+tm_grid_static <- tmap_arrange(tempfun(metab_local$temp_anae, 1, datewanted) +
                                  tm_layout(bg.color = "grey85"),
-                               inunfun(weraiCropInun, 1, datewanted, titled = FALSE) +
+                               inunfun(metab_local$inun_anae, 1, datewanted, titled = FALSE) +
                                  tm_layout(bg.color = "grey85"),
-                               gppfun(weraiCropPredGPP, 1, datewanted, titled = FALSE) +
+                               gppfun(metab_local$predGPP, 1, datewanted, titled = FALSE) +
                                  tm_layout(bg.color = "grey85"),
-                               erfun(weraiCropPredER, 1, datewanted, titled = FALSE) +
+                               erfun(metab_local$predER, 1, datewanted, titled = FALSE) +
                                  tm_layout(bg.color = "grey85"))
 tm_grid_static
 ```
@@ -95,26 +148,26 @@ I speak ggplot)
 
 ```{r}
 gg_grid_static <- ggpubr::ggarrange(
-  tempfun(weraiCropTemp, 1, datewanted, titled = FALSE,
+  tempfun(metab_local$temp_anae, 1, datewanted, titled = FALSE,
           titlePrefix = 'Two months preceding ', plotPkg = 'ggplot') + 
     guides(fill = guide_legend(title.position = 'top')) +
     theme_pub() +
     theme(legend.position = 'bottom', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')),
-  inunfun(weraiCropInun, 1, datewanted, titled = FALSE, plotPkg = 'ggplot') + 
+  inunfun(metab_local$inun_anae, 1, datewanted, titled = FALSE, plotPkg = 'ggplot') + 
     guides(fill = guide_legend(title.position = 'top')) +
     theme_pub() +
     theme(legend.position = 'bottom', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')),
-  gppfun(weraiCropPredGPP, 1, datewanted, titled = FALSE, plotPkg = 'ggplot') + 
+  gppfun(metab_local$predGPP, 1, datewanted, titled = FALSE, plotPkg = 'ggplot') + 
     guides(fill = guide_legend(title.position = 'top')) +
     theme_pub() +
     theme(legend.position = 'bottom', 
           legend.background = element_blank(),
           legend.key.size = unit(0.3, 'cm')),
-  erfun(weraiCropPredER, 1, datewanted, titled = FALSE, plotPkg = 'ggplot') + 
+  erfun(metab_local$predER, 1, datewanted, titled = FALSE, plotPkg = 'ggplot') + 
     guides(fill = guide_legend(title.position = 'top')) +
     theme_pub() +
     theme(legend.position = 'bottom', 
@@ -168,17 +221,17 @@ this into a function?
 
 ```{r}
 # ER
-er_sf <- weraiCropPredER[1,,] %>% 
+er_sf <- metab_local$predER[1,,] %>% 
   st_as_sf() %>% 
   select(all_of(datewanted)) %>%
   rename(ER = 1) %>%
   mutate(logER = log10(1+ER), type = 'estimate')
-er_sfPU <- weraiCropPredER[2,,] %>% 
+er_sfPU <- metab_local$predER[2,,] %>% 
   st_as_sf() %>% 
   select(all_of(datewanted)) %>%
   rename(ER = 1) %>%
   mutate(logER = log10(1+ER), type = 'upper')
-er_sfPL <- weraiCropPredER[3,,] %>% 
+er_sfPL <- metab_local$predER[3,,] %>% 
   st_as_sf() %>% 
   select(all_of(datewanted)) %>%
   rename(ER = 1) %>%
@@ -193,7 +246,7 @@ er_sf_LMU <- bind_rows(er_sf, er_sfPU, er_sfPL) %>%
 erlabel <- 'ER (kg 02/day)\nat max extent'
 
 # Can get away with this because pretty ranges work out OK
-erControl <- ersetup(data = weraiCropPredER, attnum = 1)
+erControl <- ersetup(data = metab_local$predER, attnum = 1)
 
   er_gg_uncertain <- ggplot() +
     geom_sf(data = er_sf_LMU, mapping = aes(fill = logER), color = NA) +
@@ -220,17 +273,17 @@ er_gg_uncertain
 # GPP
 # I'm sure there's a slick way to select all three attributes and do this in one
 # go, but I just need to get this done
-gpp_sf <- weraiCropPredGPP[1,,] %>% 
+gpp_sf <- metab_local$predGPP[1,,] %>% 
   st_as_sf() %>% 
   select(all_of(datewanted)) %>%
   rename(GPP = 1) %>%
   mutate(logGPP = log10(1+GPP), type = 'estimate')
-gpp_sfPU <- weraiCropPredGPP[2,,] %>% 
+gpp_sfPU <- metab_local$predGPP[2,,] %>% 
   st_as_sf() %>% 
   select(all_of(datewanted)) %>%
   rename(GPP = 1) %>%
   mutate(logGPP = log10(1+GPP), type = 'upper')
-gpp_sfPL <- weraiCropPredGPP[3,,] %>% 
+gpp_sfPL <- metab_local$predGPP[3,,] %>% 
   st_as_sf() %>% 
   select(all_of(datewanted)) %>%
   rename(GPP = 1) %>%
@@ -244,7 +297,7 @@ gpp_sf_LMU <- bind_rows(gpp_sf, gpp_sfPU, gpp_sfPL) %>%
 
 gpplabel <- 'GPP (kg 02/day)\nat max extent'
 
-gppControl <- gppsetup(weraiCropPredGPP, attnum  = 1)
+gppControl <- gppsetup(metab_local$predGPP, attnum  = 1)
 
 gpp_gg_uncertain <- ggplot() +
   geom_sf(data = gpp_sf_LMU, mapping = aes(fill = logGPP), color = NA) +
@@ -309,7 +362,7 @@ all. binding cols is actually safer and works
 
 ```{r}
 # Get the inundation to glue on too
-inun_sf <- weraiCropInun[1,,] %>% 
+inun_sf <- metab_local$inun_anae[1,,] %>% 
   st_as_sf() %>% 
   select(all_of(datewanted)) %>%
   rename(inun = 1) %>%
@@ -716,7 +769,7 @@ This is all done in the metabPlotSetup_Local.
 
 # I THINK I SHOULD BE ABLE TO SKIP THIS and use the functions. BUT not time right now to switch
 # GPP
-gppYear_sf <- gppannual %>% 
+gppYear_sf <- metab_local$gppannual %>% 
   st_as_sf() %>% 
   pivot_longer(cols = -geometry, names_to = 'WaterYear', values_to = 'GPP') %>%
   mutate(logGPP =  log10(1+GPP)) %>%
@@ -727,7 +780,7 @@ max(gppYear_sf$logGPP) # is within
 gppControl$gppbreaks
 
 # ER
-erYear_sf <- erannual %>% 
+erYear_sf <- metab_local$erannual %>% 
   st_as_sf() %>% 
   pivot_longer(cols = -geometry, names_to = 'WaterYear', values_to = 'ER') %>%
   mutate(logER =  log10(1+ER)) %>%
@@ -739,16 +792,16 @@ max(erYear_sf$logER) # is within
 erControl$erbreaks
 
 # Temp
-tempYear_sf <- tempannual %>% 
+tempYear_sf <- metab_local$tempannual %>% 
   st_as_sf() %>% 
-  pivot_longer(cols = -geometry, names_to = 'WaterYear', values_to = names(tempannual)) %>%
+  pivot_longer(cols = -geometry, names_to = 'WaterYear', values_to = names(metab_local$tempannual)) %>%
   st_as_sf() # REALLY???
 
 
 # Inundation
-inunYear_sf <- inunannual %>% 
+inunYear_sf <- metab_local$inunannual %>% 
   st_as_sf() %>% 
-  pivot_longer(cols = -geometry, names_to = 'WaterYear', values_to = names(inunannual)) %>%
+  pivot_longer(cols = -geometry, names_to = 'WaterYear', values_to = names(metab_local$inunannual)) %>%
   mutate(logInun =  log10(1+volumeML)) %>%
   st_as_sf() # REALLY???
 
@@ -760,22 +813,23 @@ across space is fine.
 ```{r}
 # aggregate to werai
 # temp area-weighted
-areas <- tempannual %>%
+areas <- metab_local$tempannual %>%
   st_geometry() %>%
   st_area() %>%
   as.numeric()
-tempW <- catchAgg <- catchAggW(strict = tempannual, strictWeights = areas,
-                               FUN = mean, summaryPoly = ramsarW1)
+
+tempW <- catchAggW(strict = metab_local$tempannual, strictWeights = areas,
+                               FUN = mean, summaryPoly = werai_one)
   # sum across space
-inunW <- aggregate(inunannual, 
-                      by = ramsarW1, 
+inunW <- aggregate(metab_local$inunannual, 
+                      by = werai_one, 
                       FUN = sum, na.rm = TRUE)
 
-gppW <- aggregate(gppannual, 
-                   by = ramsarW1, 
+gppW <- aggregate(metab_local$gppannual, 
+                   by = werai_one, 
                    FUN = sum, na.rm = TRUE)
-erW <- aggregate(erannual, 
-                   by = ramsarW1, 
+erW <- aggregate(metab_local$erannual, 
+                   by = werai_one, 
                    FUN = sum, na.rm = TRUE)
 
 ```
@@ -801,7 +855,7 @@ tmap_mode('plot')
 
 gppyrlabel <- 'Yearly GPP maximum\n(kg 02)'
 
-  gppAnnual_tm <- gppYear_sf %>%
+  metab_local$gppannual_tm <- gppYear_sf %>%
     filter(WaterYear != '2014-06-29') %>% # because a 5-panel is ugly
     tm_shape() +
     tm_fill(col = 'logGPP',
@@ -810,7 +864,7 @@ gppyrlabel <- 'Yearly GPP maximum\n(kg 02)'
             labels = gppControl$gpplabels,
             title = gppyrlabel) + 
     tm_facets(by = 'WaterYear')
-  gppAnnual_tm
+  metab_local$gppannual_tm
 ```
 
 #### ER
@@ -818,7 +872,7 @@ gppyrlabel <- 'Yearly GPP maximum\n(kg 02)'
 ```{r}
 eryrlabel <- 'Yearly ER maximum\n(kg 02)'
   
-  erAnnual_tm <- erYear_sf %>%
+  metab_local$erannual_tm <- erYear_sf %>%
     filter(WaterYear != '2014-06-29') %>% # because a 5-panel is ugly
     tm_shape() +
     tm_fill(col = 'logER',
@@ -827,7 +881,7 @@ eryrlabel <- 'Yearly ER maximum\n(kg 02)'
             labels = erControl$erlabels,
             title = eryrlabel) + 
     tm_facets(by = 'WaterYear')
-  erAnnual_tm
+  metab_local$erannual_tm
 ```
 
 ### GGPLOT
@@ -835,7 +889,7 @@ eryrlabel <- 'Yearly ER maximum\n(kg 02)'
 #### gpp
 
 ```{r}
-gppAnnual_gg <- gppYear_sf %>%
+metab_local$gppannual_gg <- gppYear_sf %>%
     filter(WaterYear != '2014-06-29') %>% # because a 5-panel is ugly
     ggplot() +
     geom_sf(mapping = aes(fill = logGPP), color = NA) +
@@ -848,13 +902,13 @@ gppAnnual_gg <- gppYear_sf %>%
                       guide = 'legend',
                       name = gppyrlabel) +
     facet_wrap(vars(WaterYear))
-  gppAnnual_gg
+  metab_local$gppannual_gg
 ```
 
 #### ER
 
 ```{r}
-erAnnual_gg <- erYear_sf %>%
+metab_local$erannual_gg <- erYear_sf %>%
     filter(WaterYear != '2014-06-29') %>% # because a 5-panel is ugly
     ggplot() +
     geom_sf(mapping = aes(fill = logER), color = NA) +
@@ -867,7 +921,7 @@ erAnnual_gg <- erYear_sf %>%
                       guide = 'legend',
                       name = eryrlabel) +
     facet_wrap(vars(WaterYear))
-  erAnnual_gg
+  metab_local$erannual_gg
 ```
 
 What do the drivers look like for those years?
@@ -877,8 +931,8 @@ What do the drivers look like for those years?
 ```{r}
 tempyrlabel <- 'Yearly mean\ntemp (C)'
 
-tempControl <- tempsetup(data = weraiCropTemp, attnum = 1)
-tempAnnual_gg <- tempYear_sf %>%
+tempControl <- tempsetup(data = metab_local$temp_anae, attnum = 1)
+metab_local$tempannual_gg <- tempYear_sf %>%
     filter(WaterYear != '2014-06-29') %>% # because a 5-panel is ugly
     ggplot() +
     geom_sf(mapping = aes(fill = bimonth_tempC), color = NA) +
@@ -891,7 +945,7 @@ tempAnnual_gg <- tempYear_sf %>%
                       guide = 'legend',
                       name = tempyrlabel) +
     facet_wrap(vars(WaterYear))
- tempAnnual_gg
+ metab_local$tempannual_gg
 ```
 
 #### Inundation
@@ -899,8 +953,8 @@ tempAnnual_gg <- tempYear_sf %>%
 ```{r}
 inunyrlabel <- 'Yearly inundation\nmaximum (ML)'
 
-inunControl <- inunsetup(data = weraiCropInun, attnum = 1)
-inunAnnual_gg <- inunYear_sf %>%
+inunControl <- inunsetup(data = metab_local$inun_anae, attnum = 1)
+metab_local$inunannual_gg <- inunYear_sf %>%
     filter(WaterYear != '2014-06-29') %>% # because a 5-panel is ugly
     ggplot() +
     geom_sf(mapping = aes(fill = volumeML), color = NA) +
@@ -913,13 +967,13 @@ inunAnnual_gg <- inunYear_sf %>%
                       guide = 'legend',
                       name = inunyrlabel) +
     facet_wrap(vars(WaterYear))
- inunAnnual_gg
+ metab_local$inunannual_gg
 ```
 
 Stack 3 years of gpp and ER together for the document
 
 ```{r}
-gppAnnual_gg3 <- gppYear_sf %>%
+metab_local$gppannual_gg3 <- gppYear_sf %>%
     filter(WaterYear != '2014-06-29' & WaterYear != '2018-06-29') %>% # because a 5-panel is ugly
   mutate(WaterYear = str_remove(WaterYear, '-06-29')) %>% # because these are water years, don't clutter up wit months
     ggplot() +
@@ -934,9 +988,9 @@ gppAnnual_gg3 <- gppYear_sf %>%
                       name = gppyrlabel) +
     facet_grid(WaterYear~.) + 
     theme_pub(legend.position = 'bottom')
-  # gppAnnual_gg3 
+  # metab_local$gppannual_gg3 
   
-  erAnnual_gg3 <- erYear_sf %>%
+  metab_local$erannual_gg3 <- erYear_sf %>%
     filter(WaterYear != '2014-06-29' & WaterYear != '2018-06-29') %>% # because a 5-panel is ugly
       mutate(WaterYear = str_remove(WaterYear, '-06-29')) %>% # because these are water years, don't clutter up wit months
     ggplot() +
@@ -951,15 +1005,15 @@ gppAnnual_gg3 <- gppYear_sf %>%
                       name = eryrlabel) +
     facet_grid(WaterYear~.) + 
     theme_pub(legend.position = 'bottom')
-  # erAnnual_gg3
+  # metab_local$erannual_gg3
 
-  annualGPPER <- ggpubr::ggarrange(gppAnnual_gg3 + 
+  annualGPPER <- ggpubr::ggarrange(metab_local$gppannual_gg3 + 
                                      guides(fill = guide_legend(title.position = 'top')) +
                                      theme_pub() +
                                      theme(legend.position = 'bottom', 
                                            legend.background = element_blank(),
                                            legend.key.size = unit(0.3, 'cm')), 
-                    erAnnual_gg3 + 
+                    metab_local$erannual_gg3 + 
                       guides(fill = guide_legend(title.position = 'top')) +
                       theme_pub() +
                       theme(legend.position = 'bottom', 
@@ -990,7 +1044,7 @@ Print out the ggplots for the doc
 Same, but for the drivers (to go in appendix, probably)
 
 ```{r}
-tempAnnual_gg3 <- tempYear_sf %>%
+metab_local$tempannual_gg3 <- tempYear_sf %>%
     filter(WaterYear != '2014-06-29' & WaterYear != '2018-06-29') %>% # because a 5-panel is ugly
   mutate(WaterYear = str_remove(WaterYear, '-06-29')) %>% # because these are water years, don't clutter up wit months
     ggplot() +
@@ -1006,7 +1060,7 @@ tempAnnual_gg3 <- tempYear_sf %>%
     facet_grid(WaterYear~.) + 
     theme_pub(legend.position = 'bottom')
 
-  inunAnnual_gg3 <- inunYear_sf %>%
+  metab_local$inunannual_gg3 <- inunYear_sf %>%
     filter(WaterYear != '2014-06-29' & WaterYear != '2018-06-29') %>% # because a 5-panel is ugly
   mutate(WaterYear = str_remove(WaterYear, '-06-29')) %>% # because these are water years, don't clutter up wit months
     ggplot() +
@@ -1023,13 +1077,13 @@ tempAnnual_gg3 <- tempYear_sf %>%
     theme_pub(legend.position = 'bottom')
   
   
-  annualTI <- ggpubr::ggarrange(tempAnnual_gg3 + 
+  annualTI <- ggpubr::ggarrange(metab_local$tempannual_gg3 + 
                                      guides(fill = guide_legend(title.position = 'top')) +
                                      theme_pub() +
                                      theme(legend.position = 'bottom', 
                                            legend.background = element_blank(),
                                            legend.key.size = unit(0.3, 'cm')), 
-                    inunAnnual_gg3 + 
+                    metab_local$inunannual_gg3 + 
                       guides(fill = guide_legend(title.position = 'top')) +
                       theme_pub() +
                       theme(legend.position = 'bottom', 
@@ -1070,8 +1124,8 @@ xxxYear_sf created in this rmd.The way I do it for the basin is better,
 but do I have the memory to do it that way here, or will I need to
 delete all the Years_sf objects and change how all that is done?
 
-Well, wait. I already have erannual and gppannual and inunannual and
-tempannual here as stars. so I think I don't need to go wholly remake
+Well, wait. I already have metab_local$erannual and metab_local$gppannual and metab_local$inunannual and
+metab_local$tempannual here as stars. so I think I don't need to go wholly remake
 things. Instead, how do I get to those (and why didn't I use them
 above???- I then go make the sfs with them, but that's what gets made
 inside the plotting functions, so not sure why I needed them.
@@ -1080,23 +1134,23 @@ inside the plotting functions, so not sure why I needed them.
 years are so different*
 
 ```{r}
-yrwanted <- '2016-06-29'
+yrwanted <- '2016-06-30'
 
 # Sort out the scales
-yrdex <- which(st_get_dimension_values(tempannual, which = 'time') == yrwanted)
+yrdex <- which(st_get_dimension_values(metab_local$tempannual, which = 'time') == yrwanted)
 
-tempannual[,,yrdex]
-climannual[,,yrdex]
+metab_local$tempannual[,,yrdex]
+metab_local$climannual[,,yrdex]
 
-inunannual[,,yrdex]
-inun10pannual[,,yrdex]
+metab_local$inunannual[,,yrdex]
+metab_local$inun10pannual[,,yrdex]
 
 # Need to capture the endmembers
-gppannual[1,,yrdex]
-gppannual10p_clim[,,yrdex]
+metab_local$gppannual[1,,yrdex]
+metab_local$gppannual_10p_clim[,,yrdex]
 
-erannual[1,,yrdex]
-erannual10p_clim[,,yrdex]
+metab_local$erannual[1,,yrdex]
+metab_local$erannual_10p_clim[,,yrdex]
 
 # This is hacky, but I'm going to just force those
 
@@ -1119,7 +1173,7 @@ ermax <- 5500
 
 ```{r}
 
-gppBase <- gppfun(gppannual, 1, 
+gppBase <- gppfun(metab_local$gppannual, 1, 
                  datewanted = yrwanted,
                  # units = 'tonnes', 
                  plotPkg = 'ggplot', 
@@ -1134,7 +1188,7 @@ gppBase <- gppfun(gppannual, 1,
 
 # gppBase
 
-gppClim <- gppfun(gppannual_clim, 1, 
+gppClim <- gppfun(metab_local$gppannual_clim, 1, 
                  datewanted = yrwanted,
                  # units = 'tonnes', 
                  plotPkg = 'ggplot', 
@@ -1149,7 +1203,7 @@ gppClim <- gppfun(gppannual_clim, 1,
 
 # gppClim
 
-gpp10p <- gppfun(gppannual10p, 1, 
+gpp10p <- gppfun(metab_local$gppannual_10p, 1, 
                  datewanted = yrwanted,
                  # units = 'tonnes', 
                  plotPkg = 'ggplot', 
@@ -1164,7 +1218,7 @@ gpp10p <- gppfun(gppannual10p, 1,
 
 # gpp10p
 
-gpp10p_clim <- gppfun(gppannual10p_clim, 1, 
+gpp10p_clim <- gppfun(metab_local$gppannual_10p_clim, 1, 
                  datewanted = yrwanted,
                  # units = 'tonnes', 
                  plotPkg = 'ggplot', 
@@ -1183,7 +1237,7 @@ gpp10p_clim <- gppfun(gppannual10p_clim, 1,
 ### ER
 
 ```{r}
-erBase <- erfun(erannual, 1, 
+erBase <- erfun(metab_local$erannual, 1, 
                  datewanted = yrwanted,
                  # units = 'tonnes', 
                  plotPkg = 'ggplot', 
@@ -1198,7 +1252,7 @@ erBase <- erfun(erannual, 1,
 
 # erBase
 
-erClim <- erfun(erannual_clim, 1, 
+erClim <- erfun(metab_local$erannual_clim, 1, 
                  datewanted = yrwanted,
                  # units = 'tonnes', 
                  plotPkg = 'ggplot', 
@@ -1213,7 +1267,7 @@ erClim <- erfun(erannual_clim, 1,
 
 # erClim
 
-er10p <- erfun(erannual10p, 1, 
+er10p <- erfun(metab_local$erannual_10p, 1, 
                  datewanted = yrwanted,
                  # units = 'tonnes', 
                  plotPkg = 'ggplot', 
@@ -1228,7 +1282,7 @@ er10p <- erfun(erannual10p, 1,
 
 # er10p
 
-er10p_clim <- erfun(erannual10p_clim, 1, 
+er10p_clim <- erfun(metab_local$erannual_10p_clim, 1, 
                  datewanted = yrwanted,
                  # units = 'tonnes', 
                  plotPkg = 'ggplot', 
@@ -1248,7 +1302,7 @@ er10p_clim <- erfun(erannual10p_clim, 1,
 
 ```{r}
 
-tempyr <- tempfun(tempannual, 1, 
+tempyr <- tempfun(metab_local$tempannual, 1, 
                  datewanted = yrwanted,
                  # units = 'tonnes', 
                  plotPkg = 'ggplot', 
@@ -1262,7 +1316,7 @@ tempyr <- tempfun(tempannual, 1,
 
 # tempyr
 
-climyr <- tempfun(climannual, 1, 
+climyr <- tempfun(metab_local$climannual, 1, 
                  datewanted = yrwanted,
                  # units = 'tonnes', 
                  plotPkg = 'ggplot', 
@@ -1276,7 +1330,7 @@ climyr <- tempfun(climannual, 1,
 
 # climyr
 
-inunyr <- inunfun(inunannual, 1, 
+inunyr <- inunfun(metab_local$inunannual, 1, 
                  datewanted = yrwanted,
                  # units = 'tonnes', 
                  plotPkg = 'ggplot', 
@@ -1291,7 +1345,7 @@ inunyr <- inunfun(inunannual, 1,
 
 # inunyr
 
-inun10pyr <- inunfun(inun10pannual, 1, 
+inun10pyr <- inunfun(metab_local$inun10pannual, 1, 
                  datewanted = yrwanted,
                  # units = 'tonnes', 
                  plotPkg = 'ggplot', 
@@ -1379,8 +1433,8 @@ Where to clip? Just hunt around with the indices, I think.
 
 ```{r}
 ggplot() +
-  geom_stars(data = gppannual[1,,1], mapping = aes(fill = predicted_GPP_kg02perday_at_max_inun)) +
-  geom_stars(data = gppannual[1,600:700,1], fill = 'white')
+  geom_stars(data = metab_local$gppannual[1,,1], mapping = aes(fill = predicted_GPP_kg02perday_at_max_inun)) +
+  geom_stars(data = metab_local$gppannual[1,600:700,1], fill = 'white')
 ```
 
 Create the clipped data- we'll need this for setting consistent min and
@@ -1391,11 +1445,11 @@ I can't get anything to show up using the raw data. use the difference?
 ```{r}
 clipset <- 1:1163
 
-gppannclip <- gppannual[1, clipset, ]
-gppannclip_clim <- gppannual_clim[1, clipset, ]
+gppannclip <- metab_local$gppannual[1, clipset, ]
+gppannclip_clim <- metab_local$gppannual_clim[1, clipset, ]
 
-gppannclip10p <- gppannual10p[1, clipset, ]
-gppannclip10p_clim <- gppannual10p_clim[1, clipset, ]
+gppannclip10p <- metab_local$gppannual_10p[1, clipset, ]
+gppannclip10p_clim <- metab_local$gppannual_10p_clim[1, clipset, ]
 
 refclip <- gppannclip[[1]]
 gppannclip[[1]] <- gppannclip[[1]] - refclip
@@ -1485,14 +1539,14 @@ Do I want to clip them as well, or just do the zoom?
 Try clipping first. I think I probably do need to adjust inundation to.
 
 ```{r}
-tempclip <- tempannual[1,clipset, ]
-climclip <- climannual[1, clipset, ]
+tempclip <- metab_local$tempannual[1,clipset, ]
+climclip <- metab_local$climannual[1, clipset, ]
 
-inunclip <- inunannual[1,clipset, ]
+inunclip <- metab_local$inunannual[1,clipset, ]
 refinun <- inunclip
 inunclip <- inunclip - refinun
 
-inun10pclip <- inun10pannual[1,clipset,]
+inun10pclip <- metab_local$inun10pannual[1,clipset,]
 inun10pclip <- inun10pclip - refinun
 
 inmin <- min(inunclip[1,,whichyr]$volumeML)
