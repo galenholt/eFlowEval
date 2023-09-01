@@ -145,7 +145,7 @@ lippia_prop + pubtheme + theme(legend.position = 'bottom')
 Centipeda
 
 ```{r}
-centipeda <- local_veg_plot(veg_local$centipedadf, datewanted, plotPkg = 'ggplot')
+centipeda_prop <- local_veg_plot(veg_local$centipedadf, datewanted, plotPkg = 'ggplot')
 
 centipeda_prop + pubtheme + theme(legend.position = 'bottom')
 ```
@@ -183,10 +183,17 @@ lippia_prop_yr + pubtheme
 ```{r}
 centipeda_prop_yr <- local_veg_plot(veg_local$centipedayrdf, 
                                  datewanted = unique(veg_local$centipedayrdf$date),
-                                 plotPkg = 'ggplot')
+                                 plotPkg = 'ggplot', titled = FALSE)
 
 
-centipeda_prop_yr+ pubtheme
+centipeda_prop_yr + pubtheme
+
+ggsave(file.path(scriptOut, 'centipeda_yr.pdf'),
+       plot = centipeda_prop_yr + pubtheme,
+       width = 16, height = 16, units = 'cm')
+ggsave(file.path(scriptOut, 'centipeda_yr.png'),
+       plot = centipeda_prop_yr + pubtheme,
+       width = 16, height = 16, units = 'cm')
 ```
 
 And the tmap versions
