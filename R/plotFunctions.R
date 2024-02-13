@@ -656,7 +656,7 @@ allfun <- function(tempObj, tempAtt = 1,
 
 # Local Veg Functions -----------------------------------------------------
 
-local_veg_plot <- function(vegsf, datewanted, plotPkg,
+local_veg_plot <- function(vegsf, datewanted, plotPkg, colorchoice = NA,
                            titled = TRUE, titlePrefix = NULL, titleSuffix = NULL) {
   
   # Title prefix and suffix lets us add bits around the date
@@ -670,7 +670,7 @@ local_veg_plot <- function(vegsf, datewanted, plotPkg,
   if (plotPkg == 'ggplot') {
     vegplot <- vegsf %>% 
       ggplot() +
-      geom_sf(mapping = aes(fill = prop_passing)) +
+      geom_sf(mapping = aes(fill = prop_passing), color = colorchoice) +
       scale_fill_continuous_sequential(palette = 'YlGnBu', limits = c(0,1)) + 
       labs(fill = 'Proportion\nwetland area\nsuccessful') +
       theme(legend.position = 'bottom')

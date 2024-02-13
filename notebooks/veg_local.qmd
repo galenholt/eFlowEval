@@ -3,6 +3,10 @@ title: "Veg Local"
 author: "Galen Holt"
 format: html
 editor: visual
+
+params:
+  # "Great Cumbungi Swamp"
+  ramsar: "Werai Forest" 
 ---
 
 ```{r}
@@ -33,21 +37,22 @@ ramsarpath <- file.path(datOut, 'WetlandBoundaries', 'ramsarMDB.rdata')
  # having to remember the name. save/readRDS would fix this.
 ramsarMDB <- load_rename(ramsarpath, returnOne = 'ramsarMDB')
 
-cumbung_one <- filter(ramsarMDB, WNAME == 'Great Cumbungi Swamp') %>% 
+single_ramsar_poly <- filter(ramsarMDB, WNAME == params$ramsar) %>% 
   summarise()
 
 ```
 
 ```{r}
 # where are we going to want to save?
-scriptOut <- file.path('strictOut', 'veg', 'local', 'cumbung')
+scriptOut <- file.path('strictOut', 'veg', 'local', 
+                       stringr::str_replace_all(params$ramsar, ' ', '_'))
 if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
 ```
 
 Prep the data
 
 ```{r}
-veg_local <- setup_local_veg(sub_poly = cumbung_one, catchment = 'auto')
+veg_local <- setup_local_veg(sub_poly = single_ramsar_poly, catchment = 'auto')
 
 ```
 
@@ -194,6 +199,29 @@ ggsave(file.path(scriptOut, 'centipeda_yr.pdf'),
 ggsave(file.path(scriptOut, 'centipeda_yr.png'),
        plot = centipeda_prop_yr + pubtheme,
        width = 16, height = 16, units = 'cm')
+```
+
+save the one that looks interesting
+
+```{r}
+centipeda_prop_yr16 <- local_veg_plot(veg_local$centipedayrdf, 
+                                    datewanted = "2016-06-29",
+                                    plotPkg = 'ggplot', titled = FALSE) +
+  pubtheme + 
+  theme(legend.position = 'bottom')
+
+centipeda_prop_yr16
+# ggsave(file.path(scriptOut, 'centipeda_yr16.pdf'),
+#        plot = centipeda_prop_yr16,
+#        width = 16, height = 6, units = 'cm')
+```
+
+```{r}
+ggsave(file.path(scriptOut, 'centipeda_yr16.png'),
+       plot = centipeda_prop_yr16 + 
+         scale_x_continuous(breaks = c(144.1, 144.5)) + 
+         scale_y_continuous(breaks = c(-35.20, -35.40)),
+       width = 16, height = 6, units = 'cm')
 ```
 
 And the tmap versions

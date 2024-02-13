@@ -7,9 +7,11 @@
 #    http://shiny.rstudio.com/
 #
 
+library(tidyverse)
 library(shiny)
 library(sf)
-library(dplyr)
+library(stars)
+
 # Shiny sets the wd to the app directory
 setwd(here::here())
 
