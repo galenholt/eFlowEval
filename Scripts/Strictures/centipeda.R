@@ -17,7 +17,7 @@ centipedastricts <- function(catchment,
   soilTemp_path <- file.path(datOut, 'Tempprocessed', 'weightedMean',
                              paste0(catchment, '_weightedMean.rdata'))
   
-  # Brind in the index file too- it's useful to make sure everything lines up
+  # Bring in the index file too- it's useful to make sure everything lines up
   soilTemp <- load_rename(filepath = soilTemp_path, 
                           knownnames = soilTemp_names,
                           newnames = c('aggdata', 'indices'))

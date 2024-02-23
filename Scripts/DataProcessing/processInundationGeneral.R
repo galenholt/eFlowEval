@@ -4,20 +4,6 @@
 # wrap the script to run locally. Sort out a cleaner way to do this
 # source('directorySet.R')
 
-# Let's get libraries here, then sort out git then sort out making this a library so we don't have to deal with all the library crap
-# library(sp)
-# library(rgeos)
-# library(here)
-# library(tidyverse)
-# library(sf)
-# # library(RNetCDF) # Probably not, raster can handle geographic netCDF
-# # library(raster) # maybe?
-# library(stars)
-# library(foreach)
-# library(doFuture)
-
-#  # Shouldn't be needed anymore
-
 # Set up parallel backend
 # registerDoFuture()
 # plan(multicore) # multicore on HPC
@@ -41,7 +27,7 @@
 # args <- c('blah', 'b', 'c', 'g', '5', 't', 'a', '96', 'Broken')
 
 # ## The outerchunks need to start outer and go in, ie '8', '6' is the 6th subchunk of the 8th main chunk
-# Need to handle the edge case wehre there aren't enough polys to do the array we're asking for
+# Need to handle the edge case where there aren't enough polys to do the array we're asking for
 
 processInundationGeneral <- function(datOut, args) {
   # Make a sub-directory for the subchunk

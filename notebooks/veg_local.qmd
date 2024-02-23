@@ -22,7 +22,7 @@ library(colorspace)
 # library(foreach)
 ```
 
-Comment out the function while i build it
+Source in needed functions
 
 ```{r}
 source('directorySet.R')

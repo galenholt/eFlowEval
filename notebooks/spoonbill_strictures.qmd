@@ -1,0 +1,41 @@
+---
+title: "spoonbill_strictures"
+author: "Ash Macqueen"
+format: html
+editor: visual
+---
+
+## Run spoonbill strictures
+
+```{r}
+library(Rcpp)
+library(RcppRoll)
+library(stars)
+library(sf)
+library(tidyverse)
+```
+
+Set directories and read-in function.
+
+```{r}
+source('directorySet.R')
+source(file.path('Scripts', 'Strictures', 'RoyalSpoonbill.R'))
+
+# parallel isn't needed
+# registerDoFuture()
+
+# plan(multisession)
+```
+
+## Check what needs to happen
+
+The examples in the paper are only for the Edward Wakool, so just run that.
+
+```{r}
+
+spoontime <- spoonbillstricts(catchment = 'EdwardWakool')
+```
+
+```{r}
+spoontime
+```
