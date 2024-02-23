@@ -6,6 +6,8 @@ source('directorySet.R')
 # This seems to require that wetlandBoundaries.R and RoyalSpoonbill.R get run first. 
 # We need to actually save the needed outputs from those and read them in.
 
+# This is superseded by notebooks/spoonbill_plots.qmd
+
 # Let's get libraries here
 library(here)
 library(tidyverse)

@@ -1,46 +1,12 @@
 # Royal Spoonbill Strictures.
 
-# Header from the temperature file to retain all the directories,  --------
-# source('directorySet.R')
-
-# Let's get libraries here, then sort out git then sort out making this a
-# library so we don't have to deal with all the library crap
-
-
-# library(Rcpp)
-# library(RcppRoll)
-# library(stars)
-# library(sf)
-# library(tidyverse)
-
 spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   
   start_time <- Sys.time()
-  # # Setup -------------------------------------------------------------------
-  # 
-  # # Make a sub-directory for the subchunk
-  # scriptOut <- file.path(datOut, 'Strictures', 'Spoonbill')
-  # if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
-  # 
-  # # chunksize in n anae polygons
-  # chunksize <- 1000
-  # 
-  # # I htink rather than a slurm array, pass a catchment name?
-  # # could do either, really. Sort out arg orders.
-  # # arraynum <- as.numeric(args[8])
-  # # Going to be easiest I think to base on names rather than arraynums and name indices.
-  # thisCatch <-  "EdwardWakool" #'Avoca' #args[7] # 'Murrumbidgee' # For testing- needs to be grabbed from catchNames in a loop
-  # 
-  # print(thisCatch)
-  # # stop('testing end here to make sure passing catchment name')
-  # 
-  # 
-  # # preliminaries --------------------------------------------------
-  # 
+  
   # Read in data ------------------------------------------------------------
   
   # read in Ramsar boundaries
-  # load(file.path(scriptOut, "ramsarMDB.rdata"))
   load(file.path(datOut, 'WetlandBoundaries', "ramsarBoundsMDB.rdata"))
   
   # load the ltim valleys
@@ -51,10 +17,6 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
     filter(stringr::str_remove_all(ValleyName, ' ') == catchment)
   
   ramsarBoundCatchment <- st_intersection(ramsarBoundsMDB, catchpoly)
-  
-  
-  # ramsarBoundsMDB <- sf::st_as_sf(ramsarBoundsMDB)
-  # ramsarBoundsMDB <- st_transform(ramsarBoundsMDB, whichcrs)
   
   # ANAE 'preferences' ranked from most to least times observed
   # McGinness, Langston and Brooks (2020) VEWH Prioritisation Project: Stage 2 Final Report
@@ -100,29 +62,6 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
     st_transform(st_crs(breedArea$aggdata)) %>% 
     st_make_valid()
   # 
-  # # Need to wrap this over catchments
-  # depthInBreed <- file.path(datOut, 'Inundationprocessed', 'areaSpoonbillBreed')
-  # depthInForage <- file.path(datOut, 'Inundationprocessed', 'areaSpoonbillForage')
-  # catchNames <- list.files(file.path(depthInBreed))# Get the catchment names from the folders
-  # # catchNames <- sub("\\_.x", "", catchNames)
-  # catchNames <- substr(catchNames, 1,regexpr("\\_", catchNames)-1 )
-  # 
-  # catchBreedFiles <- list.files(depthInBreed, pattern = '.rdata')
-  # catchForageFiles <- list.files(depthInForage, pattern = '.rdata')
-  # 
-  # 
-  # 
-  # load(file = file.path(depthInBreed, catchBreedFiles[grepl(thisCatch, catchBreedFiles)])) 
-  # # whichcrs <- st_crs(EdwardWakool_areaSpoonbillBreed) #GDA94  EPSG:3577
-  # load(file = file.path(depthInForage, catchForageFiles[grepl(thisCatch, catchForageFiles)]))
-  # 
-  # load ANAE for ANAE code matching on veg type for depth stars 
-  # anae 
-  
-  # load(file.path(datOut, 'ANAEprocessed', paste0(thisCatch,  'ANAE.rdata'))) #GDA94   4283 
-  # # load("C:/Users/amacq/Source/datOut/ANAEprocessed/EdwardWakoolANAE.rdata")
-  # EdwardWakoolANAE <- st_transform(EdwardWakoolANAE, 3577)
-  
   
   # Line everything up ------------------------------------------------------
   
@@ -204,20 +143,6 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   
   # Identidy TRUE/FALSE which polys have breed habitat
   breedANAE <-(anaes$ANAE_CODE %in% breedANAEcodes$ANAE_CODE) #class logical i.e. no index, geometry
-  # breedANAEind <- which(anaes$ANAE_CODE %in% breedANAEcodes$ANAE_CODE)
-  
-  
-  # # check and match index of depth stars to anaes
-  # EdwardWakool_areaSpoonbillBreed <-  matchStarsIndex(index1 = anaes, stars1 = NULL, index2 = EdwardWakool_areaSpoonbillBreed_index, 
-  #                                                     stars2 = EdwardWakool_areaSpoonbillBreed, testfinal = FALSE)
-  # # unpack list
-  # breedDepth_index <- EdwardWakool_areaSpoonbillBreed[[1]]  # TODO this needs to be made generic
-  # breedDepth <- EdwardWakool_areaSpoonbillBreed[[2]]
-  # names(breedDepth) <- "Area"
-  
-  # double-check index match 
-  # sum(breedDepth_index$UID==anaes$UID)
-  # length(anaes$UID)
   
   # turn non-breeding-suitable polys to zero, other values still areas
   breedANAEstrict <- breedArea$aggdata*breedANAE
@@ -229,9 +154,6 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
                             (st_buffer(ramsarBoundsMDB,250))) %>% lengths > 0
   
   ramsarStrict <- breedANAEstrict*ramsarTF
-  
-  # dim(breedANAEstrict) - dim(ramsarStrict) # 0 
-  # constraining to ramsar makes no difference for EdwardWakool
   
   # polygons wet for three consecutive bimonths in breeding season. 
   # Test by summing the three and checking it equals 3.
@@ -271,8 +193,6 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   breedStrict <- breedStrict*seasonStrict #max area of inundation across 3 bimos in the breeding season 
   
   # sum area up to wetland complex scale
-  # sumna <- function(x){sum(x, na.rm = TRUE)}
-  
   breedAreaByWetland <- aggregate(breedStrict, ramsarBoundCatchment, sumna)
   
   
@@ -282,8 +202,6 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   # calculate historical max area of passing breeding strictures
   
   by_t <- dim(breedAreaByWetland)["time"]*2 #number of months in dataset
-  # maxWetlandBreedArea <- aggregate(breedAreaByWetland, by = paste(by_t,"months"), max, na.rm = TRUE ) %>%
-  #   aperm(c('geometry', 'time'))
   maxWetlandBreedArea <- tempaggregate(breedAreaByWetland, 
                        by_t = paste(by_t,"months"), 
                        FUN = maxna, dates_end_interval = TRUE) %>% 
@@ -297,38 +215,14 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
     areaPC*matrix(rep(maxWetlandBreedArea[[1]], 
                       dim(breedAreaByWetland)[2]), 
                   ncol = dim(breedAreaByWetland)[2])
-  
-  # numBreedEvents <- st_as_sf(breedAreaStricture)
-  # numBreedEvents <- numBreedEvents %>% st_drop_geometry()
-  # numBreedEvents <- numBreedEvents %>% pivot_longer(names_to = "Date", values_to = "Breed", cols = everything())
-  # numBreedEvents <- numBreedEvents %>%  group_by(Date)%>% summarise(NumBreed = sum(Breed)) %>% ungroup()
-  # 
-  
+
   # --- foraging ----
   
   # Identify TRUE/FALSE which polys have breed habitat
   forageANAE <-(anaes$ANAE_CODE %in% forageANAEcodes$ANAE_CODE) #class logical i.e. no index, geometry
-  # forageANAEind <- which(anaes$ANAE_CODE %in% forageANAEcodes$ANAE_CODE)
-  
-  
-  # # check and match index of depth stars to anaes
-  # EdwardWakool_areaSpoonbillForage <-  
-  #   matchStarsIndex(index1 = anaes, stars1 = NULL, index2 = EdwardWakool_areaSpoonbillForage_index, 
-  #                   stars2 = EdwardWakool_areaSpoonbillForage, testfinal = FALSE)
-  # # unpack list
-  # forageDepth_index <- EdwardWakool_areaSpoonbillForage[[1]]  # TODO this needs to be made generic
-  # forageDepth <- EdwardWakool_areaSpoonbillForage[[2]]
-  # names(forageDepth) <- "Area"
-  # 
-  # # double-check index match 
-  # sum(forageDepth_index$UID==anaes$UID)
-  # length(anaes$UID)
   
   # turn non-foraging-suitable polys to zero, other values still areas
   forageANAEstrict <- forageArea$aggdata*forageANAE
-  
-  # sum(forageANAEstrict$Area) == sum(forageDepth$Area) #T: no reduction in areas??
-  
   
   # aggregate into ramsarbounds
   
@@ -339,25 +233,10 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   
   
   forageAreaBuffer <- aggregate(forageANAEstrict, buffer_ramsar, sumna)
-  
-  # check it worked right
-  # diffarea <- forageAreaBuffer[[1]]-forageAreaByWetland[[1]]
-  # sum(diffarea[[1]] < 0)
-  # diffarea[[1]][diffarea[[1]] < 0]
   # 
   # put Area from buffered area into original geometry
   forageAreaByWetlandBuffer <- forageAreaByWetland
   forageAreaByWetlandBuffer[[1]] <- forageAreaBuffer[[1]]
-  # 
-  
-  # diffarea <- forageAreaByWetlandBuffer[[1]]-forageAreaByWetland[[1]]
-  # sum(diffarea[[1]] < 0)
-  # diffarea[[1]][diffarea[[1]] < 0]
-  
-  # 
-  # forageAreaBufferPlot <- aggregate(forageAreaBufferPlot, "year", sum, na.rm = TRUE)
-  # # for some reason this changes the order of dimensions 
-  # forageAreaBufferPlot <- aperm(forageAreaBufferPlot, c(2,1))
   
   # calculate historical max area of inundation matching foraging habitat
   
@@ -368,9 +247,6 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
                                       FUN = maxna, dates_end_interval = TRUE) %>% 
     aperm(c('geometry', 'time'))
   
-  # maxWetlandForageArea <- aggregate(forageAreaByWetland, 
-  #                                   by = paste(by_t,"months"), max, na.rm = TRUE ) %>%
-  #   aperm(c('geometry', 'time'))
   
   # proportion of max forage area (including buffer) as threshold for foraging
   
@@ -381,27 +257,13 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
     forageAreaPC*matrix(rep(maxWetlandForageArea[[1]], 
                             dim(forageAreaByWetland)[2]), 
                         ncol = dim(forageAreaByWetland)[2])
-  # forageAreaStricture[[1]] <- forageAreaByWetland > forageAreaPC*maxWetlandBreedArea
-  # dim(forageAreaStricture)
-  sum(forageAreaStricture$Area) # 1% is 183, 2% is 121
-  # 
-  # dim(breedAreaStricture)
-  # sum(breedAreaStricture$Area, na.rm = T) #56
-  # so seems like forage stricture will remove some breeding opportunities
-  
-  
+
+  # sum(forageAreaStricture$Area) # 1% is 183, 2% is 121
+
   # combine breeding and foraging strictures
   
   forageBreedStricture <- breedAreaStricture*forageAreaStricture
   sum(forageBreedStricture$Area, na.rm = T) #
-  # 
-  # 
-  # ggplot()+
-  #   geom_stars(data = breedAreaStricture[,,194]) # 2 true
-  # 
-  # ggplot()+
-  #   geom_stars(data = forageAreaStricture[,,194]) # all false
-  # 
   
   # Do we really need to save all these?
   spoonbillstricts <- tibble::lst(breedStrict, 
@@ -428,7 +290,7 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   }
   
   if (returnR) {
-    return(lippiastricts)
+    return(spoonbillstricts)
   } else {
     end_time <- Sys.time()
     elapsed <- end_time-start_time
@@ -442,25 +304,6 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   
   
 }
-
-
-# Next steps
-# 
-# • Tidy up code
-# • Make sure main script runs properly.  
-# • Save data tables for use in graphics
-# • Move plotting/testing from wetlandBoundaries
-# 
-# • Turn main script into a function(s)
-#   • Double-check outputs
-# ○ E.g. Ordering of indicies confused?
-#   • Address possible mismatch between forage = bimonthly ,or summed to year and Breed  = march
-# • 5% seems like a low threshold value, maybe max() isn't the right metric.
-# 	• Add functionality for Northern basin i.e. Wider breeding season.
-# 	• Solution for matching wetland names to geometry ramsarLabels in W
-# 	• Analyse breeding data for actual thresholds or sensitivity analysis
-# 	• Check ramsar bounds works for other catchments 
-
 
 
 
