@@ -1,4 +1,4 @@
-# eFlowEval modelling framework repository
+# eFlowEval modeling framework repository
 
 This repository contains the code for the eFlowEval modelling framework. It is built primarily in R, but is not (currently) an R package, and contains some shell scripts to manage running on SLURM HPCs.
 
@@ -8,11 +8,11 @@ To get set up, clone this repository, and use {renv} to establish the package en
 
 The `directorySet.R` script does some setup work to establish standard input and output directories, and make some other configuration changes depending on whether the eFlowEval framework is running on local Windows machines or remote HPCs at the CSIRO. It is likely to need to be edited to use in new environments.
 
-The code structure consists of data processing code for the driver data, located in `/Scripts/DataProcessing`. The data itself is located elsewhere (with locations as set in `directorySet.R`). Sources for original data are provided in Supplementary Material. Because each response model needs different data or processes data in different ways, the scripts in `Scripts/DataProcessing` are bespoke for each model.
+The code structure consists of data processing code for the driver data, located in `/Scripts/DataProcessing`, which are typically functions to process each set of driver data. The data itself is typically large and so located elsewhere (with locations as set in `directorySet.R`). Sources for original data are provided in Supplementary Material. Because each response model needs different data or processes data in different ways, the functions in `Scripts/DataProcessing` are bespoke for each model while using the same fundamental backbone functions and format.
 
 The code will generate a `/datOut` folder, where processed data is saved, with location defined in `directorySet.R`.
 
-Stricture and other response relationships (e.g. metabolism) are defined with scripts and functions in `/Strictures`. The processed responses are then saved to a `/strictOut` directory the code creates.
+Stricture and other response relationships (e.g. metabolism) are defined with scripts and functions in `/Strictures`. Like the dataprocessing, these functions are bespoke, capturing the particular responses of each group to the data while using the same fundamental backbone functions and format.The processed responses are then saved to a `/strictOut` directory the code creates.
 
 Figures and other synthesis of the output are prepared in `/Scripts/plotting`, and organised and produced in Quarto notebooks in `/notebooks`.
 
