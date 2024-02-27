@@ -1,6 +1,18 @@
 # Royal Spoonbill Strictures.
 
-spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
+# # Testing, delete
+# ramsars <- c("Koondrook and Perricoota Forests", "Millewa Forest",  "Werai Forest")
+# ramsarBoundsMDB |> filter(Wetland %in% ramsars) |> ggplot() + geom_sf(aes(fill = Wetland))
+# ramsarBoundEdwa |> filter(Wetland %in% ramsars) |> ggplot() + geom_sf(aes(fill = Wetland))
+# ramcatch <- st_intersection(ltimNoNorth, ramsarBoundsMDB |> filter(Wetland %in% ramsars))
+# ramcatches <- unique(ramcatch$ValleyName)
+# ltimrc <- ltimNoNorth |> filter(ValleyName %in% ramcatches)
+# 
+# ggplot() +
+#   geom_sf(data = ltimrc, aes(color = ValleyName)) +
+#   geom_sf(data = ramsarBoundsMDB |> filter(Wetland %in% ramsars), aes(fill= Wetland))
+
+spoonbillstricts <- function(ramsars, catchments = NULL, savefile = TRUE, returnR = FALSE) {
   
   start_time <- Sys.time()
   
@@ -13,10 +25,21 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   load(file.path(datOut, 'ANAEprocessed', 'ltimNoNorth.rdata'))
   ltimNoNorth <- ltimNoNorth %>% st_transform(st_crs(ramsarBoundsMDB))
   
-  catchpoly <- ltimNoNorth |> 
-    filter(stringr::str_remove_all(ValleyName, ' ') == catchment)
+  # Get the catchments that match the ramsars
+  ramcatch <- st_intersection(ltimNoNorth, ramsarBoundsMDB |> 
+                                filter(Wetland %in% ramsars))
   
-  ramsarBoundCatchment <- st_intersection(ramsarBoundsMDB, catchpoly)
+  if(is.null(catchments)) {
+    catchments <- unique(ramcatch$ValleyName) |> 
+      stringr::str_remove_all(' ')
+  }
+  
+  
+  catchpoly <- ltimNoNorth |> 
+    filter(stringr::str_remove_all(ValleyName, ' ') %in% catchments)
+  
+  ramsarpolys <- ramsarBoundsMDB |> 
+    filter(Wetland %in% ramsars)
   
   # ANAE 'preferences' ranked from most to least times observed
   # McGinness, Langston and Brooks (2020) VEWH Prioritisation Project: Stage 2 Final Report
@@ -32,35 +55,50 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   ## Areas of each ANAE meeting depth stricture
   
   # Breeding
-  breed_names <- c(paste0(catchment, "_areaSpoonbillBreed"),
-                   paste0(catchment, '_areaSpoonbillBreed_index'))
-  
-  breed_path <- file.path(datOut, 'Inundationprocessed', 'areaSpoonbillBreed',
-                         paste0(catchment, '_areaSpoonbillBreed.rdata'))
-  
-  breedArea <- load_rename(filepath = breed_path, 
-                          knownnames = breed_names,
-                          newnames = c('aggdata', 'indices'))
-  
+  # I could save this to a list and then feed it to concat_star_index, but it seems to work to do it inside .combine with a list(...) argument
+  breedArea <- foreach(catch = catchments,
+                       .combine = \(...) concat_star_index(list(...),
+                                                           dimension = 'geometry')) %do% {
+           breed_names <- c(paste0(catch, "_areaSpoonbillBreed"),
+                            paste0(catch, '_areaSpoonbillBreed_index'))
+           
+           breed_path <- file.path(datOut, 'Inundationprocessed', 'areaSpoonbillBreed',
+                                   paste0(catch, '_areaSpoonbillBreed.rdata'))
+           
+           breedAreaeach <- load_rename(filepath = breed_path, 
+                                        knownnames = breed_names,
+                                        newnames = c('aggdata', 'indices'))
+   }
   
   # Foraging
-  forage_names <- c(paste0(catchment, "_areaSpoonbillForage"),
-                   paste0(catchment, '_areaSpoonbillForage_index'))
+  forageArea <- foreach(catch = catchments,
+                        .combine = \(...) concat_star_index(list(...),
+                                                            dimension = 'geometry')) %do% {
+          forage_names <- c(paste0(catch, "_areaSpoonbillForage"),
+                            paste0(catch, '_areaSpoonbillForage_index'))
+          
+          forage_path <- file.path(datOut, 'Inundationprocessed', 'areaSpoonbillForage',
+                                   paste0(catch, '_areaSpoonbillForage.rdata'))
+          
+          forageAreaeach <- load_rename(filepath = forage_path, 
+                                        knownnames = forage_names,
+                                        newnames = c('aggdata', 'indices'))
+  }
   
-  forage_path <- file.path(datOut, 'Inundationprocessed', 'areaSpoonbillForage',
-                          paste0(catchment, '_areaSpoonbillForage.rdata'))
-  
-  forageArea <- load_rename(filepath = forage_path, 
-                           knownnames = forage_names,
-                           newnames = c('aggdata', 'indices'))
   
   # The ANAEs themselves
-  anae_names <- paste0(catchment, 'ANAE')
-  anae_path <- file.path(datOut, 'ANAEprocessed', paste0(catchment, 'ANAE.rdata'))
-  anaes <- load_rename(filepath = anae_path,
-                       returnOne = anae_names) %>% 
-    st_transform(st_crs(breedArea$aggdata)) %>% 
-    st_make_valid()
+  anaes <- foreach(catch = catchments,
+                   .combine = dplyr::bind_rows,
+                   .multicombine = TRUE) %do% {
+                     anae_names <- paste0(catch, 'ANAE')
+                     anae_path <- file.path(datOut, 'ANAEprocessed',
+                                            paste0(catch, 'ANAE.rdata'))
+                     anaes <- load_rename(filepath = anae_path,
+                                          returnOne = anae_names) %>% 
+                       st_transform(st_crs(breedArea$aggdata)) %>% 
+                       st_make_valid()
+                   }
+
   # 
   
   # Line everything up ------------------------------------------------------
@@ -103,15 +141,15 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   
   # Breeding
   breedArea <- matchStarsIndex(index1 = anaes, stars1 = NULL,
-                              index2 = breedArea$indices, stars2 = breedArea$aggdata,
-                              indexcol = c(1, 1), testfinal = FALSE, return1 = TRUE)
+                               index2 = breedArea$indices, stars2 = breedArea$aggdata,
+                               indexcol = c(1, 1), testfinal = FALSE, return1 = TRUE)
   names(breedArea) <- c('indices_anae', 'indices', 'aggdata')
   anaeba <- breedArea$indices_anae
   
   # forage
   forageArea <- matchStarsIndex(index1 = anaes, stars1 = NULL,
-                               index2 = forageArea$indices, stars2 = forageArea$aggdata,
-                               indexcol = c(1, 1), testfinal = FALSE, return1 = TRUE)
+                                index2 = forageArea$indices, stars2 = forageArea$aggdata,
+                                indexcol = c(1, 1), testfinal = FALSE, return1 = TRUE)
   names(forageArea) <- c('indices_anae', 'indices', 'aggdata')
   anaefa <- forageArea$indices_anae
   
@@ -185,15 +223,15 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   breedStrict <- breedArea$aggdata
   
   breedStrict[[1]] <- timeRoll(breedStrict[[1]], 
-                              FUN = RcppRoll::roll_max, 
-                              rolln = 3, 
-                              align = 'right',
-                              na.rm = TRUE)
+                               FUN = RcppRoll::roll_max, 
+                               rolln = 3, 
+                               align = 'right',
+                               na.rm = TRUE)
   
   breedStrict <- breedStrict*seasonStrict #max area of inundation across 3 bimos in the breeding season 
   
   # sum area up to wetland complex scale
-  breedAreaByWetland <- aggregate(breedStrict, ramsarBoundCatchment, sumna)
+  breedAreaByWetland <- aggregate(breedStrict, ramsarpolys, sumna)
   
   
   # test against minimum total area inundated threshold.
@@ -203,8 +241,8 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   
   by_t <- dim(breedAreaByWetland)["time"]*2 #number of months in dataset
   maxWetlandBreedArea <- tempaggregate(breedAreaByWetland, 
-                       by_t = paste(by_t,"months"), 
-                       FUN = maxna, dates_end_interval = TRUE) %>% 
+                                       by_t = paste(by_t,"months"), 
+                                       FUN = maxna, dates_end_interval = TRUE) %>% 
     aperm(c('geometry', 'time'))
   
   areaPC <- 0.7 # proportion of max inundation as threshold for breeding
@@ -215,7 +253,7 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
     areaPC*matrix(rep(maxWetlandBreedArea[[1]], 
                       dim(breedAreaByWetland)[2]), 
                   ncol = dim(breedAreaByWetland)[2])
-
+  
   # --- foraging ----
   
   # Identify TRUE/FALSE which polys have breed habitat
@@ -227,9 +265,9 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   # aggregate into ramsarbounds
   
   # forage area available in each wetland (ramsar) boundary over time
-  forageAreaByWetland <- aggregate(forageANAEstrict, ramsarBoundCatchment, sumna)
+  forageAreaByWetland <- aggregate(forageANAEstrict, ramsarpolys, sumna)
   
-  buffer_ramsar <- st_buffer(ramsarBoundCatchment, 10000)
+  buffer_ramsar <- st_buffer(ramsarpolys, 10000)
   
   
   forageAreaBuffer <- aggregate(forageANAEstrict, buffer_ramsar, sumna)
@@ -241,10 +279,10 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   # calculate historical max area of inundation matching foraging habitat
   
   by_t <- dim(forageAreaByWetland)["time"]*2 #number of months in dataset
-
+  
   maxWetlandForageArea <- tempaggregate(forageAreaByWetlandBuffer, 
-                                      by_t = paste(by_t,"months"), 
-                                      FUN = maxna, dates_end_interval = TRUE) %>% 
+                                        by_t = paste(by_t,"months"), 
+                                        FUN = maxna, dates_end_interval = TRUE) %>% 
     aperm(c('geometry', 'time'))
   
   
@@ -257,9 +295,9 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
     forageAreaPC*matrix(rep(maxWetlandForageArea[[1]], 
                             dim(forageAreaByWetland)[2]), 
                         ncol = dim(forageAreaByWetland)[2])
-
+  
   # sum(forageAreaStricture$Area) # 1% is 183, 2% is 121
-
+  
   # combine breeding and foraging strictures
   
   forageBreedStricture <- breedAreaStricture*forageAreaStricture
@@ -279,6 +317,11 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
   
   
   # save and return
+  # Name according to ramsar
+  ramnames <- ramsars |> 
+    stringr::str_remove_all(' ') |> 
+    paste0('_', collapse = '_')
+  
   if (savefile) {
     if (!dir.exists(file.path(datOut, 'Strictures', 'Spoonbill'))) {
       dir.create(file.path(datOut, 'Strictures', 'Spoonbill'), recursive = TRUE)
@@ -286,7 +329,7 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
     # The objects needed for the plots. should be cleaned up into a list and saved as RDS
     save(spoonbillstricts,
          file = file.path(datOut, 'Strictures', 'Spoonbill', 
-                          paste0(catchment, '_spoonbill_strictures.rdata')))
+                          paste0(ramnames, '_spoonbill_strictures.rdata')))
   }
   
   if (returnR) {
@@ -295,7 +338,7 @@ spoonbillstricts <- function(catchment, savefile = TRUE, returnR = FALSE) {
     end_time <- Sys.time()
     elapsed <- end_time-start_time
     
-    sumtab <- tibble::tibble(catchment,
+    sumtab <- tibble::tibble(ramnames,
                              npolys = nrow(anaes),
                              elapsed)
     

@@ -1,6 +1,5 @@
 ---
 title: "spoonbill_strictures"
-author: "Ash Macqueen"
 format: html
 editor: visual
 ---
@@ -10,6 +9,7 @@ editor: visual
 ```{r}
 library(Rcpp)
 library(RcppRoll)
+library(foreach)
 library(stars)
 library(sf)
 library(tidyverse)
@@ -29,11 +29,11 @@ source(file.path('Scripts', 'Strictures', 'RoyalSpoonbill.R'))
 
 ## Check what needs to happen
 
-The examples in the paper are only for the Edward Wakool, so just run that.
+The examples in the paper are only for a small set of ramsars, so just run that, rather than bother with looping. Spoonbill stricts lets us catchment-restrict, but let's not here.
 
 ```{r}
 
-spoontime <- spoonbillstricts(catchment = 'EdwardWakool')
+spoontime <- spoonbillstricts(c("Koondrook and Perricoota Forests", "Millewa Forest",  "Werai Forest"))
 ```
 
 ```{r}

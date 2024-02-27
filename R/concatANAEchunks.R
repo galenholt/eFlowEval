@@ -95,6 +95,7 @@ concatANAEchunks <- function(outerDir, summaryFuns, namedIndex = TRUE, catchName
       
       
       # Then, unpack the lists also using foreach
+      # TODO: replace with concat_star_index
       depthAns <- foreach(l = 1:length(dpList),
                           .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
                           .multicombine=TRUE,

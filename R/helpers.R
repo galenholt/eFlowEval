@@ -98,6 +98,7 @@ catchAggPlot <- function(catchAgg, varname = NA, title = NULL, as_sf = FALSE) {
 
 # For some reason, feeding aggregate dates instead of something like 'years' leaves an NA sheet hanging on the end.
 # and, rightmost.closed has to be used. So, setting up a wrapper function that fixes it
+
 ### THIS RETURNS TIMES AT THE *START* OF THE INTERVAL ### 
 # This is particularly an issue for inundation, which reports inundation for the
 # *preceding* interval. dates_end_interval shifts to the end.

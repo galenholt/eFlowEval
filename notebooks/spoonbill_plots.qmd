@@ -25,7 +25,7 @@ scriptOut <- file.path('strictOut', 'spoonbill')
 if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
 ```
 
-Read in data. We're just demoing with Edward Wakool.
+Read in data. We're just demoing with a few ramsars, so they're all combined and no need to loop over a set of outputs.
 
 ```{r}
 load(file.path(datOut, 'ANAEprocessed', 'ltimNoNorth.rdata'))
@@ -33,12 +33,14 @@ ltimNoNorth <- ltimNoNorth %>% st_transform(3577)
 
 # Wetland boundaries from wetlandBoundaries.R
 load(file.path(datOut, 'WetlandBoundaries', 'ramsarBoundsMDB.rdata'))
-ramsarBoundEdwa <- st_intersection(ramsarBoundsMDB, 
-                                   filter(ltimNoNorth, ValleyName =="Edward Wakool"))
-wetlandName <- ramsarBoundEdwa$Wetland
+
+ramsars <- c("Koondrook and Perricoota Forests", "Millewa Forest",  "Werai Forest")
+
+ramsarBounds <- ramsarBoundsMDB |> 
+  filter(Wetland %in% ramsars)
 
 # Stricture results
-load(file.path(datOut, 'Strictures', 'Spoonbill', 'EdwardWakool_spoonbill_strictures.rdata'))
+load(file.path(datOut, 'Strictures', 'Spoonbill', 'KoondrookandPerricootaForests__MillewaForest__WeraiForest__spoonbill_strictures.rdata'))
 ```
 
 Choose a set of years for year plots
@@ -47,6 +49,7 @@ Choose a set of years for year plots
 # 2014-18
 # yearstoplot <- c("2014", "2015", "2016", "2017", "2018")
 yearstoplot <- as.character(2017:2020)
+# yearstoplot <- as.character(2014:2017)
 ```
 
 ## Breeding
@@ -61,22 +64,36 @@ availyears <- st_get_dimension_values(breedhectares, "time")
 subDates <- which(lubridate::year(availyears) %in% yearstoplot)
 
 breed_area <- ggplot()+
-  geom_stars(data = (breedhectares[,subDates,])) +
-  coord_sf() +
-  facet_grid(~as.character(lubridate::year(time))) +
-  scale_fill_viridis(option = 'viridis')+
-  labs(fill = 'Area (ha)') +
-  # scale_fill_viridis(option = 'viridis', limits = c(0,7e+08) )+ # limit works 
-  # guides(fill = guide_legend(title.position = 'top')) +
-  theme_grey(base_size = 8)
+    geom_stars(data = (breedhectares[,subDates,])) +
+    geom_sf_text(data = ramsarBounds |> 
+                   filter(Wetland != 'Werai Forest') |> 
+                     mutate(Wetland = str_wrap(Wetland, 10)), 
+                 aes(label = Wetland), size = 2, 
+                 nudge_x = 15000, nudge_y = -20000) +
+      geom_sf_text(data = ramsarBounds |> 
+                   filter(Wetland == 'Werai Forest') |> 
+                     mutate(Wetland = str_wrap(Wetland, 10)), 
+                 aes(label = Wetland), size = 2, nudge_x = 35000) +
+    # ggrepel::geom_text_repel(
+    #     data = ramsarBounds |> 
+    #                  mutate(Wetland = str_wrap(Wetland, 10)),
+    #     aes(label = Wetland, geometry = geometry),
+    #     stat = "sf_coordinates",
+    #     min.segment.length = 0, size = 2
+    #   ) +
+    coord_sf() +
+    facet_grid(~as.character(lubridate::year(time))) +
+    scale_fill_viridis(option = 'viridis')+
+    labs(fill = 'Area (ha)') +
+    theme_grey(base_size = 8)
 breed_area
 
 ggsave(plot = breed_area, 
-       filename = file.path(scriptOut, "EdwardWakoolAreaBreedInundation6monthsInSeason.png"),
+       filename = file.path(scriptOut, "spoonbill_breeding_season.png"),
        height=5, width=18, units = 'cm', dpi=300)
 ggsave(plot = breed_area, 
-       filename = file.path(scriptOut, "EdwardWakoolAreaBreedInundation6monthsInSeason.pdf"),
-       height=5, width=18, units = 'cm', dpi=300)
+       filename = file.path(scriptOut, "spoonbill_breeding_season.pdf"),
+       height=5, width=18, units = 'cm')
 ```
 
 Tile plots of breeding opportunity
@@ -94,13 +111,12 @@ numBreedEvents_area <- numBreedEvents_area %>%
   mutate(Breed = ifelse(is.na(Breed), FALSE, Breed))
 
 # add wetland name
-numBreedEvents_area$Wetland <- rep(wetlandName, each = length(unique(numBreedEvents_area$Date)))
+numBreedEvents_area$Wetland <- rep(ramsars, each = length(unique(numBreedEvents_area$Date)))
 
 # add up yearly and within Ramsar (though because seasonal, the yearly is redundant)
 numBreedEvents_areaByWetland_yr <- numBreedEvents_area %>% 
   group_by(Wetland, Year = lubridate::year(Date)) %>% 
-  summarise(Breed_yr = sum(Breed, na.rm = TRUE))%>% 
-  filter(Wetland != "Wakool-Tullakool Evaporation Basins") |> 
+  summarise(Breed_yr = sum(Breed, na.rm = TRUE)) |> 
   ungroup()
 ```
 
@@ -116,8 +132,7 @@ breed_tile <- ggplot(data = numBreedEvents_areaByWetland_yr,
   scale_y_discrete(expand = c(0,0))
 breed_tile
 
-breedbim_tile <- ggplot(data = numBreedEvents_area |> 
-                          filter(Wetland != "Wakool-Tullakool Evaporation Basins"),
+breedbim_tile <- ggplot(data = numBreedEvents_area,
                         aes(x = Date, y = Wetland, fill = as.numeric(Breed)))+
   geom_tile(colour="grey20")+
   # geom_tile() +
@@ -214,47 +229,49 @@ subDates <- breedindex[which(lubridate::year(breedtimes[breedindex]) %in%
 # clip ALL the ANAES to the bbox of this fig for panel 2
 bufbox <- st_bbox(spoonbillstricts$forageAreaBuffer)
 
-anaebb <- st_crop(st_as_sf(spoonbillstricts$forageANAEstrict[,c(1,2,4),subDates]), 
+anaebb <- st_crop(st_as_sf(spoonbillstricts$forageANAEstrict[,,subDates]), 
                   bufbox) |> 
   pivot_longer(-geometry, names_to = 'time', values_to = 'Area') |> 
-  mutate(time = as.Date(time))
+  mutate(time = as.Date(time)) |> 
+  st_simplify(dTolerance = 1000)
+  # rmapshaper::ms_simplify(keep = 0.01)
 
 wetland_forage <- ggplot()+
-  geom_stars(data = spoonbillstricts$forageAreaByWetland[,c(1,2,4),subDates]/10000) +
+  geom_stars(data = spoonbillstricts$forageAreaByWetland[,,subDates]/10000) +
   coord_sf(ylim = c(bufbox$ymin, bufbox$ymax), 
            xlim = c(bufbox$xmin, bufbox$xmax)) +
   facet_grid(~as.character(as.Date(time))) +
   labs(fill = 'Area (ha)') +
-  scale_fill_viridis(option = 'plasma', trans = 'log10', limits = c(0.1, 200))+
+  scale_fill_viridis(option = 'plasma', trans = 'log10', limits = c(0.5, 600))+
   # guides(fill = guide_legend(title.position = 'top')) +
   theme_grey(base_size = 8)
 
 bufonly_forage <- ggplot()+
-  geom_stars(data = spoonbillstricts$forageAreaBuffer[,c(1,2,4),subDates]/10000, alpha = 0.7) +
+  geom_stars(data = spoonbillstricts$forageAreaBuffer[,,subDates]/10000, alpha = 0.7) +
   coord_sf(ylim = c(bufbox$ymin, bufbox$ymax), 
            xlim = c(bufbox$xmin, bufbox$xmax)) +
   facet_grid(~as.character(as.Date(time))) +
   labs(fill = 'Area (ha)') +
-  scale_fill_viridis(option = 'plasma', trans = 'log10', limits = c(0.1, 200))+
+  scale_fill_viridis(option = 'plasma', trans = 'log10', limits = c(0.5, 600))+
   theme_grey(base_size = 8)
 
 buffer_forage <- ggplot()+
   geom_sf(data = anaebb, fill = NA) +
-  geom_stars(data = spoonbillstricts$forageAreaBuffer[,c(1,2,4),subDates]/10000, alpha = 0.7) +
+  geom_stars(data = spoonbillstricts$forageAreaBuffer[,,subDates]/10000, alpha = 0.7) +
   coord_sf(ylim = c(bufbox$ymin, bufbox$ymax), 
            xlim = c(bufbox$xmin, bufbox$xmax)) +
   facet_grid(~as.character(as.Date(time))) +
   labs(fill = 'Area (ha)') +
-  scale_fill_viridis(option = 'plasma', trans = 'log10', limits = c(0.1, 200))+
+  scale_fill_viridis(option = 'plasma', trans = 'log10', limits = c(0.5, 600))+
   theme_grey(base_size = 8)
 
 buf2wet_forage <- ggplot()+
-  geom_stars(data = spoonbillstricts$forageAreaByWetlandBuffer[,c(1,2,4),subDates]/10000) +
+  geom_stars(data = spoonbillstricts$forageAreaByWetlandBuffer[,,subDates]/10000) +
   coord_sf(ylim = c(bufbox$ymin, bufbox$ymax), 
            xlim = c(bufbox$xmin, bufbox$xmax)) +
   facet_grid(~as.character(as.Date(time))) +
   labs(fill = 'Area (ha)') +
-  scale_fill_viridis(option = 'plasma', trans = 'log10', limits = c(0.1, 200))+
+  scale_fill_viridis(option = 'plasma', trans = 'log10', limits = c(0.5, 600))+
   theme_grey(base_size = 8)
 ```
 
@@ -281,26 +298,32 @@ forage_timeseries <- forageAreaWetlandBufferYr |>
   pivot_longer(names_to = "Date", values_to = "Breed", cols = -geometry) |> 
   mutate(Date = lubridate::year(Date))
 
-forage_timeseries$Wetland <- rep(wetlandName, 
+forage_timeseries$Wetland <- rep(ramsars, 
                                  each = length(unique(forage_timeseries$Date)))
 
 
 ```
 
 ```{r}
-forage_timeseries |> 
-  filter(!str_detect(Wetland, 'Evaporation')) |> 
-ggplot(aes(x= Date, y = Breed, colour = Wetland))+
+ 
+forage_timeplot <- ggplot(forage_timeseries, 
+                          aes(x= Date, y = Breed, colour = Wetland))+
   geom_point()+ geom_line() +  # combine two geom types
   # hide x-axis label
   scale_y_continuous(trans = 'log10') +
   labs(x=element_blank(), y = "Maximum foraging\nhabitat (ha)") +
   # place legend over the top of plot area to save space
   # values are x and y position as a proportion e.g. 0.5 is halfway across
-  theme_pub(legend.position = c(0.55, 0.75))
+  theme_pub(legend.position = 'right') # c(0.55, 0.75)
 
-ggsave(file.path(scriptOut, "EdwardWakoolAreaForageInlcude10kBufferPointAndLineLegend.png"),
+forage_timeplot
+
+ggsave(forage_timeplot, 
+       filename = file.path(scriptOut, "spoonbill_forage_timeseries.png"),
        height = 6, width = 16, units = 'cm', dpi = 300)
+ggsave(forage_timeplot, 
+       filename = file.path(scriptOut, "spoonbill_forage_timeseries.pdf"),
+       height = 6, width = 16, units = 'cm')
 ```
 
 Tile plots of foraging passing
@@ -315,13 +338,12 @@ foragealone <- spoonbillstricts$forageAreaStricture %>%
   mutate(Forage = as.numeric(Forage > 0)) |> # Forage is in area, but for this simplification, we just want yes/no.
   mutate(Date = stringr::str_remove_all(Date, ' .*'), Date = lubridate::ymd(Date))
 
-foragealone$Wetland <- rep(wetlandName, each = length(unique(foragealone$Date)))
+foragealone$Wetland <- rep(ramsars, each = length(unique(foragealone$Date)))
 
 # summarise to wetland and year
 foragealoneByWetland_yr <- foragealone %>% 
   group_by(Wetland, Year = lubridate::year(Date)) %>% 
   summarise(Forage_yr = as.numeric(maxna(Forage) > 0)) %>%
-  filter(Wetland != "Wakool-Tullakool Evaporation Basins") |> 
   ungroup()
 
 forage_tile <- ggplot(data = foragealoneByWetland_yr, aes(x = Year, y = Wetland, fill = Forage_yr))+
@@ -332,8 +354,7 @@ forage_tile <- ggplot(data = foragealoneByWetland_yr, aes(x = Year, y = Wetland,
   scale_y_discrete(expand = c(0,0))
 forage_tile
 
-foragebim_tile <- ggplot(data = foragealone |> 
-                           filter(Wetland != "Wakool-Tullakool Evaporation Basins"),
+foragebim_tile <- ggplot(data = foragealone,
                          aes(x = Date, y = Wetland, fill = Forage, 
                              color = yearblock))+
   geom_tile(colour="grey20")+
@@ -347,8 +368,11 @@ foragebim_tile
 
 
 ggsave(plot = forage_tile, 
-       filename = file.path(scriptOut, "forage_70pcForage.png"), 
+       filename = file.path(scriptOut, "forage_tile.png"), 
        height=2, width=10, dpi=300)
+ggsave(plot = forage_tile, 
+       filename = file.path(scriptOut, "forage_tile.pdf"), 
+       height=2, width=10)
 ```
 
 ## Breed and forage
@@ -360,13 +384,11 @@ Tile plots
 numBreedEvents_forage <- spoonbillstricts$forageBreedStricture %>% st_as_sf() 
 numBreedEvents_forage <- numBreedEvents_forage %>% st_drop_geometry()
 numBreedEvents_forage <- numBreedEvents_forage %>% pivot_longer(names_to = "Date", values_to = "Breed", cols = everything())
-wetlandName <- ramsarBoundEdwa$Wetland
-numBreedEvents_forage$Wetland <- rep(wetlandName, each = length(unique(numBreedEvents_forage$Date)))
+numBreedEvents_forage$Wetland <- rep(ramsars, each = length(unique(numBreedEvents_forage$Date)))
 
 numBreedEvents_forageByWetland_yr <- numBreedEvents_forage %>% 
   group_by(Wetland, Year = lubridate::year(Date)) %>% 
-  summarise(Breed_yr = sum(Breed, na.rm = TRUE)) %>%
-  filter(Wetland != "Wakool-Tullakool Evaporation Basins")
+  summarise(Breed_yr = sum(Breed, na.rm = TRUE))
 
 forage_breed_tile <- ggplot(data = numBreedEvents_forageByWetland_yr, aes(x = Year, y = Wetland, fill = Breed_yr))+
   geom_tile(colour="grey20")+
@@ -377,8 +399,12 @@ forage_breed_tile <- ggplot(data = numBreedEvents_forageByWetland_yr, aes(x = Ye
 forage_breed_tile
 
 ggsave(plot = forage_breed_tile, 
-       filename = file.path(scriptOut, "forage_breed_5pcBreed70pcForage.png"),
+       filename = file.path(scriptOut, "year_stage_tile.png"),
        height=2, width=10, dpi=300)
+
+ggsave(plot = forage_breed_tile, 
+       filename = file.path(scriptOut, "year_stage_tile.pdf"),
+       height=2, width=10)
 
 ```
 
