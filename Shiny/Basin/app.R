@@ -7,6 +7,10 @@
 #    http://shiny.rstudio.com/
 #
 
+# The basin scale app reports dates at the *start* of the interval, because they have been tempaggregated.
+# The local scale app reports dates at the *end* of the interval, because they are indexed to the raw inundation data.
+
+
 library(shiny)
 setwd(here::here())
 

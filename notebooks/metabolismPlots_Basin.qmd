@@ -82,7 +82,7 @@ work.
 ```{r}
 tmap_mode('plot')
 
-# The auto-titling just stuffs "Two months preceding" on there, which is wrong
+# The auto-titling just stuffs "Two months preceding" on there, which is wrong- the tempaggregate that makes temperatureannual here shifts the dates to the start of the timestep.
 temp_tm <- tempfun(temperatureannual, 1, datewanted, plotPkg = 'tmap', titled = TRUE, titlePrefix = 'Water year beginning ')
 temp_tm
 ```

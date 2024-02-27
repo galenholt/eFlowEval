@@ -7,6 +7,10 @@
 #    http://shiny.rstudio.com/
 #
 
+
+# The basin scale app reports dates at the *start* of the interval, because they have been tempaggregated.
+# The local scale app reports dates at the *end* of the interval, because they are indexed to the raw inundation data.
+
 library(tidyverse)
 library(shiny)
 library(sf)
@@ -38,7 +42,7 @@ ramsarMDB <- load_rename(ramsarpath, returnOne = 'ramsarMDB') %>%
 catchpath <- file.path(datOut, 'ANAEprocessed', 'ltimNoNorth.rdata')
 ltimNoNorth <- load_rename(catchpath, returnOne ='ltimNoNorth')
 
-# werai_one <- filter(ramsarMDB, WNAME == 'Werai Forest') %>% 
+# werai_one <- filter(ramsarMDB, WNAME == 'Werai Forest') %>%
 #   summarise()
 # 
 # metab_local <- setup_local_metab(sub_poly = werai_one)
@@ -59,11 +63,11 @@ ui <- fluidPage(
                            choices = sort(unique(ramsarMDB$WNAME)), 
                            selected = "Great Cumbungi Swamp")),
         # column(2,
-        #        h4("Two months following: ")
+        #        h4("Two months preceding: ")
         #        ),
         column(4,
                # uiOutput('dates') # This works, but always starts with error until everything loads.
-               selectInput("datewanted", "Bimonth start", 
+               selectInput("datewanted", "Bimonth end", 
                            choices = availDays,
                            selected = '2019-11-01')
                )
@@ -107,7 +111,7 @@ server <- function(input, output) {
   # This makes the dates reactive, but always starts with an error
   # output$dates <- renderUI({
   #   metab_local <- ml_react()
-  #   selectInput("datewanted", "Two months following", 
+  #   selectInput("datewanted", "Two months preceding", 
   #               choices = st_get_dimension_values(metab_local$temp_anae, which = 'time'),
   #               selected = '2014-01-01')
   # })
@@ -117,7 +121,7 @@ server <- function(input, output) {
       metab_local <- ml_react()
         # Works. the others might work, if I do something reactive?
         # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny
-        tempfun(metab_local$temp_anae, 1, input$datewanted, titled = TRUE, titlePrefix = 'Two months following')
+        tempfun(metab_local$temp_anae, 1, input$datewanted, titled = TRUE, titlePrefix = 'Two months preceding')
         # tmap_leaflet(inputsfun(input$datewanted), in.shiny = TRUE)
         # tmap_leaflet(tempfun(input$datewanted), in.shiny = TRUE)
     })
