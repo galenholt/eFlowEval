@@ -1,0 +1,112 @@
+---
+title: "Make clean valleys"
+author: "Galen Holt"
+format: html
+editor: visual
+---
+
+## Default spatial data creation
+
+This isn't about things like data processing of rasters, but we need a standard set of polygons we can just easily access and not make a million times. Do that here.
+
+```{r}
+library(sf)
+library(dplyr)
+```
+
+Define where the shapefiles are- they're held externally. Use the `directorySet` framework for this.
+
+```{r}
+source('directorySet.R')
+commonCRS <- 3577
+```
+
+### Catchments (LTIM Valleys)
+
+From ANAE
+
+We want a default data layer ltimNoNorth that is the CEWH-defined ltim valleys without the Northern Unregulated polygon, since that is overlain on the main set of catchments.
+
+```{r}
+    # Get the LTIM_Valleys to use to subset for toy models at scale, but not enormous scale
+    LTIM_Valleys <- read_sf(dsn = file.path(datDir,
+                                            'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'),
+                            layer = 'LTIM_Valleys') |>
+      st_cast("MULTIPOLYGON") |> # cleans up an issue with multisurfaces
+      st_transform(crs = commonCRS) |>
+      st_make_valid()
+```
+
+```{r}
+# LTIM areas
+ltimNoNorth <- LTIM_Valleys |>
+  dplyr::select(ValleyName, ValleyID, ValleyCode) |> 
+  dplyr::filter(ValleyName != 'Northern Unregulated')|> 
+  dplyr::rename(geometry = Shape)
+
+
+```
+
+```{r}
+usethis::use_data(ltimNoNorth)
+```
+
+### Basin
+
+Also from ANAE
+
+```{r}
+# and the basin boundary, might be useful, especially for clipping rasters
+basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'MDB_Boundary') |>
+  st_cast("MULTIPOLYGON") |> # cleans up an issue with multisurfaces
+  st_transform(commonCRS) |>
+  st_make_valid() |>
+  select(LEVEL2NAME) |> 
+  dplyr::rename(geometry = Shape)
+```
+
+```{r}
+usethis::use_data(basin)
+```
+
+### Ramsar wetlands
+
+These are the boundaries for all Ramsar sites in Australia
+
+```{r}
+# https://data.gov.au/data/dataset/04cd73cc-24d9-4ae9-aeaa-046a022cb592
+# metadata html in folder
+Ramsar <- read_sf(dsn = file.path(datDir, "RAMSARwetlandBoundaries/important_wetlands.shp")) |>
+  st_cast("MULTIPOLYGON") |> # cleans up an issue with multi-surfaces
+  st_make_valid() |> 
+  st_transform(commonCRS)
+# there is one fewer unique WNAME values (202) than REFCODE values??
+```
+
+crop Ramsar to basin
+
+```{r}
+#
+
+# RamsarMDB <- Ramsar[basin] # crops to bounding box
+ramsarMDB <- st_intersection(Ramsar, basin)
+
+```
+
+Combine subpolygons
+
+```{r}
+# filter into wetland complexes and combine each into single polygon
+# This cuts down from 8819 to 202 but there are only 16 Ramsar sites. 
+
+ramsarBoundsMDB <- ramsarMDB |>
+  group_by(WNAME)|>
+  summarise() |> 
+  mutate(WNAME = stringr::str_remove_all(WNAME, pattern = "\""))
+
+names(ramsarBoundsMDB)[1] <- "Wetland"
+```
+
+```{r}
+usethis::use_data(ramsarBoundsMDB)
+```
