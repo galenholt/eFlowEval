@@ -18,3 +18,4 @@ datOut/
 
 # Ignore testing and figuring things out
 Scratch/
+.Rproj.user
