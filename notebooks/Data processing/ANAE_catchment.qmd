@@ -1,0 +1,22 @@
+---
+title: "Process ANAEs to catchment"
+format: html
+editor: visual
+---
+
+```{r}
+devtools::load_all()
+source('directorySet.R')
+source(file.path('R_data', 'process_anae.R'))
+```
+
+Here, I want to just process the ANAEs into each catchment and do the standard cleanups
+
+```{r}
+process_anae(datIn = datDir, 
+             outDir = file.path(datOut, 'ANAEcatchment'),
+                        outname = 'ANAEcatchment',
+                        intersections = 'ltimNoNorth',
+                        commonCRS = 3577,
+                        chunksave = 'ValleyName')
+```
