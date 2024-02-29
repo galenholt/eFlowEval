@@ -3,6 +3,8 @@ title: "Make clean valleys"
 author: "Galen Holt"
 format: html
 editor: visual
+params:
+  rebuild: TRUE
 ---
 
 ## Default spatial data creation
@@ -48,7 +50,8 @@ ltimNoNorth <- LTIM_Valleys |>
 ```
 
 ```{r}
-usethis::use_data(ltimNoNorth)
+#| error: true
+usethis::use_data(ltimNoNorth, overwrite = params$rebuild)
 ```
 
 ### Basin
@@ -66,7 +69,8 @@ basin <- read_sf(dsn = file.path(datDir, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), 
 ```
 
 ```{r}
-usethis::use_data(basin)
+#| error: true
+usethis::use_data(basin, overwrite = params$rebuild)
 ```
 
 ### Ramsar wetlands
@@ -108,5 +112,53 @@ names(ramsarBoundsMDB)[1] <- "Wetland"
 ```
 
 ```{r}
-usethis::use_data(ramsarBoundsMDB)
+#| error: true
+usethis::use_data(ramsarBoundsMDB, overwrite = params$rebuild)
+```
+
+### WRPAs
+
+These are water resource plan areas from Gilad Bino
+
+```{r}
+wrpa <- read_sf(dsn = file.path(datDir, "WRPA", "WRPA.shp")) |> 
+  st_cast("MULTIPOLYGON") |> # cleans up an issue with multi-surfaces
+  st_make_valid() |>
+  st_transform(commonCRS)
+```
+
+```{r}
+#| error: true
+usethis::use_data(wrpa, overwrite = params$rebuild)
+```
+
+### Bird breeding complexes
+
+These are the 'dirty thirty' bird breeding complexes (though there seem to be 40 Wetlands and 20 Complexes).
+
+```{r}
+mdba_bird_complex <- read_sf(dsn = file.path(datDir,
+                                        "MDBA_complex",
+                                        "MDBA_Complex_SubWetland_ID_15.shp")) |> 
+  st_make_valid() |> 
+  st_transform(commonCRS)
+```
+
+There are overview polygons that should be what we mainly use, and cause issues if we use them blindly.
+
+```{r}
+mdba_bird_wetlands <- mdba_bird_complex |>
+  group_by(Wetland) |> 
+  summarise() |> 
+  ungroup()
+
+mdba_bird_subwetlands <- mdba_bird_complex |> 
+  filter(!is.na(SubWetland))
+
+```
+
+```{r}
+#| error: true
+usethis::use_data(mdba_bird_wetlands, overwrite = params$rebuild)
+usethis::use_data(mdba_bird_subwetlands, overwrite = params$rebuild)
 ```
