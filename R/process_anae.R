@@ -17,15 +17,17 @@ process_anae <- function(datIn, outDir,
                         commonCRS = 3577,
                         chunksave = 'ValleyName') {
 
+  # geohashing requires 4326, so reproject everything to that and then put in the correct crs at the end.
+
   # The sf::st_cast and sf::st_make_valid clean things up so the intersects work.
   # https://www.r-spatial.org/r/2017/03/19/invalid.html says we should make valid,
   # and then cast, but that didn't work for me
   # Takes a while. Didn't time, but > 10 mins
-  wetlands <- read_sf(dsn = file.path(datIn,
+  system.time(wetlands <- sf::read_sf(dsn = file.path(datIn,
                                       'ANAE/ANAE_Wetlands_v3_24mar2021/Wetlands_ANAE_v3_24mar2021/Wetlands_ANAE_v3_24mar2021.shp')) %>%
     sf::st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
-    sf::st_transform(anaePolys, commonCRS) %>%
-    sf::st_make_valid()
+    sf::st_transform(commonCRS) %>%
+    sf::st_make_valid())
 
   # Suppose I'll keep SYSID for now, but really we want to shift over to the
   # geohash UID (see Shane's discussion in the metadata)
@@ -42,45 +44,59 @@ process_anae <- function(datIn, outDir,
     char_intersections <- intersections
   }
 
-  # TODO: make `intersections` able to take sf objects instead of just names.
-  # I think it might just work if it comes in as a list. ie a character vector or a list with the characters in the slots, provided each has their own list item
-  if ('climate' %in% char_intersections) {
+  if (exists('char_intersections')) {
+    # TODO: make `intersections` able to take sf objects instead of just names.
+    # I think it might just work if it comes in as a list. ie a character vector or a list with the characters in the slots, provided each has their own list item
+    if ('climate' %in% char_intersections) {
 
-    # Get the climate layer
-    # The rest of this still needs to come from the V2 for now, since V3 is just the shapefiles
-    # Get koppen climate region as a test of the joining of data
-    kopSub <- read_sf(dsn = file.path(datIn, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'BoM_Koppen_subregions') %>%
-      sf::st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
-      sf::st_transform(commonCRS) %>%
-      sf::st_make_valid() |>
-      dplyr::select(ANAEField, CODE, Zone)
+      # Get the climate layer
+      # The rest of this still needs to come from the V2 for now, since V3 is just the shapefiles
+      # Get koppen climate region as a test of the joining of data
+      kopSub <- sf::read_sf(dsn = file.path(datIn, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'BoM_Koppen_subregions') %>%
+        sf::st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
+        sf::st_transform(commonCRS) %>%
+        sf::st_make_valid() |>
+        dplyr::select(ANAEField, CODE, Zone)
 
-    # intersect
-    wetlands <- wetlands |>
-      sf::st_intersection(kopSub)
+      # intersect
+      wetlands <- wetlands |>
+        sf::st_intersection(kopSub)
+    }
+
+    if ('valleys' %in% char_intersections | 'ltimNoNorth' %in% char_intersections) {
+      # no need to do anything here anymore, they're already prepared as a data object `ltimNoNorth`
+      # This takes a very long time.
+      wetlands <- wetlands |>
+        sf::st_intersection(ltimNoNorth)
+    }
   }
 
-  if ('valleys' %in% char_intersections | 'ltimNoNorth' %in% char_intersections) {
-    # no need to do anything here anymore, they're already prepared as a data object `ltimNoNorth`
-    wetlands <- wetlands |>
-      sf::st_intersection(ltimNoNorth)
-  }
 
   # Do all the sfs in one go.
-  for (i in sf_intersections) {
-    wetlands <- wetlands |>
-      sf::st_intersection(i)
+  if (exists('sf_intersections')) {
+    for (i in sf_intersections) {
+      wetlands <- wetlands |>
+        sf::st_intersection(i)
+    }
   }
 
+
   # add a unique identifier
+  # Has to be in 4326
   wetlands <- wetlands |>
-    dplyr::mutate(UID = lwgeom::sf::st_geohash(geometry, precision = 11)) # Re-set the UID. This is the way to keep every polygon unique, and still retains the original SYSIDs from before.
+    sf::st_transform(4326) |>
+    dplyr::mutate(UID = lwgeom::st_geohash(geometry, precision = 11)) # Re-set the UID. This is the way to keep every polygon unique, and still retains the original SYSIDs from before.
   # 11 prevents all but one duplicate. that one is basically a line, and precision can go out to hundreds and not separate it
   # There is one remaining duplicate that never goes away, no matter the
   # resolution of the geohash. Brute-foce fix
-  while (any(duplicated(bothANAE$SYS2))) {
-    bothANAE$SYS2[which(duplicated(bothANAE$SYS2))] <- paste0(bothANAE$SYS2[which(duplicated(bothANAE$SYS2))], '_DUP')
+  while (any(duplicated(wetlands$UID))) {
+    wetlands$UID[which(duplicated(wetlands$UID))] <- paste0(wetlands$UID[which(duplicated(wetlands$UID))], '_DUP')
   }
+
+  # put back on the correct CRS
+  wetlands <- wetlands |>
+    sf::st_transform(commonCRS) |>
+    sf::st_make_valid()
 
   # Save the full data
   # Make the out directory, in case it doesn't exist
@@ -90,14 +106,15 @@ process_anae <- function(datIn, outDir,
 
   # save the data in chunks
   if (!is.null(chunksave)) {
-    uniquechunks <- unique(sf::st_drop_geometry(wetlands)[,chunksave])
+    uniquechunks <- unique(sf::st_drop_geometry(wetlands)[,chunksave]) |>
+      dplyr::pull()
     for (b in 1:length(uniquechunks)) {
-      thischunk <- dplyr::filter(wetlands, .data[[chunksave]] == b)
+      thischunk <- dplyr::filter(wetlands, .data[[chunksave]] == uniquechunks[b])
 
       thisname <- stringr::str_remove_all(uniquechunks[b], ' ')
       thisname <- paste0(thisname, '_ANAE')
 
-      saveRDS(thischunk, file = filepath(outDir, paste0(thisname, '.rds')))
+      saveRDS(thischunk, file = file.path(outDir, paste0(thisname, '.rds')))
     }
 
   }
