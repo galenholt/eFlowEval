@@ -47,7 +47,7 @@ concatANAEchunks <- function(outerDir, summaryFuns, namedIndex = TRUE, catchName
                                pattern = '.rdata', recursive = TRUE)
       
       # I need to know the names of the files to get() them
-      partnames <- str_remove(catchfiles, pattern = '.rdata') %>%
+      partnames <- str_remove(catchfiles, pattern = '.rdata') |>
         str_remove(pattern = paste0('^.*(?=(', thiscatch, '))')) # remove all the nested directories too
       
       # Sometimes the indices are shared across summaryFuns, and so not uniquely named

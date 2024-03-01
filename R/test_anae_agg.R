@@ -34,8 +34,8 @@ test_anae_agg <- function(catchments, datDir, variableDir, summaryFun, debugbrea
     anae_names <- paste0(catchment, 'ANAE')
     anae_path <- file.path(datOut, 'ANAEprocessed', paste0(catchment, 'ANAE.rdata'))
     anaes <- load_rename(filepath = anae_path,
-                         returnOne = anae_names) %>% 
-      st_transform(st_crs(in_list$aggdata)) %>% 
+                         returnOne = anae_names) |> 
+      st_transform(st_crs(in_list$aggdata)) |> 
       st_make_valid()
     
     

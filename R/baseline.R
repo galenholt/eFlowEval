@@ -1,9 +1,9 @@
 # function to allow baselining of long dataframes
 baseline <- function(longdata, comp_col, baselev, groupers, val_col, FUN, join_geo = FALSE) {
-  baseframe <- longdata %>% 
-    select({{comp_col}}, {{groupers}}, {{val_col}}) %>% 
-    filter({{comp_col}} == baselev) %>% 
-    rename(ref_val = {{val_col}}) %>% 
+  baseframe <- longdata |> 
+    select({{comp_col}}, {{groupers}}, {{val_col}}) |> 
+    filter({{comp_col}} == baselev) |> 
+    rename(ref_val = {{val_col}}) |> 
     select(-{{comp_col}})
   
   if (join_geo) {
@@ -13,7 +13,7 @@ baseline <- function(longdata, comp_col, baselev, groupers, val_col, FUN, join_g
     longdata <- left_join(longdata, st_drop_geometry(baseframe))
   }
   
-  longdata <- longdata %>% 
+  longdata <- longdata |> 
     mutate("{{val_col}}_{{FUN}}_{baselev}" := FUN({{val_col}}, ref_val))
   
 }

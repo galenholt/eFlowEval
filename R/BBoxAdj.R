@@ -14,7 +14,7 @@ BBoxAdj <- function(bbox, expandLeft = 0, expandRight = 0, expandTop = 0, expand
   bbox_new[2] <- bbox_new[2] - (expandBot * yrange) # ymin - bottom
   bbox_new[4] <- bbox_new[4] + (expandTop * yrange) # ymax - top
   
-  bbox_new <- bbox_new %>%  # take the bounding box ...
+  bbox_new <- bbox_new |>  # take the bounding box ...
     st_as_sfc()
   return(bbox_new)
   # sfPlotObj +
@@ -35,7 +35,7 @@ BBoxAdj <- function(bbox, expandLeft = 0, expandRight = 0, expandTop = 0, expand
 #   bbox_new[2] <- bbox_new[2] - (expandBot * yrange) # ymin - bottom
 #   bbox_new[4] <- bbox_new[4] + (expandTop * yrange) # ymax - top
 #   
-#   bbox_new <- bbox_new %>%  # take the bounding box ...
+#   bbox_new <- bbox_new |>  # take the bounding box ...
 #     st_as_sfc()
 #   
 #   sfPlotObj +

@@ -20,13 +20,13 @@ threshSM <- function(avgSM = avgSM, dailyThresh = 0.01, startDay = NULL, endDay 
   # print(startDay)
   # print(endDay)
   
-  avgSMdayz <- avgSM %>% slice(time, indDayz)
+  avgSMdayz <- avgSM |> slice(time, indDayz)
   
   avgSMdayz$sm_pct <- if_else(avgSMdayz$sm_pct > dailyThresh, 1, 0)
   
   #number of days soil moisture above threshold
   sumSMdayz <- st_apply(avgSMdayz, MARGIN = 1, sum)
-  SMstr <- sumSMdayz %>% mutate( str = if_else(sum > windowThresh, 1,0),
+  SMstr <- sumSMdayz |> mutate( str = if_else(sum > windowThresh, 1,0),
                                  sum = NULL) 
   # print(paste0("number of days:",  date(endDay)-date(startDay)+1))
   return(SMstr) # 1D stars object
@@ -35,18 +35,18 @@ threshSM <- function(avgSM = avgSM, dailyThresh = 0.01, startDay = NULL, endDay 
 #  transform column names to dates  
 col2date <- function(sf){
   dayz <- names(sf)
-  dayz <- dayz %>% 
-    str_subset("X") %>%
-    str_sub(2) %>%
-    str_replace_all('[.]', "-")%>%
+  dayz <- dayz |> 
+    str_subset("X") |>
+    str_sub(2) |>
+    str_replace_all('[.]', "-")|>
     as.Date()
   return(dayz)
 }
 
 # transform vector of dates into operable column names  
 date2col <- function(dateV){
-  colChar <- dateV %>% 
-    str_replace_all('-', '.') %>% 
+  colChar <- dateV |> 
+    str_replace_all('-', '.') |> 
     str_c("X",.)
 }
 

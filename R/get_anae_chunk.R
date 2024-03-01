@@ -36,8 +36,8 @@ get_anae_chunk <- function(anae_path, catchment, thischunk, subchunkArgs, nchunk
   # be an issue here. If there are potential issues, throw a warning.
   if (any(!sf::st_is(anaePolys, c('POLYGON', 'MULTIPOLYGON')))) {
     origrows <- nrow(anaePolys)
-    anaePolys <- anaePolys %>%
-      dplyr::filter(!st_is_empty(.)) %>%
+    anaePolys <- anaePolys |>
+      dplyr::filter(!st_is_empty(.)) |>
       sf::st_collection_extract('POLYGON')
 
     droppedrows <- origrows - nrow(anaePolys)

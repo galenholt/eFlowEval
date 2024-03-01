@@ -67,7 +67,7 @@ fadefinder <- function(fadeval, basehue, n = Inf) {
     fadeval <- fadevec[findInterval(fadeval, fadevec, rightmost.closed = TRUE) + 1]
   }
   
-  fadedcol <- lighten(basehue, amount = 1-fadeval) %>%
+  fadedcol <- lighten(basehue, amount = 1-fadeval) |>
     desaturate(amount = 1-fadeval)
 }
 
@@ -105,7 +105,7 @@ col2dmat <- function(pal, n1, n2 = 2, dropwhite = TRUE, fadevals = NULL) {
   
   
   for(i in 1:length(fadesteps)) {
-    colormat[i, ] <- lighten(colormat[i, ], amount = fadesteps[i]) %>%
+    colormat[i, ] <- lighten(colormat[i, ], amount = fadesteps[i]) |>
       desaturate(amount = fadesteps[i])
   }
   
@@ -114,8 +114,8 @@ col2dmat <- function(pal, n1, n2 = 2, dropwhite = TRUE, fadevals = NULL) {
 
 # generate a plot from the color value matrix
 plot2dcols <- function(colmat) {
-  coltib <- as_tibble(colmat, rownames = 'row') %>%
-    pivot_longer(cols = starts_with('V'), names_to = 'column') %>%
+  coltib <- as_tibble(colmat, rownames = 'row') |>
+    pivot_longer(cols = starts_with('V'), names_to = 'column') |>
     mutate(row = as.numeric(row), column = as.numeric(str_remove(column, 'V')))
   
   colplot <- ggplot(coltib, aes(y = row, x = column, fill = value)) +
@@ -137,9 +137,9 @@ getfadecol <- function(starsObj, attributeNum = 1, datewanted,
   # There's probably a rearrange that
   # could be done here to swap attributes and dims? usiung merge() doesn't work
   # easily, anyway, so ignore for now.
-  sfF <- starsObj[attributeNum,,] %>%
-    st_as_sf() %>%
-    select(all_of(datewanted)) %>%
+  sfF <- starsObj[attributeNum,,] |>
+    st_as_sf() |>
+    select(all_of(datewanted)) |>
     pivot_longer(cols = all_of(datewanted), names_to = 'date', values_to = 'plotValues')
   
   # We need a column of fade values. It can be set (maxfade and fadeval = NULL) or
@@ -156,15 +156,15 @@ getfadecol <- function(starsObj, attributeNum = 1, datewanted,
       stop("No way to handle more than two fade attributes. Write some code if you want to do this.")
     }
     
-    fade_sf <- starsFade %>%
-      st_as_sf() %>%
-      select(all_of(datewanted)) %>%
+    fade_sf <- starsFade |>
+      st_as_sf() |>
+      select(all_of(datewanted)) |>
       pivot_longer(cols = all_of(datewanted), names_to = 'date', values_to = 'fadeVal')
     
     sfF <- bind_cols(sfF, st_drop_geometry(select(fade_sf, fadeVal)))
     
     if (fadeRel) {
-      sfF <- sfF %>% 
+      sfF <- sfF |> 
         mutate(fadeVal = fadeVal/plotValues)
     }
     
@@ -203,14 +203,14 @@ sf_to_plot <- function(starsObj, attributeNum = 1, datewanted,
   
   # Deal with the situation where the fade values are outside 0-1
   if (any(sfC$fadeVal > 1 | sfC$fadeVal < 0)) {
-    sfC <- sfC %>%
+    sfC <- sfC |>
       mutate(origFade = fadeVal,
              fadeVal = relpos(fadeVal))
   }
   
   # enforce maxfade
   if (any(sfC$fadeVal < maxFade)) {
-    sfC <- sfC %>% 
+    sfC <- sfC |> 
       mutate(fadeVal = fadeVal*(1-maxFade)+maxFade)
   }
   
@@ -255,7 +255,7 @@ gppfade <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
   
   # log AFTER the plot controls, or end up double-logging
   if (logscale) {
-    gpp_sf <- gpp_sf %>%
+    gpp_sf <- gpp_sf |>
       mutate(plotValues = log10(1+plotValues))
   }
   
@@ -264,22 +264,22 @@ gppfade <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
   # etc. so use that I guess. Kind of annoying to do two ways
   
   if (binOrCon == 'bin') {
-    gpp_sf <- gpp_sf %>%
+    gpp_sf <- gpp_sf |>
       mutate(relvals = relpos(plotValues),
              hue = hueassign(plotValues, gppControl$gpppal, gppControl$gppbreaks),
              # conhue = huefinder(relvals, n = 1000, palname = palette, reverse = reverse),
              plotcolor = fadefinder(fadeVal, hue)) #,
              # confade = fadefinder(fadeVal, conhue))
-    # gpp_sf <- gpp_sf %>%
+    # gpp_sf <- gpp_sf |>
     #   mutate(plotcolor = binfade) 
   } else {
-    gpp_sf <- gpp_sf %>%
+    gpp_sf <- gpp_sf |>
       mutate(relvals = relpos(plotValues),
              # binhue = hueassign(plotValues, gppControl$gpppal, gppControl$gppbreaks),
              hue = huefinder(relvals, n = 1000, palname = palette, reverse = reverse),
              # binfade = fadefinder(fadeVal, binhue),
              plotcolor = fadefinder(fadeVal, hue))
-    # gpp_sf <- gpp_sf %>%
+    # gpp_sf <- gpp_sf |>
     #   mutate(plotcolor = confade)
   }
   
@@ -290,7 +290,7 @@ gppfade <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
                         forcelegend)
   
   if (plotPkg == 'tmap') {
-    gpp_tm <- gpp_sf %>%
+    gpp_tm <- gpp_sf |>
       tm_shape() +
       tm_fill(col = 'plotValues', palette = gppControl$gpppal,
               breaks = gppControl$gppbreaks,
@@ -406,7 +406,7 @@ gppfade <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
           matfade <- col2dmat(gppControl$gpppal, n1 = length(gppControl$gpppal), n2 = fadebins)
           
           ybreaks <- 1:nrow(matfade)
-          ylabels <- seq(from = min(gpp_sf$origFade), to = max(gpp_sf$origFade), length.out = fadebins) %>%
+          ylabels <- seq(from = min(gpp_sf$origFade), to = max(gpp_sf$origFade), length.out = fadebins) |>
             round(digits = 2)
         }
         

@@ -291,9 +291,9 @@ tempfun <- function(starsObj, attributeNum = 1, datewanted,
   
   
   # Process the data
-  temp_sf <- starsObj[attributeNum,,] %>%
-    st_as_sf() %>%
-    select(all_of(datewanted)) %>%
+  temp_sf <- starsObj[attributeNum,,] |>
+    st_as_sf() |>
+    select(all_of(datewanted)) |>
     pivot_longer(cols = all_of(datewanted), names_to = 'date', values_to = 'Temp')
   
   # get plot controls
@@ -304,7 +304,7 @@ tempfun <- function(starsObj, attributeNum = 1, datewanted,
                         forcelegend)
   
   if (plotPkg == 'tmap') {
-    temp_tm <- temp_sf %>%
+    temp_tm <- temp_sf |>
       tm_shape() + 
       tm_fill(col = 'Temp', 
               palette = tempControl$temppal,
@@ -370,13 +370,13 @@ inunfun <- function(starsObj, attributeNum = 1, datewanted, units = 'Ml',
     thistitle <- paste0(titlePrefix, datewanted, titleSuffix)
   }
   
-  inun_sf <- starsObj[attributeNum,,] %>%
-    st_as_sf() %>%
-    select(all_of(datewanted)) %>%
+  inun_sf <- starsObj[attributeNum,,] |>
+    st_as_sf() |>
+    select(all_of(datewanted)) |>
     pivot_longer(cols = all_of(datewanted), names_to = 'date', values_to = 'plotValues') 
   
   if (logscale) {
-    inun_sf <- inun_sf %>%
+    inun_sf <- inun_sf |>
       mutate(plotValues = log10(1+plotValues))
   }
   
@@ -388,7 +388,7 @@ inunfun <- function(starsObj, attributeNum = 1, datewanted, units = 'Ml',
                         forcelegend)
 
   if (plotPkg == 'tmap') {
-    inun_tm <- inun_sf %>%
+    inun_tm <- inun_sf |>
       tm_shape() + 
       tm_fill(col = 'plotValues', 
               palette = inunControl$inunpal,
@@ -453,13 +453,13 @@ gppfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
   }
   
   # here, attributes are estimates and CI,PI
-  gpp_sf <- starsObj[attributeNum,,] %>%
-    st_as_sf() %>%
-    select(all_of(datewanted)) %>%
+  gpp_sf <- starsObj[attributeNum,,] |>
+    st_as_sf() |>
+    select(all_of(datewanted)) |>
     pivot_longer(cols = all_of(datewanted), names_to = 'date', values_to = 'plotValues')
   
   if (logscale) {
-    gpp_sf <- gpp_sf %>%
+    gpp_sf <- gpp_sf |>
       mutate(plotValues = log10(1+plotValues))
   }
     
@@ -476,7 +476,7 @@ gppfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
                         forcelegend)
   
   if (plotPkg == 'tmap') {
-    gpp_tm <- gpp_sf %>%
+    gpp_tm <- gpp_sf |>
       tm_shape() +
       tm_fill(col = 'plotValues', palette = gppControl$gpppal,
               breaks = gppControl$gppbreaks,
@@ -554,20 +554,20 @@ erfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
   }
   
   
-  er_sf <- starsObj[attributeNum,,] %>%
-    st_as_sf() %>%
-    select(all_of(datewanted)) %>%
+  er_sf <- starsObj[attributeNum,,] |>
+    st_as_sf() |>
+    select(all_of(datewanted)) |>
     pivot_longer(cols = all_of(datewanted), names_to = 'date', values_to = 'plotValues') 
   
   if (logscale) {
-    er_sf <- er_sf %>%
+    er_sf <- er_sf |>
       mutate(plotValues = log10(1+plotValues))
   }
   
-  # er_sf <- starsObj[attributeNum,,] %>% 
-  #   st_as_sf() %>% 
-  #   select(all_of(datewanted)) %>%
-  #   rename(ER = 1) %>%
+  # er_sf <- starsObj[attributeNum,,] |> 
+  #   st_as_sf() |> 
+  #   select(all_of(datewanted)) |>
+  #   rename(ER = 1) |>
   #   mutate(logER = log10(1+ER))
   
   # get plot controls
@@ -579,7 +579,7 @@ erfun <- function(starsObj, attributeNum = 1, datewanted, units = 'kg',
   
   
   if (plotPkg == 'tmap') {
-    er_tm <- er_sf %>%
+    er_tm <- er_sf |>
       tm_shape() +
       tm_fill(col = 'plotValues', palette = erControl$erpal,
               breaks = erControl$erbreaks,
@@ -664,11 +664,11 @@ local_veg_plot <- function(vegsf, datewanted, plotPkg, colorchoice = NA,
     thistitle <- paste0(titlePrefix, datewanted, titleSuffix)
   }
   
-  vegsf <- vegsf %>% 
+  vegsf <- vegsf |> 
     dplyr::filter(date == datewanted)
   
   if (plotPkg == 'ggplot') {
-    vegplot <- vegsf %>% 
+    vegplot <- vegsf |> 
       ggplot() +
       geom_sf(mapping = aes(fill = prop_passing), color = colorchoice) +
       scale_fill_continuous_sequential(palette = 'YlGnBu', limits = c(0,1)) + 
@@ -695,7 +695,7 @@ local_veg_plot <- function(vegsf, datewanted, plotPkg, colorchoice = NA,
   
   if (plotPkg == 'tmap') {
     
-    vegplot <- vegsf %>%
+    vegplot <- vegsf |>
       tm_shape() +
       tm_fill(col = 'prop_passing', palette = 'YlGnBu',
               title = 'Proportion\nwetland area\nsuccessful',

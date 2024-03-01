@@ -189,7 +189,7 @@ daysfromWY <- function(input.date) {
 # A function to return NA when trying to predict new factor levels for fixed effects
 checklevels <- function(newdata, mod) {
   # Get the factor levels
-  faclevs <- model.frame(mod) %>% select_if(is.factor) %>% 
+  faclevs <- model.frame(mod) |> select_if(is.factor) |> 
     map(unique)
   # and the ones that are fixed factors (not random effects)
   fixedvars <- attributes(attributes(model.frame(mod))$terms)$varnames.fixed
@@ -198,13 +198,13 @@ checklevels <- function(newdata, mod) {
   
   # get the levels available in the data
   if ('sf' %in% class(newdata)) {
-    datalevs <- newdata %>% 
-      st_drop_geometry() %>% # only relevant if sf
-      select(any_of(names(faclevs))) %>% 
+    datalevs <- newdata |> 
+      st_drop_geometry() |> # only relevant if sf
+      select(any_of(names(faclevs))) |> 
       map(unique)
   } else {
-    datalevs <- newdata %>% 
-      select(any_of(names(faclevs))) %>% 
+    datalevs <- newdata |> 
+      select(any_of(names(faclevs))) |> 
       map(unique)
   }
   
@@ -221,7 +221,7 @@ checklevels <- function(newdata, mod) {
   
   # use map-reduce to ask if all levels are available for all factors across
   # what might be an uneven list.
-  facsinmodel <- map2(datalevs, faclevs, checkin) %>% reduce(all)
+  facsinmodel <- map2(datalevs, faclevs, checkin) |> reduce(all)
   return(all(facsinmodel))
 }
 
@@ -294,7 +294,7 @@ add_preds <- function(newdata, mod, predname = NULL,
 
 crscheck <- function(obj, whichcrs) {
   if (st_crs(obj)$epsg != whichcrs) {
-    obj <- st_transform(obj, whichcrs) %>%
+    obj <- st_transform(obj, whichcrs) |>
       st_make_valid()
   } 
   
@@ -305,13 +305,13 @@ crscheck <- function(obj, whichcrs) {
 # turn a stars into a stacked sf with date col and add the catchme --------
 
 sfandcatch <- function(starsObj, catches = NULL, newname) {
-  starsObj <- starsObj %>%
-    st_as_sf() %>% 
-    pivot_longer(cols = -any_of(c('Shape', 'geometry')), names_to = 'date', values_to = {{newname}}) %>%
+  starsObj <- starsObj |>
+    st_as_sf() |> 
+    pivot_longer(cols = -any_of(c('Shape', 'geometry')), names_to = 'date', values_to = {{newname}}) |>
     mutate(date = as.Date(date))
   
   if (!is.null(catches)) {
-    starsObj <- starsObj %>%
+    starsObj <- starsObj |>
       st_join(catches, join = st_equals_exact, par = 1)
   }
   

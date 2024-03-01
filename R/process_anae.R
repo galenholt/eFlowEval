@@ -24,9 +24,9 @@ process_anae <- function(datIn, outDir,
   # and then cast, but that didn't work for me
   # Takes a while. Didn't time, but > 10 mins
   system.time(wetlands <- sf::read_sf(dsn = file.path(datIn,
-                                      'ANAE/ANAE_Wetlands_v3_24mar2021/Wetlands_ANAE_v3_24mar2021/Wetlands_ANAE_v3_24mar2021.shp')) %>%
-    sf::st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
-    sf::st_transform(commonCRS) %>%
+                                      'ANAE/ANAE_Wetlands_v3_24mar2021/Wetlands_ANAE_v3_24mar2021/Wetlands_ANAE_v3_24mar2021.shp')) |>
+    sf::st_cast("MULTIPOLYGON") |> # cleans up an issue with multisurfaces
+    sf::st_transform(commonCRS) |>
     sf::st_make_valid())
 
   # Suppose I'll keep SYSID for now, but really we want to shift over to the
@@ -52,9 +52,9 @@ process_anae <- function(datIn, outDir,
       # Get the climate layer
       # The rest of this still needs to come from the V2 for now, since V3 is just the shapefiles
       # Get koppen climate region as a test of the joining of data
-      kopSub <- sf::read_sf(dsn = file.path(datIn, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'BoM_Koppen_subregions') %>%
-        sf::st_cast("MULTIPOLYGON") %>% # cleans up an issue with multisurfaces
-        sf::st_transform(commonCRS) %>%
+      kopSub <- sf::read_sf(dsn = file.path(datIn, 'ANAE/MDB_ANAE_Aug2017/MDB_ANAE.gdb'), layer = 'BoM_Koppen_subregions') |>
+        sf::st_cast("MULTIPOLYGON") |> # cleans up an issue with multisurfaces
+        sf::st_transform(commonCRS) |>
         sf::st_make_valid() |>
         dplyr::select(ANAEField, CODE, Zone)
 
