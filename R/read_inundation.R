@@ -15,34 +15,47 @@ read_inundation <- function(inun_dir) {
       stringr::str_extract_all("[1-2][0-9][0-9][0-9]_[0-9][0-9]")
   } else if (grepl('WOFS', inunTifs[1])) {
     # Old version
-    tifdates <- inunTifs %>% # Set of filenames
-      stringr::str_extract_all("[1-2][0-9][0-9][0-9]_[0-9][0-9]_WaterDepth.tif") %>%
+    tifdates <- inunTifs |> # Set of filenames
+      stringr::str_extract_all("[1-2][0-9][0-9][0-9]_[0-9][0-9]_WaterDepth.tif") |>
       # now delete the safety
       stringr::str_remove("_WaterDepth.tif")
   }
 
 
   # clean up the dates
-  tifdates <- tifdates %>%
+  tifdates <- tifdates |>
     # add the first of the month on there
-    stringr::str_c('_01') %>%
+    stringr::str_c('_01') |>
     # turn into dates
-    lubridate::ymd() %>%
+    lubridate::ymd() |>
     as.POSIXct() # soilMstars uses posix instead of the Date class that lubridate returns, so be consistent
 
   # Make the proxy
-  tifTimes <- inunTifs %>% # filenames
-    stars::read_stars() %>% # read in
-    merge() %>% # make a brick
-    setNames('depth') %>% # name the attribute
+  tifTimes <- inunTifs |> # filenames
+    stars::read_stars() |> # read in
+    merge() |> # make a brick
+    setNames('depth') |> # name the attribute
     # Make dates
     # soilMstars uses an offset and delta, while this has 'values'.
     # I seem to remember values might cause an issue somewhere down the track, so
     # might need to revisit
-    stars::st_set_dimensions(3, values = tifdates) %>%
+    stars::st_set_dimensions(3, values = tifdates) |>
     stars::st_set_dimensions(names = c("x", "y", "time"))
 
-  pixarea <- get_pixarea(inunTifs[1], st_crs(tifTimes))
+  # Units can't actually be set on a proxy, so we just have to be careful I'm
+  # going to use m consistently, since the volume is easier to calculate that
+  # way. There's potentially some memory savings from using int mm, but the data
+  # reads in as double anyway.
+  if (grepl('v3', inunTifs[1])) {
+    # New version in mm
+    # tifTimes[[1]] <- units::set_units(tifTimes[[1]], "mm")
+    tifTimes <- tifTimes / 1000
+  } else if (grepl('WOFS', inunTifs[1])) {
+    # Old version in m
+    # tifTimes[[1]] <- units::set_units(tifTimes[[1]], "m")
+  }
+
+  pixarea <- get_pixarea(inunTifs[1], sf::st_crs(tifTimes))
 
   return(list(proxy_data = tifTimes, pixarea = pixarea))
 }
