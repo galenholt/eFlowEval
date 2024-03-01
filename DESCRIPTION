@@ -11,10 +11,14 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
 Imports: 
+    doFuture,
     dplyr,
+    foreach,
     ggplot2,
     lubridate,
     lwgeom,
+    purrr,
+    RcppRoll,
     readxl,
     sf,
     stars,
