@@ -94,7 +94,7 @@ singlegeoms <- metdatasf %>% select(samplepoint, program) %>% distinct() %>%
 # FOR LOOP STARTS HERE
 loopstart <- proc.time()
 joinedTempProd <- foreach(i = 1:nrow(singlegeoms), 
-                          .combine = bind_rows) %dopar% {
+                          .combine = bind_rows) %dofuture% {
   # Filter to a single site- takes a while
   onesite <- filter(metdatasf, geometry == singlegeoms$geometry[i]) %>% 
     mutate(ValleyName = singlegeoms$ValleyName[i]) # add the valleyname

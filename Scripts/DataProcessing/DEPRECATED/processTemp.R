@@ -246,8 +246,8 @@ anaePolys <- st_transform(anaePolys, starCRS)
 # the below gets weird if I run with nrow(anaePolys) == 0. tried to fix in
 # rastPolyJoin, and did, but the list unpacking is still a pain. so, use a
 # workaround
-# dpList <- foreach(s = 8:12) %dopar% {
-dpList <- foreach(s = 1:nrow(anaePolys)) %dopar% {
+# dpList <- foreach(s = 8:12) %dofuture% {
+dpList <- foreach(s = 1:nrow(anaePolys)) %dofuture% {
   thiscrop <- st_crop(soilTstars, anaePolys[s,], as_points = FALSE)
   thistemp <- rastPolyJoin(polysf = anaePolys[s,], rastst = thiscrop, FUN = chosenSummary,
                             grouper = 'UID', maintainPolys = TRUE,
@@ -267,13 +267,13 @@ if (nrow(anaePolys) == 0) {
   # Then, unpack the lists also using foreach
   tempAns <- foreach(l = 1:length(dpList),
                      .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
-                     .multicombine=TRUE) %dopar% {
+                     .multicombine=TRUE) %dofuture% {
                        dpList[[l]][[1]]
                      }
   
   tempIndex <- foreach(l = 1:length(dpList),
                        .combine=bind_rows,
-                       .multicombine=TRUE) %dopar% {
+                       .multicombine=TRUE) %dofuture% {
                          dpList[[l]][[2]]
                        }
 }

@@ -54,7 +54,7 @@ for(sfun in 1:length(summaryFuns)) {
   inunBasin <- foreach(i = 1:length(catchNames), # length(catchNames)
                        .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
                        .multicombine=TRUE,
-                       .inorder = TRUE, .packages = c('sf', 'stars', 'dplyr')) %dopar% { # dopar now seems to work with .packages
+                       .inorder = TRUE, .packages = c('sf', 'stars', 'dplyr')) %dofuture% { # dopar now seems to work with .packages
                          
                          # oneloopstart <- proc.time()
                          # Set up loop iterations

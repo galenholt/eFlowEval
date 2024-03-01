@@ -317,7 +317,7 @@ if (nrow(weightedMeanIndex) == 0) {
 } else {
   starpreds <- foreach(l = 1:nrow(weightedMeanIndex),
                        .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
-                       .multicombine=TRUE) %dopar% {
+                       .multicombine=TRUE) %dofuture% {
                          bottom <- l
                          top <- l
                          chunkpred(bottom, top) 

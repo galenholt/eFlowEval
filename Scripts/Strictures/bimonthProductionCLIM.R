@@ -64,9 +64,9 @@ catchNames
 startloop <- proc.time()
 
 # trashout <- foreach(i = 1:2) %:%
-#   foreach(ca = 6:7) %dopar% {
+#   foreach(ca = 6:7) %dofuture% {
 trashout <- foreach(i = 1:length(predicteds)) %:%
-  foreach(ca = 1:length(catchNames)) %dopar% {
+  foreach(ca = 1:length(catchNames)) %dofuture% {
     scriptOut <- file.path(datOut, 'ClimateAndProduction', 'Predictions', predicteds[i], 'bimonth')
     if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
     
@@ -109,8 +109,8 @@ trashout <- foreach(i = 1:length(predicteds)) %:%
     # For testing
     # ca <- 9 # 9 is Ed-Wak
     # startloop <- proc.time()
-    # trashOut <- foreach(ca = 6) %dopar% {
-    # trashOut <- foreach(ca = 1:length(catchNames)) %dopar% {
+    # trashOut <- foreach(ca = 6) %dofuture% {
+    # trashOut <- foreach(ca = 1:length(catchNames)) %dofuture% {
     # Will need to loop over this
     thisCatch <- catchNames[ca]
     load(file.path(predictIn, paste0(thisCatch, '_', predicteds[i], '.rdata')))

@@ -339,8 +339,8 @@ processInundationGeneral <- function(datOut, args) {
   # Need to change the way we do the grid-cropped situation. It should be out
   # here (or the thiscrop step should be in rastpolyjoin) so we don't have to
   # potentially crop twice. I think I've now done this.
-  # dpList <- foreach(s = 8:12) %dopar% {
-  dpList <- foreach(s = 1:nrow(anaePolys)) %dopar% {
+  # dpList <- foreach(s = 8:12) %dofuture% {
+  dpList <- foreach(s = 1:nrow(anaePolys)) %dofuture% {
     # moved the cropping all the way in to rpintersect
     # thiscrop <- st_crop(tifTimes, anaePolys[s,], as_points = FALSE)
     thistemp <- rastPolyJoin(polysf = anaePolys[s,], rastst = tifTimes, FUN = chosenSummary,
@@ -361,13 +361,13 @@ processInundationGeneral <- function(datOut, args) {
     # Then, unpack the lists also using foreach
     tempAns <- foreach(l = 1:length(dpList),
                        .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
-                       .multicombine=TRUE) %dopar% {
+                       .multicombine=TRUE) %dofuture% {
                          dpList[[l]][[1]]
                        }
     
     tempIndex <- foreach(l = 1:length(dpList),
                          .combine=bind_rows,
-                         .multicombine=TRUE) %dopar% {
+                         .multicombine=TRUE) %dofuture% {
                            dpList[[l]][[2]]
                          }
   }

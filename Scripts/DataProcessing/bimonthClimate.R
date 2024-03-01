@@ -43,8 +43,8 @@ suffix <- str_extract(catchFiles[1], pattern = '_[A-z]*')
 # For testing
 # ca <- 1
 startloop <- proc.time()
-# trashOut <- foreach(ca = 4:5) %dopar% {
-trashOut <- foreach(ca = 1:length(catchNames)) %dopar% {
+# trashOut <- foreach(ca = 4:5) %dofuture% {
+trashOut <- foreach(ca = 1:length(catchNames)) %dofuture% {
   # Will need to loop over this
   thisCatch <- catchNames[ca]
   # suffix <- str_extract(catchFiles, pattern = '_[A-z]*')

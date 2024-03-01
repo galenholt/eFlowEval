@@ -67,7 +67,7 @@ runlist <- makeSHfails(outerDir = file.path(datOut, 'Inundationprocessed'),
 
 # Run over the catchments and chunks 
 alltimes <- foreach(w = names(runlist), .combine = rbind, .errorhandling = 'remove') %:%
-  foreach(i = as.character(runlist[[w]]), .combine = rbind, .errorhandling = 'remove') %dopar% {
+  foreach(i = as.character(runlist[[w]]), .combine = rbind, .errorhandling = 'remove') %dofuture% {
   args <- c('blah', 'b', 'c', 'g', '5', 
             'Scripts/DataProcessing/processInundationGeneral.R', 
             'lippiaAdultSurvive', i, w)

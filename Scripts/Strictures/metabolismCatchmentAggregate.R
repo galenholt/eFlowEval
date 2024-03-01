@@ -67,7 +67,7 @@ for(sfun in 1:length(filesubdirs)) {
   catchmentBasin <- foreach(i = 1:length(catchNames), # length(catchNames)
                        .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
                        .multicombine=TRUE,
-                       .inorder = TRUE, .packages = c('sf', 'stars', 'dplyr', 'stringr')) %dopar% { # I cannot sort out why I keep getting 'task 1 failed non numeric argument to mathematical function' when I use dopar
+                       .inorder = TRUE, .packages = c('sf', 'stars', 'dplyr', 'stringr')) %dofuture% { # I cannot sort out why I keep getting 'task 1 failed non numeric argument to mathematical function' when I use dopar
                          
                          # oneloopstart <- proc.time()
                          # Set up loop iterations
