@@ -61,7 +61,7 @@ alltimes <- foreach(w = names(runlist),
                     .errorhandling = 'remove') %:%
   foreach(i = as.character(runlist[[w]]), 
           .combine = rbind, 
-          .errorhandling = 'remove') %dopar% {
+          .errorhandling = 'remove') %dofuture% {
             inuntab <- processData(dataname = 'inundation', 
                                    data_dir = datDir, 
                                    summaryFun = 'lippiaAdultSurvive', 
@@ -106,8 +106,10 @@ if (is.null(runlist_end)) {
 
 ```
 
-     user  system elapsed 
-      91.36   61.53 1479.17 
+```         
+ user  system elapsed 
+  91.36   61.53 1479.17 
+```
 
 ### Check the anaes aren't weirdly duplicated
 

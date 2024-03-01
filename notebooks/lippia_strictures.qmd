@@ -104,7 +104,7 @@ For ref, longest one takes about 3.5 minutes, took about 10 mins to run locally 
 # Run over the catchments
 alltimes <- foreach(w = runlist, 
                     .combine = rbind, 
-                    .errorhandling = 'remove') %dopar% {
+                    .errorhandling = 'remove') %dofuture% {
             lippiatime <- lippiastricts(catchment = w, 
                                    savefile = TRUE, returnR = FALSE)
             

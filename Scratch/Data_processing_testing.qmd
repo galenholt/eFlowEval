@@ -125,8 +125,10 @@ test <- read_stars(temppath, sub = 'LST_Day_1km', proxy = TRUE)
 
 The error there is
 
-    Access window out of range in RasterIO().  Requested (0,0) of size 1933x1865 on raster of 1933x1.Error in CPL_read_gdal(as.character(x), as.character(options), as.character(driver),  : 
-      read failure
+```         
+Access window out of range in RasterIO().  Requested (0,0) of size 1933x1865 on raster of 1933x1.Error in CPL_read_gdal(as.character(x), as.character(options), as.character(driver),  : 
+  read failure
+```
 
 But it *has* size 1933x1865-
 
@@ -153,8 +155,10 @@ testRproxy <- temppath %>% # filename
 
 But the proxy can't be turned into a stars
 
-    Access window out of range in RasterIO().  Requested (0,0) of size 100x100 on raster of 1933x1.Error in CPL_read_gdal(as.character(x), as.character(options), as.character(driver),  : 
-      read failure
+```         
+Access window out of range in RasterIO().  Requested (0,0) of size 100x100 on raster of 1933x1.Error in CPL_read_gdal(as.character(x), as.character(options), as.character(driver),  : 
+  read failure
+```
 
 ```{r}
 #| eval: false

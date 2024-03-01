@@ -27,7 +27,7 @@ modifyANAE <- function(outerDir, summaryFuns, returnDir, FUN) {
     
     # Loop over catchments, perform function, and return
     
-      dpList <- foreach(s = 1:length(catchfiles)) %dopar% {
+      dpList <- foreach(s = 1:length(catchfiles)) %dofuture% {
         load(file.path(moddir, catchfiles[s]))
         # Standard variable names
         starpart <- get(partnames[s])

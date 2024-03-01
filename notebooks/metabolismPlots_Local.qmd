@@ -424,7 +424,7 @@ amount of monkeying with the look, that's OK
 ```{r}
 # Get x breaks that exist when discretized
 breakswanted <- c(0, 1, 10, 100, 1000)
-xbreaks <- foreach(b = breakswanted, .combine = c) %dopar% {
+xbreaks <- foreach(b = breakswanted, .combine = c) %dofuture% {
     gpp_sf_LMU_wide$inun[which.min(abs(gpp_sf_LMU_wide$inun - b))]
 } 
 

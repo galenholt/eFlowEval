@@ -113,7 +113,7 @@ run the loops over catchments. No chunks here, I don't think.
 # Run over the catchments
 alltimes <- foreach(w = runlist, 
                     .combine = rbind, 
-                    .errorhandling = 'remove') %dopar% {
+                    .errorhandling = 'remove') %dofuture% {
             centipedatime <- centipedastricts(catchment = w, 
                                    savefile = TRUE, returnR = FALSE)
             
