@@ -1,0 +1,142 @@
+---
+title: "New Inundation Checks"
+format: html
+editor: visual
+---
+
+## Purpose
+
+The new inundation data has changed. Explore it here to check things like units.
+
+```{r}
+library(stars)
+library(dplyr)
+library(ggplot2)
+source('directorySet.R')
+```
+
+The metadata at <https://data.csiro.au/collection/csiro:50243> says
+
+::: {#quote style="color: gray"}
+The unit of the data is in millimetres. The maximum depth is 65534mm; minimum water depth is 1mm; value 0 represents dry land; and value 65535 represents no-data. The file format is Cloud Optimised Geotiff (COG) and the projection used is EPSG:4326.
+:::
+
+Those are not the same units as previously, and there used to be NA in there that was also 0.
+
+The timesteps **are at the start of the period**:
+
+::: {#reference style="color: gray"}
+FROM TICEHUST PAPER ABOUT WOFS:
+
+The filenames use the following format:
+
+MIM_WOFS_Max_water_4326tiles_YYYY_MM_TwoMonthlyMax_CloudGapSlopeMskd.tif.gz
+
+Where YYYY is the year, and MM is the first month of the two-monthly period (01=January-February, 03=March-April, 05=May-June, 07=July-August, 09=September-October, 11=November-December).
+
+References:
+
+Ticehurst C, Teng J, Sengupta A. Development of a Multi-Index Method Based on Landsat Reflectance Data to Map Open Water in a Complex Environment. Remote Sens. 2022, 14, 1158. https://doi.org/10.3390/ rs14051158.
+
+Ticehurst C, Teng J, Sengupta A (2021) Generating two-monthly surface water images for the Murray-Darling Basin. In Proceedings of 24th International Congress on Modelling and Simulation, Sydney, NSW, Australia, 5 to 10 December 2021 mssanz.org.au/modsim2021. https://www.mssanz.org.au/modsim2021/papers/G5/ticehurst.pdf.
+:::
+
+## Check the data
+
+Look at just one file to see what we're working with.
+
+```{r}
+inun1 <- read_stars(file.path(datDir, 'Inundation_new', 'data', 'MDB_Water_Depth_v3.6_4326', 'FwDET_v3_TPS_2010_09.tif'))
+```
+
+```{r}
+rbm <- ramsarBoundsMDB |> 
+  mutate(area = st_area(geometry)) |> 
+  arrange(area) |> 
+  st_transform(st_crs(inun1))
+
+inun1c <- st_crop(inun1, rbm |> 
+                    filter(Wetland == 'Booligal Wetlands'),
+                  as_points = FALSE)
+```
+
+```{r}
+system.time(inun1np <- rpintersect(rbm |> filter(Wetland == 'Booligal Wetlands'),
+                                   inun1c))
+```
+
+```{r}
+inun1np
+```
+
+```{r}
+ggplot() + geom_sf(data = inun1np, mapping = aes(fill = FwDET_v3_TPS_2010_09.tif))
+
+```
+
+That looks fine, but what are the units? I want to double check that they are in fact in mm. The previous data was in m, (we thought).
+
+```{r}
+inun1old <- read_stars(file.path(datDir, 'Inundation', 'WaterDepth_TwoMonthly', 'geotiff',
+                                 'WOFSwater_MaxTwoMonthly_4326_MDB_2010_09_WaterDepth.tif'))
+
+inun1cold <- st_crop(inun1old, rbm |> 
+                    filter(Wetland == 'Booligal Wetlands'),
+                  as_points = FALSE)
+
+system.time(inun1npold <- rpintersect(rbm |> filter(Wetland == 'Booligal Wetlands'),
+                                   inun1cold))
+
+inun1npold
+```
+
+```{r}
+ggplot() + geom_sf(data = inun1npold,
+                   mapping = aes(fill = WOFSwater_MaxTwoMonthly_4326_MDB_2010_09_WaterDepth.tif))
+
+```
+
+That seems about right. Now, will that unit change bite us? Almost certainly. Will need to track it through everywhere.
+
+## Check the read function is doing cleanup correctly
+
+Moved 2010 data to test directory
+
+```{r}
+inun_proxy <- read_inundation(file.path(datDir, 'Inundation_new', 'test2010'))
+```
+
+```{r}
+system.time(inun_stars <- rpintersect(rbm |> 
+                                        filter(Wetland == 'Booligal Wetlands'),
+                                   inun_proxy$proxy_data))
+```
+
+```{r}
+inun_starsl <- inun_stars |> 
+  tidyr::pivot_longer(cols = starts_with('X'), values_to = 'depth') |> 
+  mutate(date = lubridate::ymd(stringr::str_remove_all(name, 'X')))
+```
+
+```{r}
+hist(inun_starsl$depth)
+```
+
+```{r}
+ggplot(data = inun_starsl) + geom_sf(aes(fill = depth)) +
+  facet_wrap(vars(date)) + labs(fill = 'Depth (m)')
+```
+
+We do need to be careful with depths, there is a lot piled up right at 1mm
+
+```{r}
+hist(inun_starsl$depth[inun_starsl$depth > 0 & inun_starsl$depth < 0.01])
+```
+
+All but 5 are right at 1mm
+
+```{r}
+sum(inun_starsl$depth > 0 & inun_starsl$depth < 0.01)
+sum(inun_starsl$depth == 0.001)
+```
+
