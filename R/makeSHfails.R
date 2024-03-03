@@ -17,6 +17,22 @@
 # done with a single function, but it's not super straightforward, so easier to
 # just do separately
 
+#' Find missing runs
+#'
+#' @param outerDir
+#' @param varName
+#' @param summaryFuns
+#' @param nchunks
+#' @param lengthOrChunk
+#' @param runImmediate
+#' @param forceAllCatchments
+#' @param returnForR
+#' @param produce_sh
+#'
+#' @return
+#' @export
+#'
+#' @examples
 makeSHfails <- function(outerDir, varName, summaryFuns,
                         nchunks = 100, lengthOrChunk, runImmediate = FALSE,
                         forceAllCatchments = FALSE,

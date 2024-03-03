@@ -37,11 +37,14 @@ process_anae <- function(datIn, outDir,
     dplyr::select(UID, SYSID, ANAE_DESC, ANAE_CODE, WaterType, WaterRegim, SystemType, Confidence)
 
   # This is a bit fragile, but lets us pass sfs or characters. Some judicious use of `get` would be better.
-  if (is.list(intersections)) {
+  if (all(is.character(intersections))) {
+    char_intersections <- intersections
+  } else if (inherits(intersections, 'sf')) {
+    # This lets the loop work the same if there's only one
+    sf_intersections <- list(intersections)
+  } else if (is.list(intersections)) {
     char_intersections <- intersections[purrr::map_lgl(intersections, \(x) is.character(x))]
     sf_intersections <- intersections[purrr::map_lgl(intersections, \(x) inherits(x, 'sf'))]
-  } else {
-    char_intersections <- intersections
   }
 
   if (exists('char_intersections')) {
