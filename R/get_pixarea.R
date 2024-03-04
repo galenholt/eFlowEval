@@ -12,7 +12,7 @@ get_pixarea <- function(onefile, crs, sub = TRUE) {
   # Not sure this will actually work for dims > 3
   if (length(extradims) > 0) {
     data1010 <- data1010 |>
-      slice(!!extradims, 1)
+      dplyr::slice(!!extradims, 1)
   }
 
   pixarea <- data1010 |>

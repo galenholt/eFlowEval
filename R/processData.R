@@ -40,7 +40,7 @@ processData <- function(dataname,
     chunkpath <- stringr::str_flatten(c(catchment, subchunkArgs),
                                          collapse = '/sub_')
     }
-  scriptOut <- file.path(out_dir, paste0(dataname, 'processed'), summaryFun, 'chunked',
+  scriptOut <- file.path(out_dir, paste0(dataname), summaryFun, 'chunked',
                          chunkpath)
 
   # Get the needed chunk of anaes
