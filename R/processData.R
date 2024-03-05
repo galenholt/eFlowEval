@@ -20,7 +20,7 @@
 #' @export
 #'
 #' @examples
-processData <- function(dataname,
+process_data <- function(dataname,
                         data_dir,
                         poly_path = file.path(out_dir, 'ANAEprocessed'),
                         summaryFun,

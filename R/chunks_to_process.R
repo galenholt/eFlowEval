@@ -55,12 +55,15 @@ chunks_to_process <- function(out_dir,
   done_set <- full_set[full_set$filename %in% existing, ]
   todo_set <- full_set[!full_set$filename %in% existing, ]
 
-  if (length(todo_set == 0)) {
+  if (nrow(todo_set) == 0) {
     rlang::inform(c("All processing has finished!"))
   } else {
     rlang::inform(c("Processing to do:",
-                    glue::glue("Catchments: {unique(todo_set$catchment)}"),
-                    glue::glue("Total chunks: {nrow(todo_set)}")))
+                    "i" = "Total chunks: ",
+                    glue::glue("{nrow(todo_set)}"),
+                    "i" = "Catchments: ",
+                    glue::glue("{unique(todo_set$catchment)}"))
+                    )
   }
 
   if (produce_sh) {

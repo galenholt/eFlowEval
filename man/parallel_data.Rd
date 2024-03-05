@@ -20,26 +20,6 @@ parallel_data(
 }
 \arguments{
 \item{runframe}{a tibble or dataframe with columns 'catchment' and 'chunk'. if nchunks == 1, the 'chunk' column still needs to be there, but there should only be one row per catchment and chunk should always be 1}
-
-\item{dataname}{name of the data to process (and name of output directory for the data type). Current options 'inundation', 'soil_temp', 'moisture'}
-
-\item{data_dir}{directory with raw data}
-
-\item{poly_path}{path to the polygons to process into}
-
-\item{summaryFun}{character name of the summary function}
-
-\item{out_dir}{output directory}
-
-\item{nchunks}{default 100, how many chunks to use. If 1, the chunked system cancels out and the data is just saved to out_dir/dataname/summaryFun/Catchment_summaryFun.rds.}
-
-\item{whichcrs}{desired crs}
-
-\item{maxPix}{maximum number of pixels before individual polygons are broken up in \code{\link[=rastPolyJoin]{rastPolyJoin()}}}
-
-\item{rastRollArgs}{arguments to \code{\link[=rastPolyJoin]{rastPolyJoin()}} to roll the raster before aggregating}
-
-\item{saveout}{default TRUE, save data out.}
 }
 \value{
 a tibble of timings. The main output is saving the data to out_dir.

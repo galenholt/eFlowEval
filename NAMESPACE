@@ -2,9 +2,11 @@
 
 export(build_sh_file)
 export(chunks_to_process)
+export(concat_chunks)
 export(parallel_data)
-export(processData)
 export(process_anae)
+export(process_data)
 export(rastPolyJoin)
+export(test_anae_agg)
 importFrom(doFuture,"%dofuture%")
 importFrom(foreach,"%do%")

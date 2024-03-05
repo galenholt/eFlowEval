@@ -47,7 +47,7 @@ parallel_data <- function(runframe,
       thischunk = i,
       nchunks = nchunks,
       whichcrs = whichcrs,
-      maxPix = maxpix,
+      maxPix = maxPix,
       rastRollArgs = rastRollArgs,
     )
 
