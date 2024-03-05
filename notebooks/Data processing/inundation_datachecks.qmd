@@ -139,4 +139,3 @@ All but 5 are right at 1mm
 sum(inun_starsl$depth > 0 & inun_starsl$depth < 0.01)
 sum(inun_starsl$depth == 0.001)
 ```
-

@@ -21,7 +21,7 @@ chunks_to_process <- function(out_dir,
                   produce_sh = FALSE,
                   filetype = '.rds') {
 
-  if (catchment == 'all') {
+  if ('all' %in% catchment) {
     catchment <- c("Avoca", "BarwonDarling", "BorderRivers", "Broken", "Campaspe",
                   "Castlereagh", "CentralMurray", "CondamineBalonne",
                   "EdwardWakool", "Goulburn", "Gwydir", "Kiewa", "Lachlan",

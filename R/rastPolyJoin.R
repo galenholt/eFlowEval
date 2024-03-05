@@ -270,6 +270,7 @@ rpintersect <- function(singlesf, singleraster,
 
   # Transform to correct crs.
   # Doing this here, because if rastst is a proxy, we won't be able to transform until it's read in as st_as_sf
+
   if (sf::st_crs(rastSF)$epsg != whichcrs) {
     rastSF <- sf::st_transform(rastSF, whichcrs) |>
       sf::st_make_valid()
