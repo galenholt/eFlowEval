@@ -10,7 +10,7 @@
 #' @param catchment catchment to chunk into
 #' @param thischunk helps with chunking for parallel
 #' @param subchunkArgs more chunking help, default NULL
-#' @param nchunks default 100, how many chunks to use
+#' @param nchunks default 100, how many chunks to use. If 1, the chunked system cancels out and the data is just saved to out_dir/dataname/summaryFun/Catchment_summaryFun.rds.
 #' @param whichcrs desired crs
 #' @param maxPix maximum number of pixels before individual polygons are broken up in [rastPolyJoin()]
 #' @param rastRollArgs arguments to [rastPolyJoin()] to roll the raster before aggregating
@@ -40,8 +40,16 @@ processData <- function(dataname,
     chunkpath <- stringr::str_flatten(c(catchment, subchunkArgs),
                                          collapse = '/sub_')
     }
-  scriptOut <- file.path(out_dir, paste0(dataname), summaryFun, 'chunked',
-                         chunkpath)
+
+
+  # If not chunking, don't need the inner chunked dir.
+  if (nchunks == 1) {
+    scriptOUt <- file.path(out_dir, paste0(dataname), summaryFun)
+  } else if (nchunks > 1) {
+    scriptOut <- file.path(out_dir, paste0(dataname), summaryFun, 'chunked',
+                           chunkpath)
+  }
+
 
   # Get the needed chunk of anaes
   anaePolys <- get_anae_chunk(anae_path = poly_path,
@@ -165,6 +173,12 @@ processData <- function(dataname,
   # Got to be a cleaner way to do this.
   # assign(thistemp, tempAns)
   # assign(thisIndex, tempIndex)
+
+  # If 1, we don't append the chunkname and it goes in a different directory.
+  if (nchunks == 1) {
+    thistemp <- stringr::str_remove(thistemp, '_1$')
+    thisIndex <- stringr::str_remove(thisIndex, '_1$')
+  }
 
   names(outlist) <- c(thistemp, thisIndex)
 

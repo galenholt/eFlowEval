@@ -37,7 +37,7 @@ processData(
 
 \item{subchunkArgs}{more chunking help, default NULL}
 
-\item{nchunks}{default 100, how many chunks to use}
+\item{nchunks}{default 100, how many chunks to use. If 1, the chunked system cancels out and the data is just saved to out_dir/dataname/summaryFun/Catchment_summaryFun.rds.}
 
 \item{whichcrs}{desired crs}
 
