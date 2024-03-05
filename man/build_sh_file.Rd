@@ -20,6 +20,9 @@ build_sh_file(
 
 \item{lengthOrChunk}{'short', 'long' or 'chunk'. Short and long are times, 'chunk' makes subchunks, and is rarely used or maintained.}
 }
+\value{
+nothing, makes a file
+}
 \description{
 make an sh file for the HPC from a list of catchments and chunks
 }

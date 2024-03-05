@@ -2,7 +2,7 @@
 
 export(build_sh_file)
 export(chunks_to_process)
-export(makeSHfails)
+export(parallel_data)
 export(processData)
 export(process_anae)
 export(rastPolyJoin)
