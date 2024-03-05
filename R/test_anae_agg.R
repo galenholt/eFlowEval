@@ -1,6 +1,6 @@
 #' Check the UIDs haven't gotten scrambled or duplicated
 #'
-#' @inheritParams processData
+#' @inheritParams process_data
 #'
 #' @param debugbreak for testing
 #' @param filetype '.rds' (default), or '.rdata' for backwards compatibility

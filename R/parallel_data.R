@@ -1,6 +1,6 @@
-#' Light parallel wrapper over [processData()]
+#' Light parallel wrapper over [process_data()]
 #'
-#' @inheritParams processData
+#' @inheritParams process_data
 #'
 #' @param runframe a tibble or dataframe with columns 'catchment' and 'chunk'. if nchunks == 1, the 'chunk' column still needs to be there, but there should only be one row per catchment and chunk should always be 1
 #'
@@ -37,7 +37,7 @@ parallel_data <- function(runframe,
     w <- runframe$catchment[nl]
     i <- runframe$chunk[nl]
 
-    inuntab <- processData(
+    inuntab <- process_data(
       dataname = dataname,
       data_dir = data_dir,
       poly_path = poly_path,

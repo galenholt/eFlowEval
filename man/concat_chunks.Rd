@@ -14,6 +14,14 @@ concat_chunks(
 )
 }
 \arguments{
+\item{out_dir}{output directory}
+
+\item{dataname}{name of the data to process (and name of output directory for the data type). Current options 'inundation', 'soil_temp', 'moisture'}
+
+\item{summaryFun}{character name of the summary function}
+
+\item{catchment}{catchment to chunk into}
+
 \item{rebuild}{logical default FALSE does not re-concatenate if a concatenated file exists. If TRUE, it does.}
 
 \item{filetype}{'.rds' (default), or '.rdata' for backwards compatibility}

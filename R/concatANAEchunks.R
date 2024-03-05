@@ -1,6 +1,6 @@
 #' Function to concatenate chunked ANAE outputs
 #'
-#' @inheritParams processData
+#' @inheritParams process_data
 #'
 #' @param rebuild logical default FALSE does not re-concatenate if a concatenated file exists. If TRUE, it does.
 #' @param filetype '.rds' (default), or '.rdata' for backwards compatibility

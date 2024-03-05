@@ -15,6 +15,16 @@ test_anae_agg(
 )
 }
 \arguments{
+\item{catchment}{catchment to chunk into}
+
+\item{out_dir}{output directory}
+
+\item{dataname}{name of the data to process (and name of output directory for the data type). Current options 'inundation', 'soil_temp', 'moisture'}
+
+\item{summaryFun}{character name of the summary function}
+
+\item{poly_path}{path to the polygons to process into}
+
 \item{debugbreak}{for testing}
 
 \item{filetype}{'.rds' (default), or '.rdata' for backwards compatibility}
