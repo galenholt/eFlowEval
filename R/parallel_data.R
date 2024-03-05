@@ -29,8 +29,7 @@ parallel_data <- function(runframe,
     .combine = rbind,
     .options.future = list(
       seed = TRUE,
-      globals = structure(TRUE, add = summaryFun),
-      packages = 'sf'
+      globals = structure(TRUE, add = summaryFun)
     )
   ) %dofuture% {
 
