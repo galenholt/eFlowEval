@@ -20,6 +20,10 @@ parallel_data <- function(runframe,
                           saveout = TRUE) {
 
 
+  # Nothing to aggregate, return a dummy.
+  if (nrow(runframe) == 0) {
+    return(tibble::tibble(catchment = NA, chunknumber = NA, summaryFun = NA, npolys = 0, pixarea = NA, elapsed = NA))
+  }
   # set up progress bar
   p <- progressor(steps = nrow(runframe))
 
