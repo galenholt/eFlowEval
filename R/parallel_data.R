@@ -27,6 +27,7 @@ parallel_data <- function(runframe,
   alltimes <- foreach(
     nl = 1:nrow(runframe),
     .combine = rbind,
+    .errorhandling = 'remove', # ignores failed loops, which can be found post-hoc with chunks_to_process
     .options.future = list(
       seed = TRUE,
       globals = structure(TRUE, add = summaryFun)

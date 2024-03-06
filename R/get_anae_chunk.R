@@ -7,17 +7,23 @@ get_anae_chunk <- function(anae_path, catchment, thischunk, subchunkArgs, nchunk
 
   # Read in all ANAE ----------------------------------
   # The whole-basin version is ANAEbasinclim.rdata
-  # the particular file we want here is passed as catchment
-  thisAName <- paste0(catchment, 'ANAE')
+
   allANAES <- list.files(anae_path, pattern = paste0('^', catchment))
   ## Read in all ANAE polygons
+
+  # informative error if we try to grab something that doesn't exist.
+  if (length(allANAES) == 0) {
+    rlang::abort(c("No ANAE file for",
+                   glue::glue("Catchment {catchment} in {anae_path}")))
+  }
 
   # Old way with save - load
   if (grepl('.rdata', allANAES)) {
     load(file.path(anae_path, allANAES))
     # datOut is location-aware, based on directorySet.R, so this should work
     # locally or on HPC
-
+    # the particular file we want here is passed as catchment
+    thisAName <- paste0(catchment, 'ANAE')
     #change its name to something generic so can be looped over This is annoying,
     #but I guess not too bad
     #TODO:: if we re-structure the project, should saveRDS() to create the
