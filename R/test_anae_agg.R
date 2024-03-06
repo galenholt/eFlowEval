@@ -17,8 +17,8 @@ test_anae_agg <- function(catchment,
                           filetype = '.rds') {
   # This is a test file because I'm getting weird issues with ANAE duplication on big runs but not individual runs.
   # based on lippia.R, but moving to others too
-  if ('all' %in% catchments) {
-    catchments <- c("Avoca", "BarwonDarling", "BorderRivers", "Broken", "Campaspe",
+  if ('all' %in% catchment) {
+    catchment <- c("Avoca", "BarwonDarling", "BorderRivers", "Broken", "Campaspe",
                     "Castlereagh", "CentralMurray", "CondamineBalonne",
                     "EdwardWakool", "Goulburn", "Gwydir", "Kiewa", "Lachlan",
                     "Loddon", "LowerDarling", "LowerMurray", "Macquarie", "MittaMitta",
@@ -26,39 +26,51 @@ test_anae_agg <- function(catchment,
   }
 
   # I have no idea why this generates random numbers, but shut the warning up with doRNG
-  outtib <- foreach(i = 1:length(catchments),
-                    .combine = dplyr::bind_rows) %dorng% {
-    catchment <- catchments[i]
-    # we need to read them in to a standard name, rather than the pre-named
-    # objects they come in as.
-    outerDir <- file.path(out_dir, dataname)
+  outtib <- foreach(i = 1:length(catchment),
+                    .combine = dplyr::bind_rows) %do% {
+    thiscatchment <- catchment[i]
 
-    list_names <- c(paste0(catchment, '_', summaryFun),
-                    paste0(catchment, '_', summaryFun, '_index'))
-    list_path <- file.path(outerDir, summaryFun,
-                           paste0(catchment, '_', summaryFun, filetype))
+    anaes <- read_catchment_polys(poly_path, thiscatchment)
+    # Somehow some are invalid, despite the st_make_valid in processANAE
+    anaes <- sf::st_make_valid(anaes)
 
-    # Brind in the index file too- it's useful to make sure everything lines up
-
-    if (filetype == '.rdata') {
-      rlang::warn("please switch to .rds")
-      in_list <- load_rename(filepath = list_path,
-                             knownnames = list_names,
-                             newnames = c('aggdata', 'indices'))
-
-      anae_names <- paste0(catchment, 'ANAE')
-      anae_path <- file.path(datOut, 'ANAEprocessed', paste0(catchment, 'ANAE.rdata'))
-      anaes <- load_rename(filepath = anae_path,
-                           returnOne = anae_names) |>
-        st_transform(st_crs(in_list$aggdata)) |>
-        st_make_valid()
-    }
-    if (filetype == '.rds') {
-      in_list <- readRDS(file = list_path) |>
-        setNames(c('aggdata', 'indices'))
-      anae_path <- file.path(poly_path, paste0(catchment, 'ANAE.rds'))
-      anaes <- readRDS(file = anae_path)
-    }
+    datapath <- file.path(out_dir, dataname, summaryFun)
+    # The data should all have the catchment names too
+    in_list <- read_catchment_polys(datapath, thiscatchment) |>
+      setNames(c('aggdata', 'indices')) # make names generic
+#
+#     if (filetype == '.rdata') {
+#
+#       rlang::warn("please switch to .rds")
+#
+#       # we need to read them in to a standard name, rather than the pre-named
+#       # objects they come in as.
+#       outerDir <- file.path(out_dir, dataname)
+#
+#       list_names <- c(paste0(catchment, '_', summaryFun),
+#                       paste0(catchment, '_', summaryFun, '_index'))
+#       list_path <- file.path(outerDir, summaryFun,
+#                              paste0(catchment, '_', summaryFun, filetype))
+#
+#       # Brind in the index file too- it's useful to make sure everything lines up
+#
+#       in_list <- load_rename(filepath = list_path,
+#                              knownnames = list_names,
+#                              newnames = c('aggdata', 'indices'))
+#
+#       anae_names <- paste0(catchment, 'ANAE')
+#       anae_path <- file.path(datOut, 'ANAEprocessed', paste0(catchment, 'ANAE.rdata'))
+#       anaes <- load_rename(filepath = anae_path,
+#                            returnOne = anae_names) |>
+#         st_transform(st_crs(in_list$aggdata)) |>
+#         st_make_valid()
+#     }
+#     if (filetype == '.rds') {
+#       in_list <- readRDS(file = list_path) |>
+#         setNames(c('aggdata', 'indices'))
+#       anae_path <- file.path(poly_path, paste0(catchment, 'ANAE.rds'))
+#       anaes <- readRDS(file = anae_path)
+#     }
 
 
 
@@ -101,7 +113,7 @@ test_anae_agg <- function(catchment,
                           message = function(c) paste0('Message: ', c$message)
     )
 
-    outcome <- tibble::tibble(catchment = catchment, variable = dataname,
+    outcome <- tibble::tibble(catchment = thiscatchment, variable = dataname,
                               agg_fun = summaryFun,
                               passfail = list_test)
   }
