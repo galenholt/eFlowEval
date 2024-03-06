@@ -8,35 +8,7 @@ get_anae_chunk <- function(anae_path, catchment, thischunk, subchunkArgs, nchunk
   # Read in all ANAE ----------------------------------
   # The whole-basin version is ANAEbasinclim.rdata
 
-  allANAES <- list.files(anae_path, pattern = paste0('^', catchment))
-  ## Read in all ANAE polygons
-
-  # informative error if we try to grab something that doesn't exist.
-  if (length(allANAES) == 0) {
-    rlang::abort(c("No ANAE file for",
-                   glue::glue("Catchment {catchment} in {anae_path}")))
-  }
-
-  # Old way with save - load
-  if (grepl('.rdata', allANAES)) {
-    load(file.path(anae_path, allANAES))
-    # datOut is location-aware, based on directorySet.R, so this should work
-    # locally or on HPC
-    # the particular file we want here is passed as catchment
-    thisAName <- paste0(catchment, 'ANAE')
-    #change its name to something generic so can be looped over This is annoying,
-    #but I guess not too bad
-    #TODO:: if we re-structure the project, should saveRDS() to create the
-    #anaepolys so we can set the name on read-in
-    anaePolys <- get(thisAName)
-    rm(list = thisAName)
-  } else if (grepl('.rds', allANAES)) {
-    anaePolys <- readRDS(file.path(anae_path, allANAES))
-  }
-
-
-  # Somehow some are invalid, despite the st_make_valid in processANAE
-  anaePolys <- sf::st_make_valid(anaePolys)
+  anaePolys <- read_catchment_polys(anae_path, catchment)
 
   # Weird geometry types were causing problems for the grid, but don't seem to
   # be an issue here. If there are potential issues, throw a warning.
@@ -117,11 +89,12 @@ get_anae_chunk <- function(anae_path, catchment, thischunk, subchunkArgs, nchunk
   # if we're past the end, otherwise define the chunk
   if (nchunks >= nrow(anaePolys)) {
     # If we're trying to grab a chunk that is in the available rows, just pass out the row
-    # Otherwise, we don't want to pass out anything.
+    # Otherwise, we just pass out empty data.
     if (arraynum <= nrow(anaePolys)) {
       anaePolys <- anaePolys[arraynum, ]
     } else {
-      stop('indexing beyond end of anaePolys')
+      anaePolys <- anaePolys[0, ]
+      # stop('indexing beyond end of anaePolys')
     }
   } else {
     chunksize <- ceiling(nrow(anaePolys)/nchunks)

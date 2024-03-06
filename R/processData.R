@@ -50,6 +50,9 @@ process_data <- function(dataname,
                            chunkpath)
   }
 
+  # Make the out directory, in case it doesn't exist
+  if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
+
 
   # Get the needed chunk of anaes
   anaePolys <- get_anae_chunk(anae_path = poly_path,
@@ -60,6 +63,24 @@ process_data <- function(dataname,
 
   npolys <- nrow(anaePolys)
   print(glue::glue('in {catchment} chunk {thischunk}, number of polygons processing is {npolys}'))
+
+  # Nothing to do if there are no polys in this chunk, so make the outlist return.
+  if (nrow(anaePolys) == 0) {
+    outlist <- list(tempAns = NULL,
+                    tempIndex <- NULL)
+    sumtab <- tibble::tibble(catchment,
+                             chunknumber = as.numeric(thischunk),
+                             summaryFun, npolys,
+                             pixarea = proxylist$pixarea,
+                             elapsed = Sys.time() - start_time)
+    # still save the list, since later functions count expected files. I think.
+    if (saveout) {
+      saveRDS(outlist, file = file.path(scriptOut, paste0(thistemp, '.rds')))
+      # save(list = c(thistemp, thisIndex), file = file.path(scriptOut, paste0(thistemp, '.rdata')))
+    }
+    return(sumtab)
+  }
+
 
   # Get the stars proxy
   if (grepl(dataname,'inundation', ignore.case=TRUE)) {
@@ -125,35 +146,11 @@ process_data <- function(dataname,
 
 
 
-  # the below gets weird if I run with nrow(anaePolys) == 0. tried to fix in
-  # rastPolyJoin, and did, but the list unpacking is still annoying (the combine
-  # functions turn NULLs into things). so, use a workaround
-  # There's GOT to be a cleaner way to do this though.
-  if (nrow(anaePolys) == 0) {
-    outlist <- list(tempAns = NULL,
-                    tempIndex <- NULL)
-  } else {
     # Then, unpack the lists also using foreach
       # does making these %do% actually
       # speed things up overall by giving more resources to the dopars?
       # Does using dopar potentially shuffle these relative to each other?
     outlist <- concat_star_index(dpList, dimension = 1)
-    #
-    # tempAns <- foreach(l = 1:length(dpList),
-    #                    .combine=function(...) c(..., along = 1), # Pass dimension argument to c.stars
-    #                    .multicombine=TRUE) %do% {
-    #                      dpList[[l]][[1]]
-    #                    }
-    #
-    # tempIndex <- foreach(l = 1:length(dpList),
-    #                      .combine=bind_rows,
-    #                      .multicombine=TRUE) %do% {
-    #                        dpList[[l]][[2]]
-    #                      }
-  }
-
-  # Make the out directory, in case it doesn't exist
-  if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
 
   # These subchunk indices feel backwards (the outer chunk is on the right,
   # instead of building L -> R). But other things depend on that so don't fix
