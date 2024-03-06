@@ -54,8 +54,8 @@ concat_chunks <- function(out_dir,
                                pattern = filetype, recursive = TRUE)
 
       # I need to know the names of the files to get() them
-      partnames <- str_remove(catchfiles, pattern = filetype) |>
-        str_remove(pattern = paste0('^.*(?=(', thiscatch, '))')) # remove all the nested directories too
+      partnames <- stringr::str_remove(catchfiles, pattern = filetype) |>
+        stringr::str_remove(pattern = paste0('^.*(?=(', thiscatch, '))')) # remove all the nested directories too
 
       if (filetype == '.rdata') {
         rlang::abort(".rdata no longer supported. While there may still be some out there, it should all be concatenated by now. Moving forward, use .rds and save the lists")
