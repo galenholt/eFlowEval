@@ -1,3 +1,14 @@
+#' identify needed analyes, run, concatenate, and check
+#'
+#' wrapper over [chunks_to_process()], [parallel_data()], [concat_chunks()], and
+#' [test_anae_agg()], since they are often run together and take the same
+#' arguments.
+#'
+#' @inheritParams parallel_data
+#'
+#' @return if failures, a tibble, else invisible
+#' @export
+#'
 process_with_checks <- function(dataname,
                                 data_dir,
                                 poly_path = file.path(out_dir, 'ANAEprocessed'),
@@ -77,14 +88,11 @@ process_with_checks <- function(dataname,
   if (nrow(findfails) == 0) {
     rlang::inform(glue::glue("Polygon structure tests passed."),
                   .file = stdout())
-    return(invisible())
   } else {
     rlang::warn(glue::glue("Polygon structure tests failed, returning failing results"),
                   .file = stdout())
-
-    return(findfails)
   }
 
-
+  return(list(timings = alltimes, failures = findfails))
 
 }
