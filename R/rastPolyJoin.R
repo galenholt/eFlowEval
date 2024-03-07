@@ -299,8 +299,8 @@ rpintersect <- function(singlesf, singleraster,
   # weighted (they're not with aggregate; see timePolyRastScratch for testing)
 
   # trying to avoid warnings https://github.com/r-spatial/sf/issues/406
-  # sf::st_agr(singlesf) = "constant"
-  # sf::st_agr(rastSF) = "constant"
+  sf::st_agr(singlesf) = "constant"
+  sf::st_agr(rastSF) = "constant"
   intersectedPR <- sf::st_intersection(singlesf, rastSF)
 
   return(intersectedPR)
