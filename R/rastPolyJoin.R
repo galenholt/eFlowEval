@@ -66,6 +66,8 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
     # make a grid that breaks up the polygon (or is just the bb if the number of pixels is small enough)
     grid <- sf::st_make_grid(polysf, n = ceiling(sqrt(pixneeded/maxPixels)))
     # Now, the intersection gets the polysf split by grids (and drops grids with no polysf in them)
+    sf::st_agr(polysf) = "constant"
+    sf::st_agr(grid) = "constant"
     gridsf <- sf::st_intersection(polysf, grid)
 
     # get rid of linestrings and points that occasionally appear when we make
