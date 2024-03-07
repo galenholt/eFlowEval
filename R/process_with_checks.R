@@ -31,7 +31,7 @@ process_with_checks <- function(dataname,
                                filetype = '.rds')
 
   # Let's leave some checkpoints around
-  rlang::inform(glue::glue("\nProcessing {dataname} with {summaryFun} into {poly_path} starting at {Sys.time()}\n"),
+  rlang::inform(c("i" = glue::glue("\n\nProcessing {dataname} with {summaryFun} into {poly_path} starting at {format(Sys.time(), '%a %b %d %X %Y')}\n\n")),
                 .file = stdout())
 
   # do the runs
@@ -47,7 +47,7 @@ process_with_checks <- function(dataname,
                             rastRollArgs = rastRollArgs,
                             saveout = TRUE)
   #
-  rlang::inform(glue::glue("\nProcessing {dataname} with {summaryFun} into {poly_path} finished at {Sys.time()}\n"),
+  rlang::inform(c("i" = glue::glue("\n\nProcessing {dataname} with {summaryFun} into {poly_path} finished at {format(Sys.time(), '%a %b %d %X %Y')}\n\n")),
                 .file = stdout())
 
   runlist_end <- chunks_to_process(out_dir = out_dir,
@@ -59,7 +59,7 @@ process_with_checks <- function(dataname,
                                    filetype = '.rds')
 
   if (nrow(runlist_end) == 0) {
-    rlang::inform(glue::glue("\nAll runs completed, concatenating\n"),
+    rlang::inform(c("i" = glue::glue("\n\nAll runs completed, concatenating\n\n")),
                   .file = stdout())
 
     cattime <- concat_chunks(out_dir = out_dir,
@@ -67,11 +67,11 @@ process_with_checks <- function(dataname,
                                          summaryFun = summaryFun,
                                          catchment = catchment)
   } else {
-    rlang::abort(c("\nNot all runs completed, did not concatenate",
-                   "Failures can be found with `chunks_to_process`.\n"))
+    rlang::abort(c("\n\nNot all runs completed, did not concatenate",
+                   "Failures can be found with `chunks_to_process`.\n\n"))
   }
 
-  rlang::inform(glue::glue("\nConcatenation completed, error checking\n"),
+  rlang::inform(c("i" = glue::glue("\n\nConcatenation completed, error checking\n\n")),
                 .file = stdout())
 
   check_aggs <- test_anae_agg(out_dir = out_dir,
@@ -86,10 +86,10 @@ process_with_checks <- function(dataname,
                     !grepl('Assigning based on position', passfail))
 
   if (nrow(findfails) == 0) {
-    rlang::inform(glue::glue("\nPolygon structure tests passed.\n"),
+    rlang::inform(c("i" = glue::glue("\n\nPolygon structure tests passed.\n\n")),
                   .file = stdout())
   } else {
-    rlang::warn(glue::glue("\nPolygon structure tests failed, returning failing results\n"),
+    rlang::warn(glue::glue("\n\nPolygon structure tests failed, returning failing results\n\n"),
                   .file = stdout())
   }
 

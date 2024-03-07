@@ -14,7 +14,7 @@
 #' @param maintainPolys TRUE averages back into them. FALSE leaves them split, and makes a new grouping variable to keep it distinct
 #' @param na.replace allows replacing NA with numerical values (e.g. 0)
 #' @param whichcrs Default here is the Australian Albers 3577. If geographic (unprojected) crs is used, the intersection jumbles up for sf version >=1.0, and so I'm forcing a projection as default
-#' @param maxPixels maximum number of pixels before interanally chunking
+#' @param maxPixels maximum number of pixels before internally chunking
 #' @param pixelsize size of the pixels in the raster
 #' @param rastRollArgs allows passing a list of arguments to timeRoll to roll the  raster after cropping. use the `attribute_number` format, e.g. `rastRollArgs  = list(attribute_number = 1, tDim = 3, FUN = RcppRoll::roll_max, rolln = 2, align = 'right', na.rm = TRUE)`. NULL (the default) just bypasses
 #'
@@ -228,8 +228,18 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
   stars::st_dimensions(avgPRStars)[2] <- stars::st_dimensions(rastst)[3]
   # st_dimensions(avgPRtars)[2] # yup, though it's still called X1?
   names(stars::st_dimensions(avgPRStars))[2] <- names(stars::st_dimensions(rastst))[3]
+
   # and change the name of the attribute
-  names(avgPRStars) <- names(rastst)
+  if (is.function(FUN)) {
+    funname <- deparse(substitute(FUN))
+  } else if (is.character(FUN)) {
+    funname <- FUN
+  } else if (is.list(FUN)) {
+    funname <- names(FUN)[1]
+    } else {
+    rlang::inform("not using named function, ignoring for attribute names")
+  }
+  names(avgPRStars) <- paste0(funname, '_from_', names(rastst))
 
   return(list(avgPRStars, avgPRindex))
 
@@ -285,6 +295,10 @@ rpintersect <- function(singlesf, singleraster,
   # Have to intersect with the polygons to get average.
   # Less fiddly (because it's one-to-one), and it ensures the averages are area
   # weighted (they're not with aggregate; see timePolyRastScratch for testing)
+
+  # trying to avoid warnings https://github.com/r-spatial/sf/issues/406
+  sf::st_agr(singlesf) = "constant"
+  sf::st_agr(rastSF) = "constant"
   intersectedPR <- sf::st_intersection(singlesf, rastSF)
 
   return(intersectedPR)

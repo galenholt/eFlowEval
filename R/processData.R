@@ -89,7 +89,8 @@ process_data <- function(dataname,
                               nchunks = nchunks)
 
   npolys <- nrow(anaePolys)
-  print(glue::glue('in {catchment} chunk {thischunk}, number of polygons processing is {npolys}'))
+  # This gets sunk to stderr when non-interactive, which is probably good.
+  rlang::inform(glue::glue('In {catchment} chunk {thischunk}, number of polygons processing is {npolys}'))
 
   # Nothing to do if there are no polys in this chunk, so make the outlist return.
   if (nrow(anaePolys) == 0) {

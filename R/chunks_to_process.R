@@ -62,7 +62,8 @@ chunks_to_process <- function(out_dir,
                     "i" = "Total chunks: ",
                     glue::glue("{nrow(todo_set)}"),
                     "i" = "Catchments: ",
-                    glue::glue("{unique(todo_set$catchment)}"))
+                    glue::glue("{unique(todo_set$catchment)}\n"),
+                    "\n")
                     )
   }
 

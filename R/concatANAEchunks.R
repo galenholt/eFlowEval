@@ -68,18 +68,19 @@ concat_chunks <- function(out_dir,
       }
 
       # read in all the lists and concatenate
-      catch_cat <- foreach::foreach(s = 1:length(catchfiles),
-                                      .combine = \(...) concat_star_index(list(...),
-                                                                          dimension = 'geometry',
-                                                                          starname = paste0(thiscatch, '_', summaryFun),
-                                                                          indexname = paste0(thiscatch, '_', summaryFun, '_index'))) %do% {
+      catch_cat <- foreach::foreach(s = 1:length(catchfiles)) %do% {
         cc <- readRDS(file.path(chunkdir, thiscatch, catchfiles[s]))
       }
 
-      # Seems to work to just do it directly in the foreach
-      # catchchunks <- concat_star_index(catchchunks, dimension = 1,
-      #                                  starname = paste0(thiscatch, '_', summaryFun),
-      #                                  indexname = paste0(thiscatch, '_', summaryFun, '_index'))
+      # remove the nulls that might persist from the aggregation step if there are fewer ANAEs than chunks
+      catch_cat <- catch_cat[!purrr::map_lgl(catch_cat, \(x) is.null(x[[1]]) & is.null(x[[2]]))]
+      catch_cat <- concat_star_index(catch_cat,
+                                          dimension = 'geometry',
+                                          starname = paste0(thiscatch, '_', summaryFun),
+                                          indexname = paste0(thiscatch, '_', summaryFun, '_index'))
+
+      # Seems to work to just do it directly in the foreach with .combine, UNLESS there are NULLs.
+
 
       # Could just use thisInunName for the rdata, since there's a folder structure, but this is more explicit
       saveRDS(catch_cat, file = file.path(fundir, paste0(thiscatch, '_', summaryFun, '.rds')))
