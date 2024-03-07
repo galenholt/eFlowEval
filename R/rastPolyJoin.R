@@ -84,7 +84,8 @@ rastPolyJoin <- function(polysf, rastst, grouper = 'UID', FUN = weighted.mean,
     ## THE second crop in here is breaking with proxys. Sort that out. I htink
     intPR <- foreach::foreach(r = 1:nrow(gridsf),
                      .combine = dplyr::bind_rows,
-                     .multicombine = TRUE) %dofuture% {
+                     .multicombine = TRUE,
+                     .options.future = list(seed = TRUE)) %dofuture% {
                        # Get the grid-cut polygon r
                        thissmall <- gridsf[r,]
                        # # crop the raster to JUST this grid-cut polygon. That

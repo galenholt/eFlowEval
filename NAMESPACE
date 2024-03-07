@@ -3,6 +3,7 @@
 export(build_sh_file)
 export(chunks_to_process)
 export(concat_chunks)
+export(concat_star_index)
 export(parallel_data)
 export(process_anae)
 export(process_data)

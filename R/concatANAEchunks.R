@@ -48,7 +48,8 @@ concat_chunks <- function(out_dir,
     p <- progressor(steps = length(catchment))
 
     # Loop over catchments that were chunked
-      allcatch <- foreach(cn = 1:length(catchment)) %dofuture% {
+      allcatch <- foreach(cn = 1:length(catchment),
+                          .options.future = list(seed = TRUE)) %dofuture% {
         # Get a single catchment
         thiscatch <- catchment[cn]
 
