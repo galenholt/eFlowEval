@@ -71,7 +71,7 @@ process_data <- function(dataname,
     sumtab <- tibble::tibble(catchment,
                              chunknumber = as.numeric(thischunk),
                              summaryFun, npolys,
-                             pixarea = proxylist$pixarea,
+                             pixarea = NA,
                              elapsed = Sys.time() - start_time)
     # still save the list, since later functions count expected files. I think.
     if (saveout) {
