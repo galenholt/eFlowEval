@@ -34,13 +34,15 @@ process_data <- function(dataname,
                         rastRollArgs = NULL,
                         saveout = TRUE) {
   start_time <- Sys.time()
+
+  ## NAMING AND DIR MGMT
+
   # Make a sub-directory for the subchunk
   if (length(subchunkArgs) == 0 | is.null(subchunkArgs)) {chunkpath <- catchment}
   if (length(subchunkArgs) > 0) {
     chunkpath <- stringr::str_flatten(c(catchment, subchunkArgs),
                                          collapse = '/sub_')
     }
-
 
   # If not chunking, don't need the inner chunked dir.
   if (nchunks == 1) {
@@ -52,6 +54,31 @@ process_data <- function(dataname,
 
   # Make the out directory, in case it doesn't exist
   if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
+
+  # These subchunk indices feel backwards (the outer chunk is on the right,
+  # instead of building L -> R). But other things depend on that so don't fix
+  # unless planning a big restructure
+  # str_replace is because when there's no subchunk we get two _ next to each
+  # other.
+  unique_chunkname <- paste0(catchment, '_', summaryFun, '_',
+                             stringr::str_flatten(subchunkArgs, collapse = '_'),
+                             '_', thischunk) |>
+    stringr::str_replace_all('__', '_')
+
+  unique_indexname <- paste0(catchment, '_', summaryFun, '_index', '_',
+                             stringr::str_flatten(subchunkArgs, collapse = '_'),
+                             '_', thischunk) |>
+    stringr::str_replace_all('__', '_')
+
+  # Got to be a cleaner way to do this.
+  # assign(unique_chunkname, tempAns)
+  # assign(unique_indexname, tempIndex)
+
+  # If 1, we don't append the chunkname and it goes in a different directory.
+  if (nchunks == 1) {
+    unique_chunkname <- stringr::str_remove(unique_chunkname, '_1$')
+    unique_indexname <- stringr::str_remove(unique_indexname, '_1$')
+  }
 
 
   # Get the needed chunk of anaes
@@ -75,8 +102,8 @@ process_data <- function(dataname,
                              elapsed = Sys.time() - start_time)
     # still save the list, since later functions count expected files. I think.
     if (saveout) {
-      saveRDS(outlist, file = file.path(scriptOut, paste0(thistemp, '.rds')))
-      # save(list = c(thistemp, thisIndex), file = file.path(scriptOut, paste0(thistemp, '.rdata')))
+      saveRDS(outlist, file = file.path(scriptOut, paste0(unique_chunkname, '.rds')))
+      # save(list = c(unique_chunkname, unique_indexname), file = file.path(scriptOut, paste0(unique_chunkname, '.rdata')))
     }
     return(sumtab)
   }
@@ -133,7 +160,7 @@ process_data <- function(dataname,
                     .options.future = list(seed = TRUE,
                                            globals = structure(TRUE, add = summaryFun))) %dofuture% {
     # moved the cropping all the way in to rpintersect
-    thistemp <- rastPolyJoin(polysf = anaePolys[s,],
+    oneanae <- rastPolyJoin(polysf = anaePolys[s,],
                              rastst = proxylist$proxy_data,
                              FUN = summaryFun,
                              grouper = 'UID', maintainPolys = TRUE,
@@ -152,32 +179,8 @@ process_data <- function(dataname,
       # Does using dopar potentially shuffle these relative to each other?
     outlist <- concat_star_index(dpList, dimension = 1)
 
-  # These subchunk indices feel backwards (the outer chunk is on the right,
-  # instead of building L -> R). But other things depend on that so don't fix
-  # unless planning a big restructure
-  # str_replace is because when there's no subchunk we get two _ next to each
-  # other.
-  thistemp <- paste0(catchment, '_', summaryFun, '_',
-                     stringr::str_flatten(subchunkArgs, collapse = '_'),
-                     '_', thischunk) |>
-    stringr::str_replace_all('__', '_')
-
-  thisIndex <- paste0(catchment, '_', summaryFun, '_index', '_',
-                      stringr::str_flatten(subchunkArgs, collapse = '_'),
-                      '_', thischunk) |>
-    stringr::str_replace_all('__', '_')
-
-  # Got to be a cleaner way to do this.
-  # assign(thistemp, tempAns)
-  # assign(thisIndex, tempIndex)
-
-  # If 1, we don't append the chunkname and it goes in a different directory.
-  if (nchunks == 1) {
-    thistemp <- stringr::str_remove(thistemp, '_1$')
-    thisIndex <- stringr::str_remove(thisIndex, '_1$')
-  }
-
-  names(outlist) <- c(thistemp, thisIndex)
+  # name the list appropriately
+  names(outlist) <- c(unique_chunkname, unique_indexname)
 
   # probably a cleaner way to do this, likely with saveRDS to allow cleaner
   # read-in.
@@ -185,8 +188,8 @@ process_data <- function(dataname,
   # but this is more explicit
   # saveout is a way to bypass saving while testing
   if (saveout) {
-    saveRDS(outlist, file = file.path(scriptOut, paste0(thistemp, '.rds')))
-    # save(list = c(thistemp, thisIndex), file = file.path(scriptOut, paste0(thistemp, '.rdata')))
+    saveRDS(outlist, file = file.path(scriptOut, paste0(unique_chunkname, '.rds')))
+    # save(list = c(unique_chunkname, unique_indexname), file = file.path(scriptOut, paste0(unique_chunkname, '.rdata')))
   }
 
   end_time <- Sys.time()

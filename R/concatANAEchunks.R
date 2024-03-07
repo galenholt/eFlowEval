@@ -44,6 +44,9 @@ concat_chunks <- function(out_dir,
       return()
     }
 
+    # set up progress bar
+    p <- progressor(steps = length(catchment))
+
     # Loop over catchments that were chunked
       allcatch <- foreach(cn = 1:length(catchment)) %dofuture% {
         # Get a single catchment
@@ -78,10 +81,13 @@ concat_chunks <- function(out_dir,
       # Could just use thisInunName for the rdata, since there's a folder structure, but this is more explicit
       saveRDS(catch_cat, file = file.path(fundir, paste0(thiscatch, '_', summaryFun, '.rds')))
 
-      return(invisible())
+      # just kick the catchment name to the foreach output
+      p(glue::glue("catchment {thiscatch} concatenated"))
+      thiscatch
     }
   # }
 
+      return(invisible())
 }
 
 
