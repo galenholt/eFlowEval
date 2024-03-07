@@ -1,6 +1,6 @@
 Package: CC2
 Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9018
+Version: 0.0.0.9019
 Authors@R: c(
     person("Galen", "Holt", , "g.holt@deakin.edu.au", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-7455-9275")),
@@ -14,7 +14,6 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
 Imports: 
     doFuture,
-    dplyr,
     foreach,
     ggplot2,
     knitr,
@@ -25,12 +24,13 @@ Imports:
     RcppRoll,
     readxl,
     rlang,
-    sf,
-    stars,
     stringr,
     tibble,
     tidyr,
     units
 Depends: 
-    R (>= 2.10)
+    dplyr,
+    R (>= 2.10),
+    sf,
+    stars
 LazyData: true

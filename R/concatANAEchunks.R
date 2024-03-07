@@ -47,7 +47,9 @@ concat_chunks <- function(out_dir,
     # set up progress bar
     p <- progressor(steps = length(catchment))
 
-    # Loop over catchments that were chunked
+    # Loop over catchments that were chunked. I do not understand why, but if
+    # this is %dofuture%, concat_star_index can't use c.stars or bind_rows on an
+    # sf. I've tried passing in packages in options.future and nothing is working.
       allcatch <- foreach(cn = 1:length(catchment),
                           .options.future = list(seed = TRUE)) %dofuture% {
         # Get a single catchment
