@@ -87,8 +87,8 @@ concat_chunks <- function(out_dir,
       anaes <- read_catchment_polys(poly_path, thiscatch)
 
       catch_cat <- matchStarsIndex(index1 = anaes, stars1 = NULL,
-                                 index2 = catch_cat[[paste0(thiscatch, '_', summaryFun)]],
-                                 stars2 = catch_cat[[paste0(thiscatch, '_', summaryFun, '_index')]],
+                                 index2 = catch_cat[[paste0(thiscatch, '_', summaryFun, '_index')]],
+                                 stars2 = catch_cat[[paste0(thiscatch, '_', summaryFun)]],
                                  indexcol = c(1, 1), testfinal = FALSE)
 
       names(catch_cat) <- c(paste0(thiscatch, '_', summaryFun), paste0(thiscatch, '_', summaryFun, '_index'))

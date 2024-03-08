@@ -107,7 +107,8 @@ test_anae_agg <- function(catchment,
     # Wrap all these in tryCatches to test. I don't actually want to return the list though. Just whether it passed
     list_test <- tryCatch(if (is.list(matchStarsIndex(index1 = anaes, stars1 = NULL,
                                                       index2 = in_list$indices, stars2 = in_list$aggdata,
-                                                      indexcol = c(1, 1), testfinal = FALSE))) {paste0('pass')},
+                                                      indexcol = c(1, 1),
+                                                      testfinal = FALSE, as_test = TRUE))) {paste0('pass')},
                           error = function(c) paste0('Error: ', c$message),
                           warning = function(c) paste0('Warning: ', c$message),
                           message = function(c) paste0('Message: ', c$message)

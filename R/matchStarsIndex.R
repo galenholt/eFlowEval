@@ -75,7 +75,7 @@ matchStarsIndex <- function(index1, stars1 = NULL, index2, stars2,
       all(index1$INDEX == index2$INDEX)) {
     names(index2)[indexcol[2]] <- origname2
     if (return1) {return(tibble::lst(index1, index2, stars2))}
-    return(tibble::lst(index2, stars2))
+    return(tibble::lst(stars2, index2))
   }
 
 
