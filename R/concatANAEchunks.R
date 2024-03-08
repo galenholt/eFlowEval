@@ -12,6 +12,7 @@ concat_chunks <- function(out_dir,
                           dataname,
                           summaryFun,
                           catchment = 'all',
+                          poly_path = file.path(out_dir, 'ANAEprocessed'),
                           rebuild = FALSE,
                           filetype = '.rds') {
   # loop over summary functions- deprecated, this was never used in practice, and could be done outside the code
@@ -81,6 +82,16 @@ concat_chunks <- function(out_dir,
 
       # Seems to work to just do it directly in the foreach with .combine, UNLESS there are NULLs.
 
+      # undo any shuffling that's happened
+
+      anaes <- read_catchment_polys(poly_path, thiscatch)
+
+      catch_cat <- matchStarsIndex(index1 = anaes, stars1 = NULL,
+                                 index2 = catch_cat[[paste0(thiscatch, '_', summaryFun)]],
+                                 stars2 = catch_cat[[paste0(thiscatch, '_', summaryFun, '_index')]],
+                                 indexcol = c(1, 1), testfinal = FALSE)
+
+      names(catch_cat) <- c(paste0(thiscatch, '_', summaryFun), paste0(thiscatch, '_', summaryFun, '_index'))
 
       # Could just use thisInunName for the rdata, since there's a folder structure, but this is more explicit
       saveRDS(catch_cat, file = file.path(fundir, paste0(thiscatch, '_', summaryFun, '.rds')))

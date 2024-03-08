@@ -65,7 +65,8 @@ process_with_checks <- function(dataname,
     cattime <- concat_chunks(out_dir = out_dir,
                                          dataname = dataname,
                                          summaryFun = summaryFun,
-                                         catchment = catchment)
+                                         catchment = catchment,
+                             poly_path = poly_path)
   } else {
     rlang::abort(c("\n\nNot all runs completed, did not concatenate",
                    "Failures can be found with `chunks_to_process`.\n\n"))

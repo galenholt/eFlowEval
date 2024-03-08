@@ -1,8 +1,23 @@
-# Function to sort stars according to their index files and deal with any duplicated ANAEs
-
+#' Function to sort stars according to their index files and deal with any duplicated ANAEs
+#'
+#' Particularly important while parallel processing. Often used with anaes as index1 to sort stars relative to them. In typical use, this assumes the stars2 and index2 are not shuffled relative to each other, and sorts them relative to index1. If `testfinal = TRUE`, it does a check of the stars2 and index2 spatial matching, but that is slow.
+#'
+#'
+#' @param index1 sf with an index in column 1 and geometry
+#' @param stars1 a stars belonging to index1. Default NULL
+#' @param index2 sf with an index in column 1 and geometry
+#' @param stars2 a stars belonging to index2
+#' @param indexcol columns of the index values. Default c(1,1) if both index1 and 2 have the column as 1
+#' @param testfinal do a spatial check of the stars itself. This takes a very long time.
+#' @param return1 whether to return index1 or not. Default FALSE
+#' @param as_test Use this as a test of whether things needed to be sorted (ie emits error if sorting happens). Default FALSE
+#'
+#' @return a list of stars and index (and if return1, index1 also)
+#' @export
+#'
 matchStarsIndex <- function(index1, stars1 = NULL, index2, stars2,
                             indexcol = c(1, 1), testfinal = TRUE,
-                            return1 = FALSE) {
+                            return1 = FALSE, as_test = FALSE) {
   # index1 and index2 expected to be an sf with an index in the first column and geometry
   # testfinal does a big st_intersects on the stars, and so can take FOREVER. Turn it off for speed
   # If stars1 is NULL, this just matches to index1. particularly useful for matching to the ANAE in sf form,
@@ -218,7 +233,12 @@ matchStarsIndex <- function(index1, stars1 = NULL, index2, stars2,
     index2$INDUP <- NULL
 
 
-    # test <- 1
+    # if we're using this as a test and not re-saving the return object, check whether the orders were wrong.
+    if (as_test) {
+      if (ordermatcher != order(ordermatcher)) {
+        rlang::abort("The two sets of polygons are not in the same order. Need to run matchStarsIndex on the inputs.")
+      }
+    }
 
     if (return1) {
       names(index1)[indexcol[2]] <- origname1
@@ -226,7 +246,7 @@ matchStarsIndex <- function(index1, stars1 = NULL, index2, stars2,
       return(tibble::lst(index1, index2, stars2))
     }
 
-   if (!return1) {return(tibble::lst(index2, stars2))}
+   if (!return1) {return(tibble::lst(stars2, index2))}
 
 }
 

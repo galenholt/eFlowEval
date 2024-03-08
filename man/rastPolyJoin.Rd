@@ -37,7 +37,7 @@ pass 'wm'. There are other solutions, but that seems to be the cleanest.}
 
 \item{whichcrs}{Default here is the Australian Albers 3577. If geographic (unprojected) crs is used, the intersection jumbles up for sf version >=1.0, and so I'm forcing a projection as default}
 
-\item{maxPixels}{maximum number of pixels before interanally chunking}
+\item{maxPixels}{maximum number of pixels before internally chunking}
 
 \item{pixelsize}{size of the pixels in the raster}
 

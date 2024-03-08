@@ -46,7 +46,7 @@ process_data <- function(dataname,
 
   # If not chunking, don't need the inner chunked dir.
   if (nchunks == 1) {
-    scriptOUt <- file.path(out_dir, paste0(dataname), summaryFun)
+    scriptOut <- file.path(out_dir, paste0(dataname), summaryFun)
   } else if (nchunks > 1) {
     scriptOut <- file.path(out_dir, paste0(dataname), summaryFun, 'chunked',
                            chunkpath)
@@ -178,10 +178,18 @@ process_data <- function(dataname,
       # does making these %do% actually
       # speed things up overall by giving more resources to the dopars?
       # Does using dopar potentially shuffle these relative to each other?
-    outlist <- concat_star_index(dpList, dimension = 1)
+    outlist <- concat_star_index(dpList, dimension = 1, starname = unique_chunkname,
+                                 indexname = unique_indexname)
 
-  # name the list appropriately
+    # undo any shuffling that's happened
+    outlist <- matchStarsIndex(index1 = anaePolys, stars1 = NULL,
+                               index2 = outlist[[unique_indexname]],
+                               stars2 = outlist[[unique_chunkname]],
+                               indexcol = c(1, 1), testfinal = FALSE)
+
+  # name the list appropriately (again, matchstars changes the names)
   names(outlist) <- c(unique_chunkname, unique_indexname)
+
 
   # probably a cleaner way to do this, likely with saveRDS to allow cleaner
   # read-in.
