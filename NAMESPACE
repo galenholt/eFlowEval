@@ -2,6 +2,7 @@
 
 export(build_sh_file)
 export(chunks_to_process)
+export(clean_area)
 export(concat_chunks)
 export(concat_star_index)
 export(matchStarsIndex)

@@ -9,6 +9,7 @@ concat_chunks(
   dataname,
   summaryFun,
   catchment = "all",
+  poly_path = file.path(out_dir, "ANAEprocessed"),
   rebuild = FALSE,
   filetype = ".rds"
 )
@@ -21,6 +22,8 @@ concat_chunks(
 \item{summaryFun}{character name of the summary function}
 
 \item{catchment}{catchment to chunk into}
+
+\item{poly_path}{path to the polygons to process into}
 
 \item{rebuild}{logical default FALSE does not re-concatenate if a concatenated file exists. If TRUE, it does.}
 

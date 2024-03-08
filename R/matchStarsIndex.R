@@ -218,7 +218,7 @@ matchStarsIndex <- function(index1, stars1 = NULL, index2, stars2,
     if (sum(!inter3) != 0) {
       warning(sum(!inter3), " geometries still unmatched")
     } else {
-      print('stars match, at least at the level of st_intersects')
+      rlang::inform('stars match, at least at the level of st_intersects')
     }
   }
 
