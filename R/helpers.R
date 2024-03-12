@@ -29,31 +29,25 @@ minna <- function(x, na.rm = TRUE) {
 
 # Aggregation and plotting in the catchment -------------------------------
 
-catchAggW <- function(strict, strictWeights, FUN, summaryPoly) {
-  # strict is the strictures stars object (T/F or 0/1)
-  # strictWeights is a vector of the weights to give each stricture (typically area of relevant polygons)
-  # summaryPoly is an sf with one or more polygons that get aggregated into
-
-  # sArea <- strict
+#' Spatial aggregation of stars objects
+#'
+#' @param FUN aggregation function
+#' @param summaryPoly summary polygon(s) to aggregate into (sf)
+#' @param starObj stars object to aggregate
+#' @param weights a vector of the weights to give each stricture (typically area of relevant polygons)
+#'
+#' @return
+#' @export
+#'
+catchAggW <- function(starObj, weights, FUN, summaryPoly) {
 
   # get area-proportion of success (same as area-days, but divided by days in year)
-  strict[[1]] <- t(t(strict[[1]])*strictWeights)
+  starObj[[1]] <- t(t(starObj[[1]])*weights)
 
   # Now aggregate over space
-  sCatch <- aggregate(strict, by = summaryPoly, FUN = FUN, na.rm = TRUE)
+  sCatch <- aggregate(starObj, by = summaryPoly, FUN = FUN, na.rm = TRUE)
 
   return(sCatch)
-
-  # testing
-  # germArea <- germLippiaYr
-  # # get area-proportion of success (same as area-days, but divided by days in year)
-  # germArea[[1]] <- t(t(germArea[[1]])*lachArea)
-  #
-  # # Now aggregate over space
-  # germCatch2 <- aggregate(germArea, by = filter(ltimNoNorth, ValleyName == "Lachlan"), FUN = sum, na.rm = TRUE)
-  #
-  # # Check
-  # all(germCatch[[1]] == germCatch2[[1]])
 
 
 }
@@ -102,6 +96,21 @@ catchAggPlot <- function(catchAgg, varname = NA, title = NULL, as_sf = FALSE) {
 ### THIS RETURNS TIMES AT THE *START* OF THE INTERVAL ###
 # This is particularly an issue for inundation, which reports inundation for the
 # *preceding* interval. dates_end_interval shifts to the end.
+
+#' Temporal aggregation of stars objects
+#'
+#' THIS RETURNS TIMES AT THE *START* OF THE INTERVAL unless `dates_end_interval = TRUE`
+#' Note that inundation dates are the start of the interval, as are the others. There was confusion about this previously.
+#'
+#' @param starObj stars
+#' @param by_t the time intervals, as in [aggregate()], can be numeric or things like 'years'
+#' @param FUN aggregation function
+#' @param na.rm as usual
+#' @param dates_end_interval default FALSE, dates are the start of the interval, if TRUE, dates are the end.
+#'
+#' @return an aggregated stars object
+#' @export
+#'
 tempaggregate <- function(starObj, by_t, FUN, na.rm = TRUE, dates_end_interval = FALSE) {
 
 
@@ -128,7 +137,7 @@ tempaggregate <- function(starObj, by_t, FUN, na.rm = TRUE, dates_end_interval =
 
     if (dates_end_interval) {
       # the first one gets dropped (just like the last one does if the dates are at the beginning- we can't aggregate into a period beyond the end)
-      aggObj <- st_set_dimensions(aggObj, which = 'time', values = by_t[2:length(by_t)])
+      aggObj <- sf::st_set_dimensions(aggObj, which = 'time', values = by_t[2:length(by_t)])
     }
 
   }
@@ -144,10 +153,16 @@ tempaggregate <- function(starObj, by_t, FUN, na.rm = TRUE, dates_end_interval =
 # these are fairly specific, but I use them for regressions and predictions, so
 # put them here so if anything changes they cascade
 
-# Function to get the water year that a date is in
+#' get the water year that a date is in
+#'
+#' @param input.date a date
+#'
+#' @return the water year the date is in
+#' @export
+#'
 getWaterYear <- function(input.date) {
-  wateryear <- ifelse((month(input.date) >= 7), year(input.date),
-                      year(input.date-dyears()))
+  wateryear <- ifelse((lubridate::month(input.date) >= 7), lubridate::year(input.date),
+                      lubridate::year(input.date-lubridate::dyears()))
   return(wateryear)
 }
 
@@ -163,15 +178,23 @@ getSeason <- function(input.date){
   return(cuts)
 }
 
-# Get the bimonthly group (this is specific to the inundation layer)
+#' Get the bimonthly group
+#'
+#' Helps match inundation layer
+#'
+#' @param input.date a date
+#'
+#' @return the bimonth period a date is in.
+#' @export
+#'
 getBimonth <- function(input.date) {
   bimonth <- case_when(
-    month(input.date) %in% c(1, 2) ~ 1, # Maps to 03-01
-    month(input.date) %in% c(3, 4) ~ 2, # Map to 05-01
-    month(input.date) %in% c(5, 6) ~ 3, # Map to 07-01
-    month(input.date) %in% c(7, 8) ~ 4, # Map to 09-01
-    month(input.date) %in% c(9, 10) ~ 5, # Map to 11-01
-    month(input.date) %in% c(11, 12) ~ 6, # Maps to Jan 01 because this is the preceding
+    month(input.date) %in% c(1, 2) ~ 1, # Maps to 01-01
+    month(input.date) %in% c(3, 4) ~ 2, # Map to 03-01
+    month(input.date) %in% c(5, 6) ~ 3, # Map to 05-01
+    month(input.date) %in% c(7, 8) ~ 4, # Map to 07-01
+    month(input.date) %in% c(9, 10) ~ 5, # Map to 09-01
+    month(input.date) %in% c(11, 12) ~ 6, # Maps to 11-01
   )
   return(bimonth)
 }
