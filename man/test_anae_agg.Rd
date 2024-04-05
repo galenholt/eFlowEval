@@ -10,6 +10,7 @@ test_anae_agg(
   dataname,
   summaryFun,
   poly_path = file.path(out_dir, "ANAEprocessed"),
+  extraname = NULL,
   debugbreak = FALSE,
   filetype = ".rds"
 )
@@ -24,6 +25,8 @@ test_anae_agg(
 \item{summaryFun}{character name of the summary function}
 
 \item{poly_path}{path to the polygons to process into}
+
+\item{extraname}{an extra level for the directory path, so, out_dir/dataname/summaryFun/extraname. Often used if there are multiple sets of rastRollArgs that get the same summaryFun, e.g. min moisture over different timeperiods.}
 
 \item{debugbreak}{for testing}
 

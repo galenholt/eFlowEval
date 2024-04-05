@@ -18,7 +18,8 @@ process_with_checks <- function(dataname,
                                 nchunks = 100,
                                 whichcrs = 3577,
                                 maxPix = 100000,
-                                rastRollArgs = NULL) {
+                                rastRollArgs = NULL,
+                                extraname = NULL) {
 
 
   # Get the runs
@@ -27,6 +28,7 @@ process_with_checks <- function(dataname,
                                summaryFun = summaryFun,
                                nchunks = nchunks,
                                catchment = catchment,
+                               extraname = extraname,
                                returnForR = TRUE,
                                filetype = '.rds')
 
@@ -45,6 +47,7 @@ process_with_checks <- function(dataname,
                             whichcrs = whichcrs,
                             maxPix = maxPix,
                             rastRollArgs = rastRollArgs,
+                            extraname = extraname,
                             saveout = TRUE)
   #
   rlang::inform(c("i" = glue::glue("\n\nProcessing {dataname} with {summaryFun} into {poly_path} finished at {format(Sys.time(), '%a %b %d %X %Y')}\n\n")),
@@ -54,6 +57,7 @@ process_with_checks <- function(dataname,
                                    dataname = dataname,
                                    summaryFun = summaryFun,
                                    catchment = catchment,
+                                   extraname = extraname,
                                    nchunks = nchunks,
                                    returnForR = TRUE,
                                    filetype = '.rds')
@@ -66,7 +70,8 @@ process_with_checks <- function(dataname,
                                          dataname = dataname,
                                          summaryFun = summaryFun,
                                          catchment = catchment,
-                             poly_path = poly_path)
+                             poly_path = poly_path,
+                             extraname = extraname)
   } else {
     rlang::abort(c("\n\nNot all runs completed, did not concatenate",
                    "Failures can be found with `chunks_to_process`.\n\n"))

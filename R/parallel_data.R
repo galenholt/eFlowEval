@@ -17,6 +17,7 @@ parallel_data <- function(runframe,
                           whichcrs = 3577,
                           maxPix = 100000,
                           rastRollArgs = NULL,
+                          extraname = NULL,
                           saveout = TRUE) {
 
 
@@ -54,6 +55,7 @@ parallel_data <- function(runframe,
       whichcrs = whichcrs,
       maxPix = maxPix,
       rastRollArgs = rastRollArgs,
+      extraname = extraname
     )
 
     p(glue::glue("catchment {w} chunk {i} finished"))

@@ -10,6 +10,7 @@ chunks_to_process(
   summaryFun,
   nchunks = 100,
   catchment = "all",
+  extraname = NULL,
   returnForR = TRUE,
   produce_sh = FALSE,
   filetype = ".rds"

@@ -10,6 +10,7 @@ concat_chunks(
   summaryFun,
   catchment = "all",
   poly_path = file.path(out_dir, "ANAEprocessed"),
+  extraname = NULL,
   rebuild = FALSE,
   filetype = ".rds"
 )
@@ -24,6 +25,8 @@ concat_chunks(
 \item{catchment}{catchment to chunk into}
 
 \item{poly_path}{path to the polygons to process into}
+
+\item{extraname}{an extra level for the directory path, so, out_dir/dataname/summaryFun/extraname. Often used if there are multiple sets of rastRollArgs that get the same summaryFun, e.g. min moisture over different timeperiods.}
 
 \item{rebuild}{logical default FALSE does not re-concatenate if a concatenated file exists. If TRUE, it does.}
 

@@ -17,6 +17,7 @@ chunks_to_process <- function(out_dir,
                   summaryFun,
                   nchunks = 100,
                   catchment = 'all',
+                  extraname = NULL,
                   returnForR = TRUE,
                   produce_sh = FALSE,
                   filetype = '.rds') {
@@ -30,7 +31,12 @@ chunks_to_process <- function(out_dir,
   }
 
   # Where to look for the files
-  fundir <- file.path(out_dir, dataname, summaryFun)
+  if (!is.null(extraname)) {
+    sumextra <- paste0(summaryFun, '/', extraname)
+  } else {
+    sumextra <- summaryFun
+  }
+  fundir <- file.path(out_dir, dataname, sumextra)
   chunkdir <- file.path(fundir, 'chunked')
 
   # Create the directory structure?

@@ -13,6 +13,7 @@ test_anae_agg <- function(catchment,
                           dataname,
                           summaryFun,
                           poly_path = file.path(out_dir, 'ANAEprocessed'),
+                          extraname = NULL,
                           debugbreak = FALSE,
                           filetype = '.rds') {
   # This is a test file because I'm getting weird issues with ANAE duplication on big runs but not individual runs.
@@ -25,6 +26,15 @@ test_anae_agg <- function(catchment,
                     "Murrumbidgee", "Namoi", "Ovens", "Paroo", "UpperMurray", "Warrego", "Wimmera")
   }
 
+  # Directory
+  if (!is.null(extraname)) {
+    sumextra <- paste0(summaryFun, '/', extraname)
+  } else {
+    sumextra <- summaryFun
+  }
+
+  datapath <- file.path(out_dir, dataname, sumextra)
+
   # I have no idea why this generates random numbers, but shut the warning up with doRNG
   outtib <- foreach(i = 1:length(catchment),
                     .combine = dplyr::bind_rows) %do% {
@@ -34,7 +44,7 @@ test_anae_agg <- function(catchment,
     # Somehow some are invalid, despite the st_make_valid in processANAE
     anaes <- sf::st_make_valid(anaes)
 
-    datapath <- file.path(out_dir, dataname, summaryFun)
+
     # The data should all have the catchment names too
     in_list <- read_catchment_polys(datapath, thiscatchment) |>
       setNames(c('aggdata', 'indices')) # make names generic

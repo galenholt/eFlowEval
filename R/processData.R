@@ -15,6 +15,7 @@
 #' @param maxPix maximum number of pixels before individual polygons are broken up in [rastPolyJoin()]
 #' @param rastRollArgs arguments to [rastPolyJoin()] to roll the raster before aggregating
 #' @param saveout default TRUE, save data out.
+#' @param extraname an extra level for the directory path, so, out_dir/dataname/summaryFun/extraname. Often used if there are multiple sets of rastRollArgs that get the same summaryFun, e.g. min moisture over different timeperiods.
 #'
 #' @return a tibble of the time taken, main output is the saved data
 #' @export
@@ -32,6 +33,7 @@ process_data <- function(dataname,
                         whichcrs = 3577,
                         maxPix = 100000,
                         rastRollArgs = NULL,
+                        extraname = NULL,
                         saveout = TRUE) {
   start_time <- Sys.time()
 
@@ -44,11 +46,16 @@ process_data <- function(dataname,
                                          collapse = '/sub_')
     }
 
+  if (!is.null(extraname)) {
+    sumextra <- paste0(summaryFun, '/', extraname)
+  } else {
+    sumextra <- summaryFun
+  }
   # If not chunking, don't need the inner chunked dir.
   if (nchunks == 1) {
-    scriptOut <- file.path(out_dir, paste0(dataname), summaryFun)
+    scriptOut <- file.path(out_dir, paste0(dataname), sumextra)
   } else if (nchunks > 1) {
-    scriptOut <- file.path(out_dir, paste0(dataname), summaryFun, 'chunked',
+    scriptOut <- file.path(out_dir, paste0(dataname), sumextra, 'chunked',
                            chunkpath)
   }
 
@@ -136,7 +143,9 @@ process_data <- function(dataname,
 
   if (grepl(dataname, 'moist', ignore.case=TRUE) |
       grepl('moist', dataname, ignore.case= TRUE)) {
-    moistDir <- file.path(data_dir, 'soilmoisture')
+
+    # make this flexible- the data_dir arg should be the actual data dir, not the outer data_dir.
+    moistDir <- data_dir # file.path(data_dir, 'soilmoisture')
 
     # units are soil moisture percent 'sm_pct' as 0-1, not 0-100
     proxylist <- read_soil_moisture(moistDir)

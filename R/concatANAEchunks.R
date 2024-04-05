@@ -13,6 +13,7 @@ concat_chunks <- function(out_dir,
                           summaryFun,
                           catchment = 'all',
                           poly_path = file.path(out_dir, 'ANAEprocessed'),
+                          extraname = NULL,
                           rebuild = FALSE,
                           filetype = '.rds') {
   # loop over summary functions- deprecated, this was never used in practice, and could be done outside the code
@@ -20,7 +21,12 @@ concat_chunks <- function(out_dir,
   #   summaryFun <- summaryFuns[su]
 
     # There are some that were NOT chunked- leave them alone, and just look in the chunked folder
-    fundir <- file.path(out_dir, dataname, summaryFun)
+  if (!is.null(extraname)) {
+    sumextra <- paste0(summaryFun, '/', extraname)
+  } else {
+    sumextra <- summaryFun
+  }
+    fundir <- file.path(out_dir, dataname, sumextra)
     chunkdir <- file.path(fundir, 'chunked')
 
     if ('all' %in% catchment) {

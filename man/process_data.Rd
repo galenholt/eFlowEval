@@ -17,6 +17,7 @@ process_data(
   whichcrs = 3577,
   maxPix = 1e+05,
   rastRollArgs = NULL,
+  extraname = NULL,
   saveout = TRUE
 )
 }
@@ -44,6 +45,8 @@ process_data(
 \item{maxPix}{maximum number of pixels before individual polygons are broken up in \code{\link[=rastPolyJoin]{rastPolyJoin()}}}
 
 \item{rastRollArgs}{arguments to \code{\link[=rastPolyJoin]{rastPolyJoin()}} to roll the raster before aggregating}
+
+\item{extraname}{an extra level for the directory path, so, out_dir/dataname/summaryFun/extraname. Often used if there are multiple sets of rastRollArgs that get the same summaryFun, e.g. min moisture over different timeperiods.}
 
 \item{saveout}{default TRUE, save data out.}
 }
