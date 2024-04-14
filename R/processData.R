@@ -133,8 +133,9 @@ process_data <- function(dataname,
   if (grepl(dataname, 'soiltemp', ignore.case=TRUE) |
       grepl(dataname, 'soil_temp', ignore.case=TRUE) |
       grepl(dataname, 'soil temp', ignore.case=TRUE)) {
-    tempDir <- file.path(data_dir, 'soilTemp14_20')
+    # tempDir <- file.path(data_dir, 'soilTemp14_20')
 
+    tempDir <- data_dir
     # The `sub = 'LST_Day_1km'` argument happens inside here
     proxylist <- read_soil_temp(tempDir)
     na.replace <- NA
@@ -168,7 +169,7 @@ process_data <- function(dataname,
   # parallel loop over the anae polygons
   dpList <- foreach::foreach(s = 1:nrow(anaePolys),
                     .options.future = list(seed = TRUE,
-                                           globals = structure(TRUE, add = summaryFun))) %dofuture% {
+                                           globals = structure(TRUE, add = summaryFun))) %do% {
     # moved the cropping all the way in to rpintersect
     oneanae <- rastPolyJoin(polysf = anaePolys[s,],
                              rastst = proxylist$proxy_data,
