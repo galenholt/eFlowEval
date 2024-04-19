@@ -8,13 +8,13 @@ editor: visual
 ## Run centipeda strictures across the basin
 
 ```{r}
-library(here)
-library(tidyverse)
+# library(here)
+library(dplyr)
 library(sf)
 library(stars)
 library(foreach)
 library(doFuture)
-library(doRNG)
+#library(doRNG)
 ```
 
 First, set directories and read-in function

@@ -88,15 +88,6 @@ catchAggPlot <- function(catchAgg, varname = NA, title = NULL, as_sf = FALSE) {
 }
 
 
-# Fixing the last time unit when feeding aggregate() a vector of d --------
-
-# For some reason, feeding aggregate dates instead of something like 'years' leaves an NA sheet hanging on the end.
-# and, rightmost.closed has to be used. So, setting up a wrapper function that fixes it
-
-### THIS RETURNS TIMES AT THE *START* OF THE INTERVAL ###
-# This is particularly an issue for inundation, which reports inundation for the
-# *preceding* interval. dates_end_interval shifts to the end.
-
 #' Temporal aggregation of stars objects
 #'
 #' THIS RETURNS TIMES AT THE *START* OF THE INTERVAL unless `dates_end_interval = TRUE`
@@ -327,18 +318,68 @@ crscheck <- function(obj, whichcrs) {
 
 # turn a stars into a stacked sf with date col and add the catchme --------
 
-sfandcatch <- function(starsObj, catches = NULL, newname) {
-  starsObj <- starsObj |>
-    st_as_sf() |>
-    pivot_longer(cols = -any_of(c('Shape', 'geometry')), names_to = 'date', values_to = {{newname}}) |>
-    mutate(date = as.Date(date))
+#' Make a stars an sf and join with spatial info about its polygons or larger ones
+#'
+#' @param starsObj stars object
+#' @param newname name for the column of data
+#' @param polyinfo info about these polygons (sf). These are st_joined by st_equals_exact
+#' @param larger_poly info about other polygons (sf). These are just st_joined with left = FALSE
+#'
+#' @return an sf with geometry as in the original stars and possibly additional info from the other polygons
+#' @export
+#'
+sfandcatch <- function(starsObj, newname, polyinfo = NULL, larger_poly = NULL) {
 
-  if (!is.null(catches)) {
+  if (missing(newname)) {
+    if (length(names(starsObj)) > 1) {
+      newname = 'values'
+    } else {
+      newname <- names(starsObj)
+    }
+  }
+  starsObj <- starsObj |>
+    sf::st_as_sf() |>
+    tidyr::pivot_longer(cols = -tidyselect::any_of(c('Shape', 'geometry')),
+                        names_to = 'date', values_to = {{newname}}) |>
+    dplyr::mutate(date = as.Date(date))
+
+  # Join on info about these polys
+  if (!is.null(polyinfo)) {
     starsObj <- starsObj |>
-      st_join(catches, join = st_equals_exact, par = 1)
+      sf::st_join(polyinfo, join = sf::st_equals_exact, par = 1)
+  }
+
+  # join on the larger-scale polygon
+  if (!is.null(larger_poly)) {
+    starsObj <- starsObj |>
+      sf::st_join(larger_poly, left = FALSE)
   }
 
   return(starsObj)
+}
+
+#' Turn a stars into an sf and aggregate it into a larger poly
+#'
+#' @param starsobj stars object
+#' @param catchpoly the larger polygon. There is no spatial joining here- it's just a force
+#' @param newname the data column name
+#' @param funlist function (bare or \(x) style)
+#'
+#' @return an sf aggregated over all of the stars polygons and attached to the catchpoly polygon
+#' @export
+#'
+sf_and_aggforce <- function(starsobj, catchpoly, newname, funlist) {
+
+  # typical name parsing
+  # nameparser = paste0('{.fn}_{.col}')
+
+  starsobj |>
+    sfandcatch(newname = newname) |> # This just does the sf and pivot
+    sf::st_drop_geometry() |> # we know we're going to glue on the catchment
+    dplyr::summarise(dplyr::across(all_of(newname), {{funlist}}),
+                     .by = date) |>
+    dplyr::bind_cols(catchpoly) |>
+    sf::st_as_sf()
 }
 
 
