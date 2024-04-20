@@ -55,7 +55,6 @@ timeRoll <- function(stardat, attribute_number = 1,
       starperm <- aperm(stardat, perm = permorder)
     }
   }
-  test <- 1
 
   # loop over 3rd dimension if necessary
     # this is hacky. I'm sure there's a purrr way to do this
@@ -78,6 +77,13 @@ timeRoll <- function(stardat, attribute_number = 1,
       starroll <- aperm(starperm, perm = revPerm)
     }
   }
+
+  # Deal with issues of e.g. max(NA, NA): from help
+  # The minimum and maximum of a numeric empty set are +Inf and -Inf (in this
+  # order!) which ensures transitivity, e.g., min(x1, min(x2)) == min(x1, x2).
+  # For numeric x max(x) == -Inf and min(x) == +Inf whenever length(x) == 0
+  # (after removing missing values if requested).
+  starroll[is.infinite(starroll)] <- NA
 
   # if it came in as stars, put it back together.
   if (instars) {
