@@ -39,54 +39,17 @@ process_data <- function(dataname,
 
   ## NAMING AND DIR MGMT
 
-  # Make a sub-directory for the subchunk
-  if (length(subchunkArgs) == 0 | is.null(subchunkArgs)) {chunkpath <- catchment}
-  if (length(subchunkArgs) > 0) {
-    chunkpath <- stringr::str_flatten(c(catchment, subchunkArgs),
-                                         collapse = '/sub_')
-    }
+  dirinfo <- make_chunk_dirs(out_dir = out_dir,
+                             catchment = catchment,
+                             process_function = summaryFun,
+                             dataname = dataname,
+                             nchunks = nchunks,
+                             subchunkArgs = subchunkArgs,
+                             extraname = extraname)
 
-  if (!is.null(extraname)) {
-    sumextra <- paste0(summaryFun, '/', extraname)
-  } else {
-    sumextra <- summaryFun
-  }
-  # If not chunking, don't need the inner chunked dir.
-  if (nchunks == 1) {
-    scriptOut <- file.path(out_dir, paste0(dataname), sumextra)
-  } else if (nchunks > 1) {
-    scriptOut <- file.path(out_dir, paste0(dataname), sumextra, 'chunked',
-                           chunkpath)
-  }
-
-  # Make the out directory, in case it doesn't exist
-  if (!dir.exists(scriptOut)) {dir.create(scriptOut, recursive = TRUE)}
-
-  # These subchunk indices feel backwards (the outer chunk is on the right,
-  # instead of building L -> R). But other things depend on that so don't fix
-  # unless planning a big restructure
-  # str_replace is because when there's no subchunk we get two _ next to each
-  # other.
-  unique_chunkname <- paste0(catchment, '_', summaryFun, '_',
-                             stringr::str_flatten(subchunkArgs, collapse = '_'),
-                             '_', thischunk) |>
-    stringr::str_replace_all('__', '_')
-
-  unique_indexname <- paste0(catchment, '_', summaryFun, '_index', '_',
-                             stringr::str_flatten(subchunkArgs, collapse = '_'),
-                             '_', thischunk) |>
-    stringr::str_replace_all('__', '_')
-
-  # Got to be a cleaner way to do this.
-  # assign(unique_chunkname, tempAns)
-  # assign(unique_indexname, tempIndex)
-
-  # If 1, we don't append the chunkname and it goes in a different directory.
-  if (nchunks == 1) {
-    unique_chunkname <- stringr::str_remove(unique_chunkname, '_1$')
-    unique_indexname <- stringr::str_remove(unique_indexname, '_1$')
-  }
-
+  scriptOut <- dirinfo$scriptOut
+  unique_chunkname <- dirinfo$unique_chunkname
+  unique_indexname <- dirinfo$unique_indexname
 
   # Get the needed chunk of anaes
   anaePolys <- get_anae_chunk(anae_path = poly_path,

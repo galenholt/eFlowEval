@@ -8,7 +8,7 @@ process_with_checks(
   dataname,
   data_dir,
   poly_path = file.path(out_dir, "ANAEprocessed"),
-  summaryFun,
+  process_function,
   out_dir,
   catchment = "all",
   nchunks = 100,
@@ -19,13 +19,13 @@ process_with_checks(
 )
 }
 \arguments{
-\item{dataname}{name of the data to process (and name of output directory for the data type). Current options 'inundation', 'soil_temp', 'moisture'}
+\item{dataname}{as in \code{\link[=parallel_data]{parallel_data()}}, but if \code{''} or missing, assumes strictures, since they have no dataname argument.}
 
 \item{data_dir}{directory with raw data}
 
 \item{poly_path}{path to the polygons to process into}
 
-\item{summaryFun}{character name of the summary function}
+\item{process_function}{the name of the function used to process, same as \code{summaryFun} for data and \code{strict_fun} for strictures}
 
 \item{out_dir}{output directory}
 
