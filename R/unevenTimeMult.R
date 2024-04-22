@@ -25,6 +25,11 @@ unevenTimeMult <- function(fineStars, coarseStars, lag, invertCoarseLogic = FALS
   timesheets <- st_get_dimension_values(fineStars, 'time')
   yrtimes <- st_get_dimension_values(coarseStars, 'time')
 
+  # We need to handle the situation of fine times beyond the end of coarse. To
+  # do that, we need the end of the last coarse period
+
+  yrtimes <- c(yrtimes, yrtimes[length(yrtimes)] + diff(yrtimes[(length(yrtimes)-1):length(yrtimes)]))
+
   # This is the interval (in the coarse) each sheet of the fine data is in
   # So, we really just need to grab the whichInt[t]-1 yearsheet for the mult
   whichInt <- findInterval(timesheets, yrtimes, rightmost.closed = TRUE)
@@ -51,6 +56,9 @@ unevenTimeMult <- function(fineStars, coarseStars, lag, invertCoarseLogic = FALS
     fineMat <- t(fineMat)
   }
 
+  if (any(diff(unique(whichInt)) > 1)) {
+    rlang::warn("Missing time data in fineStars, can cause unexpected behaviour in the multiplication, since some intervals are missing.")
+  }
   # Loop over each coarse time unit, multiplying it by the matrix of fine time units applying to it (as determined by lag)
   for (t in min(whichInt):max(whichInt)) {
 
@@ -58,7 +66,8 @@ unevenTimeMult <- function(fineStars, coarseStars, lag, invertCoarseLogic = FALS
     thiscoarseIndex <- which(whichInt == t)
 
     # multiply the coarse vector by the fine matrix (this is element-wise but expanded, NOT matrix-mult)
-    if (((t-lag) < 1) | ((t-lag) > max(whichInt))) {
+    # Set output to NA if it's off the bottom (< 1) or the top (in the last interval, whihc is > the last data + one interval size)
+    if (((t-lag) < 1) | ((t-lag) >= max(whichInt))) {
       # set to NA if there is no coarse value for the desired lag
       fineMat[ ,thiscoarseIndex] <- NA * fineMat[ , thiscoarseIndex]
     } else {

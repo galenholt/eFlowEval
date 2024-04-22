@@ -373,13 +373,15 @@ sf_and_aggforce <- function(starsobj, catchpoly, newname, funlist) {
   # typical name parsing
   # nameparser = paste0('{.fn}_{.col}')
 
-  starsobj |>
+  sfed <- starsobj |>
     sfandcatch(newname = newname) |> # This just does the sf and pivot
     sf::st_drop_geometry() |> # we know we're going to glue on the catchment
     dplyr::summarise(dplyr::across(all_of(newname), {{funlist}}),
                      .by = date) |>
     dplyr::bind_cols(catchpoly) |>
     sf::st_as_sf()
+
+  return(sfed)
 }
 
 
