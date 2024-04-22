@@ -14,6 +14,7 @@ make_chunk_dirs <- function(out_dir,
                             catchment,
                             process_function,
                             dataname,
+                            thischunk,
                             nchunks,
                             subchunkArgs = NULL,
                             extraname = NULL) {

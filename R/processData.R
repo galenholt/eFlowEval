@@ -43,6 +43,7 @@ process_data <- function(dataname,
                              catchment = catchment,
                              process_function = summaryFun,
                              dataname = dataname,
+                             thischunk = thischunk,
                              nchunks = nchunks,
                              subchunkArgs = subchunkArgs,
                              extraname = extraname)

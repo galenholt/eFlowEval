@@ -27,6 +27,7 @@ process_strictures <- function(out_dir,
                              catchment = catchment,
                              process_function = strict_fun,
                              dataname = '',
+                             thischunk = thischunk,
                              nchunks = nchunks,
                              extraname = extraname)
 

@@ -9,6 +9,7 @@ make_chunk_dirs(
   catchment,
   process_function,
   dataname,
+  thischunk,
   nchunks,
   subchunkArgs = NULL,
   extraname = NULL
