@@ -4,13 +4,15 @@
 \alias{clean_area}
 \title{Make sure areas aren't larger than areas of polygons. There are cases where the rounding is an issue.}
 \usage{
-clean_area(starsObj, anaes)
+clean_area(in_geo, anaes, test = FALSE)
 }
 \arguments{
-\item{anaes}{}
+\item{in_geo}{input geometry (either stars or sf)}
+
+\item{anaes}{the canonical set of anae polygons}
 }
 \value{
-clean starsObj
+clean stars or sf object with areas never larger than the anaes (and in the case of ANAEs, the geometry is replaced)
 }
 \description{
 Make sure areas aren't larger than areas of polygons. There are cases where the rounding is an issue.

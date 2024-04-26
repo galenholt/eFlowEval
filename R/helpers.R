@@ -1,30 +1,7 @@
 # Small helper functions
 
 
-# Proportion function
-propor <- function(x, na.rm = FALSE) {
-  sum(x, na.rm = na.rm)/length(x)
-}
 
-# when everything being summed (or otherwise aggregated) is NA, sum(na.rm =
-# TRUE) gives 0, but I need it to be NA. So define a function on the backend,
-# some of the code expects a na.rm so pass it I guess really, should make these
-# generic and accept the FUN, but not now
-sumna <- function(x, na.rm = TRUE) {
-  ifelse(all(is.na(x)), NA, sum(x, na.rm = TRUE))
-}
-
-meanna <- function(x, na.rm = TRUE) {
-  ifelse(all(is.na(x)), NA, mean(x, na.rm = TRUE))
-}
-
-maxna <- function(x, na.rm = TRUE) {
-  ifelse(all(is.na(x)), NA, max(x, na.rm = TRUE))
-}
-
-minna <- function(x, na.rm = TRUE) {
-  ifelse(all(is.na(x)), NA, min(x, na.rm = TRUE))
-}
 
 
 # Aggregation and plotting in the catchment -------------------------------
@@ -422,20 +399,34 @@ load_rename <- function(filepath, knownnames,
 
 #' Make sure areas aren't larger than areas of polygons. There are cases where the rounding is an issue.
 #'
-#' @param starsObj
-#' @param anaes
+#' @param in_geo input geometry (either stars or sf)
+#' @param anaes the canonical set of anae polygons
 #'
-#' @return clean starsObj
+#' @return clean stars or sf object with areas never larger than the anaes (and in the case of ANAEs, the geometry is replaced)
 #' @export
 #'
-clean_area <- function(starsObj, anaes) {
+clean_area <- function(in_geo, anaes, test = FALSE) {
   anaeareas <- as.numeric(st_area(anaes))
-  polyareas <- matrix(rep(anaeareas,
-                          length(st_get_dimension_values(starsObj, which = 'time'))),
-                      ncol = length(st_get_dimension_values(starsObj, which = 'time')))
-  repind <- which(starsObj[[1]] > polyareas)
-  starsObj[[1]][repind] <- polyareas[repind]
-  return(starsObj)
+
+  if (inherits(in_geo, 'stars')) {
+    polyareas <- matrix(rep(anaeareas,
+                            length(st_get_dimension_values(in_geo, which = 'time'))),
+                        ncol = length(st_get_dimension_values(in_geo, which = 'time')))
+    repind <- which(in_geo[[1]] > polyareas)
+    in_geo[[1]][repind] <- polyareas[repind]
+  } else if (inherits(in_geo, 'sf')) {
+    if (test) {
+      inter <- diag(sf::st_intersects(sf::st_geometry(anaes),
+                                       sf::st_geometry(in_geo), sparse = FALSE))
+      if (!all(inter)) {
+        rlang::abort(glue::glue("ANAE geometry does not intersect geometry it will replace at positions {paste0(which(!inter))}"))
+      }
+    }
+
+    in_geo$geometry <- anaes$geometry
+  }
+
+  return(in_geo)
 }
 
 # Plot helpers (themes) ---------------------------------------------------
