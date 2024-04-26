@@ -87,7 +87,7 @@ chunks_to_process <- function(out_dir,
   # we need to know if *anything* is getting chunked for whether to put the files in /chunked.
   anychunks <- any(nchunks > 1)
 
-  full_set <- tibble::tibble(catchment = rep(catchment, nchunks)) |>
+  full_set <- tibble::tibble(catchment = rep(catchment, nchunks), nchunks = rep(nchunks, nchunks)) |>
     arrange(catchment) |>
     mutate(chunk = row_number(), .by = catchment) |>
     dplyr::mutate(filename = dplyr::case_when(!anychunks ~ paste0(catchment, '_', summaryFun, filetype),
