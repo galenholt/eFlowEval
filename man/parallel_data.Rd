@@ -11,7 +11,6 @@ parallel_data(
   poly_path = file.path(out_dir, "ANAEprocessed"),
   summaryFun,
   out_dir,
-  nchunks = 100,
   whichcrs = 3577,
   maxPix = 1e+05,
   rastRollArgs = NULL,
@@ -31,8 +30,6 @@ parallel_data(
 \item{summaryFun}{character name of the summary function}
 
 \item{out_dir}{output directory}
-
-\item{nchunks}{default 100, how many chunks to use. If 1, the chunked system cancels out and the data is just saved to out_dir/dataname/summaryFun/Catchment_summaryFun.rds.}
 
 \item{whichcrs}{desired crs}
 

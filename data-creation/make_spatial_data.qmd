@@ -162,3 +162,21 @@ mdba_bird_subwetlands <- mdba_bird_complex |>
 usethis::use_data(mdba_bird_wetlands, overwrite = params$rebuild)
 usethis::use_data(mdba_bird_subwetlands, overwrite = params$rebuild)
 ```
+
+## An anae summary
+
+This is a bit of a hack, since I make the ANAE catchment elsewhere, but
+
+```{r}
+anaes <- readRDS(file.path('datOut', 'ANAEcatchment', 'ANAEcatchment.rds'))
+anae_number <- anaes |> 
+  st_drop_geometry() |> 
+  summarise(nanaes = n(), .by = ValleyName) |> 
+  mutate(ValleyName = stringr::str_remove_all(ValleyName, ' ')) |> 
+  arrange(ValleyName)
+```
+
+```{r}
+#| error: true
+usethis::use_data(anae_number, overwrite = params$rebuild)
+```

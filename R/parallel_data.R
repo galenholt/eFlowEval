@@ -13,7 +13,6 @@ parallel_data <- function(runframe,
                           poly_path = file.path(out_dir, "ANAEprocessed"),
                           summaryFun,
                           out_dir,
-                          nchunks = 100,
                           whichcrs = 3577,
                           maxPix = 100000,
                           rastRollArgs = NULL,
@@ -25,6 +24,9 @@ parallel_data <- function(runframe,
   if (nrow(runframe) == 0) {
     return(tibble::tibble(catchment = NA, chunknumber = NA, summaryFun = NA, npolys = 0, pixarea = NA, elapsed = NA))
   }
+
+  anychunks <- any(runframe$nchunks > 1)
+
   # set up progress bar
   p <- progressor(steps = nrow(runframe))
 
@@ -42,6 +44,7 @@ parallel_data <- function(runframe,
     # get the looplevels
     w <- runframe$catchment[nl]
     i <- runframe$chunk[nl]
+    nc <- runframe$nchunks[nl]
 
     inuntab <- process_data(
       dataname = dataname,
@@ -51,11 +54,12 @@ parallel_data <- function(runframe,
       out_dir = out_dir,
       catchment = w,
       thischunk = i,
-      nchunks = nchunks,
+      nchunks = nc,
       whichcrs = whichcrs,
       maxPix = maxPix,
       rastRollArgs = rastRollArgs,
-      extraname = extraname
+      extraname = extraname,
+      forcechunk = anychunks
     )
 
     p(glue::glue("catchment {w} chunk {i} finished"))

@@ -11,7 +11,8 @@ process_with_checks(
   process_function,
   out_dir,
   catchment = "all",
-  nchunks = 100,
+  nchunks = NULL,
+  poly_per_chunk = NULL,
   whichcrs = 3577,
   maxPix = 1e+05,
   rastRollArgs = NULL,
@@ -29,7 +30,11 @@ process_with_checks(
 
 \item{out_dir}{output directory}
 
-\item{nchunks}{default 100, how many chunks to use. If 1, the chunked system cancels out and the data is just saved to out_dir/dataname/summaryFun/Catchment_summaryFun.rds.}
+\item{catchment}{names of catchments or other units. Default 'all' forces all catchments in the basin.}
+
+\item{nchunks}{number of chunks. Default NULL. If > 1, data goes into a 'catchment/chunked/...' directory. If 1, does not chunk, data goes into the summaryFun directory}
+
+\item{poly_per_chunk}{number of polygons per chunk. default NULL. Dynamically adjusts the number of chunks per catchment so each has approximately polys_per_chunk. Cannot use this and nchunks.}
 
 \item{whichcrs}{desired crs}
 

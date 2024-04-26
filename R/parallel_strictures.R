@@ -10,7 +10,6 @@
 parallel_strictures <- function(runframe,
                                 out_dir,
                                 strict_fun,
-                                nchunks,
                                 extraname = NULL,
                                 whichcrs = 3577,
                                 saveout = TRUE,
@@ -46,13 +45,14 @@ parallel_strictures <- function(runframe,
     # get the looplevels
     w <- runframe$catchment[nl]
     i <- runframe$chunk[nl]
+    nc <- runframe$nchunks[nl]
 
     stricttab <- process_strictures(
       out_dir = out_dir,
       strict_fun = strict_fun,
       catchment = w,
       thischunk = i, # nearly always just 1
-      nchunks = nchunks,
+      nchunks = nc,
       whichcrs = whichcrs,
       saveout = saveout,
       returnForR = returnForR

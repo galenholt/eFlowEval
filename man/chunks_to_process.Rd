@@ -8,8 +8,9 @@ chunks_to_process(
   out_dir,
   dataname,
   summaryFun,
-  nchunks = 100,
   catchment = "all",
+  nchunks = NULL,
+  poly_per_chunk = NULL,
   extraname = NULL,
   returnForR = TRUE,
   produce_sh = FALSE,
@@ -23,9 +24,11 @@ chunks_to_process(
 
 \item{summaryFun}{name of the summary function (the next dir in, enabling multiple summaries of same data)}
 
-\item{nchunks}{number of chunks. If > 1, data goes into a 'catchment/chunked/...' directory. If 1, does not chunk, data goes into the summaryFun directory}
-
 \item{catchment}{names of catchments or other units. Default 'all' forces all catchments in the basin.}
+
+\item{nchunks}{number of chunks. Default NULL. If > 1, data goes into a 'catchment/chunked/...' directory. If 1, does not chunk, data goes into the summaryFun directory}
+
+\item{poly_per_chunk}{number of polygons per chunk. default NULL. Dynamically adjusts the number of chunks per catchment so each has approximately polys_per_chunk. Cannot use this and nchunks.}
 
 \item{returnForR}{logical, default TRUE, return a tibble with catchment and chunk columns}
 

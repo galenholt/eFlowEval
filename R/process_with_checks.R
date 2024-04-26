@@ -5,6 +5,8 @@
 #' arguments.
 #'
 #' @inheritParams parallel_data
+#' @inheritParams chunks_to_process
+#'
 #' @param dataname as in [parallel_data()], but if `''` or missing, assumes strictures, since they have no dataname argument.
 #' @param process_function the name of the function used to process, same as `summaryFun` for data and `strict_fun` for strictures
 #'
@@ -17,7 +19,8 @@ process_with_checks <- function(dataname,
                                 process_function,
                                 out_dir,
                                 catchment = 'all',
-                                nchunks = 100,
+                                nchunks = NULL,
+                                poly_per_chunk = NULL,
                                 whichcrs = 3577,
                                 maxPix = 100000,
                                 rastRollArgs = NULL,
@@ -40,6 +43,7 @@ process_with_checks <- function(dataname,
                                dataname = dataname,
                                summaryFun = funname,
                                nchunks = nchunks,
+                               poly_per_chunk = poly_per_chunk,
                                catchment = catchment,
                                extraname = extraname,
                                returnForR = TRUE,
@@ -58,7 +62,6 @@ process_with_checks <- function(dataname,
                               poly_path = poly_path,
                               summaryFun = process_function,
                               out_dir = out_dir,
-                              nchunks = nchunks,
                               whichcrs = whichcrs,
                               maxPix = maxPix,
                               rastRollArgs = rastRollArgs,
@@ -79,7 +82,6 @@ process_with_checks <- function(dataname,
     alltimes <- parallel_strictures(runframe = runlist,
                               out_dir = out_dir,
                               strict_fun = process_function,
-                              nchunks = nchunks,
                               whichcrs = whichcrs,
                               extraname = extraname,
                               saveout = TRUE)

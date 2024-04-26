@@ -12,7 +12,8 @@ make_chunk_dirs(
   thischunk,
   nchunks,
   subchunkArgs = NULL,
-  extraname = NULL
+  extraname = NULL,
+  forcechunk = FALSE
 )
 }
 \arguments{

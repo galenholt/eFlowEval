@@ -3,8 +3,9 @@
 #' @param out_dir outer directory for all output data
 #' @param dataname name of the dataset (this will be the next dir in)
 #' @param summaryFun name of the summary function (the next dir in, enabling multiple summaries of same data)
-#' @param nchunks number of chunks. If > 1, data goes into a 'catchment/chunked/...' directory. If 1, does not chunk, data goes into the summaryFun directory
 #' @param catchment names of catchments or other units. Default 'all' forces all catchments in the basin.
+#' @param nchunks number of chunks. Default NULL. If > 1, data goes into a 'catchment/chunked/...' directory. If 1, does not chunk, data goes into the summaryFun directory
+#' @param poly_per_chunk number of polygons per chunk. default NULL. Dynamically adjusts the number of chunks per catchment so each has approximately polys_per_chunk. Cannot use this and nchunks.
 #' @param returnForR logical, default TRUE, return a tibble with catchment and chunk columns
 #' @param produce_sh logical default FALSE, produce an .sh file if TRUE
 #' @param filetype '.rds' (default), or '.rdata' for backwards compatibility
@@ -15,8 +16,9 @@
 chunks_to_process <- function(out_dir,
                   dataname,
                   summaryFun,
-                  nchunks = 100,
                   catchment = 'all',
+                  nchunks = NULL,
+                  poly_per_chunk = NULL,
                   extraname = NULL,
                   returnForR = TRUE,
                   produce_sh = FALSE,
@@ -29,6 +31,39 @@ chunks_to_process <- function(out_dir,
                   "Loddon", "LowerDarling", "LowerMurray", "Macquarie", "MittaMitta",
                   "Murrumbidgee", "Namoi", "Ovens", "Paroo", "UpperMurray", "Warrego", "Wimmera")
   }
+
+  # Handle a few ways to do nchunks
+
+  if (is.null(nchunks) & is.null(poly_per_chunk)) {
+    rlang::abort("How many chunks? Use one of `nchunks` or `poly_per_chunk`")
+  }
+
+  if (!is.null(nchunks) & !is.null(poly_per_chunk)) {
+    rlang::abort("Cannot use both `nchunks` and `poly_per_chunk`.")
+  }
+
+  # if we're using poly_per
+  if (!is.null(poly_per_chunk)) {
+      # anae_number is the number of anaes in the dataset, provided by eFlowEval so we don't have to create or read in
+      chunkcalc <- anae_number |>
+        dplyr::filter(ValleyName %in% catchment) |>
+        dplyr::mutate(catchchunks = ceiling(nanaes/poly_per_chunk))
+
+      # make n_chunks and catchment (again, to make sure nothing got shuffled)
+      nchunks <- chunkcalc$catchchunks
+      catchment <- chunkcalc$ValleyName
+  }
+
+  # We might have a vector of chunk sizes, either passed in directly or created
+  # by poly_per_chunk. Check that the  length equal to the catchments should
+  # just be left alone, but checked.
+  if (length(nchunks) > 1) {
+    if (length(catchment) != length(nchunks)) {
+      rlang::abort(glue::glue("{length(catchment)} catchments requested, but chunksizes given for {length(nchunks}."))
+    }
+  }
+
+
 
   # Where to look for the files
   if (!is.null(extraname)) {
@@ -49,9 +84,14 @@ chunks_to_process <- function(out_dir,
 
   # Get the expected full set
   # The paths here are relative to fundir.
-  full_set <- tidyr::expand_grid(catchment, chunk = 1:nchunks) |>
-    dplyr::mutate(filename = dplyr::case_when(nchunks == 1 ~ paste0(catchment, '_', summaryFun, filetype),
-                                              nchunks > 1 ~ file.path('chunked', catchment,
+  # we need to know if *anything* is getting chunked for whether to put the files in /chunked.
+  anychunks <- any(nchunks > 1)
+
+  full_set <- tibble::tibble(catchment = rep(catchment, nchunks)) |>
+    arrange(catchment) |>
+    mutate(chunk = row_number(), .by = catchment) |>
+    dplyr::mutate(filename = dplyr::case_when(!anychunks ~ paste0(catchment, '_', summaryFun, filetype),
+                                              anychunks ~ file.path('chunked', catchment,
                                                                       paste0(catchment, '_', summaryFun, '_', chunk, filetype))))
 
   # Get the existing files

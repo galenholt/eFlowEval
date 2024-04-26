@@ -17,7 +17,8 @@ make_chunk_dirs <- function(out_dir,
                             thischunk,
                             nchunks,
                             subchunkArgs = NULL,
-                            extraname = NULL) {
+                            extraname = NULL,
+                            forcechunk = FALSE) {
 
   if (rlang::is_function(process_function)) {
     funname <- deparse(substitute(process_function))
@@ -25,12 +26,12 @@ make_chunk_dirs <- function(out_dir,
     funname <- process_function
   }
 
-  if (nchunks == 1) {
+  if (nchunks == 1 & !forcechunk) {
     scriptOut <- file.path(out_dir, funname)
     # chunk names, don't support subchunks
     unique_chunkname <- paste0(catchment, '_', funname)
     unique_indexname <- paste0(catchment, '_', funname, '_index')
-  } else if (nchunks > 1) {
+  } else if (nchunks > 1 | forcechunk) {
 
     # Make a sub-directory for the subchunk
     if (length(subchunkArgs) == 0 | is.null(subchunkArgs)) {chunkpath <- catchment}

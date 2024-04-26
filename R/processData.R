@@ -16,6 +16,7 @@
 #' @param rastRollArgs arguments to [rastPolyJoin()] to roll the raster before aggregating
 #' @param saveout default TRUE, save data out.
 #' @param extraname an extra level for the directory path, so, out_dir/dataname/summaryFun/extraname. Often used if there are multiple sets of rastRollArgs that get the same summaryFun, e.g. min moisture over different timeperiods.
+#' @param forcechunk default FALSE, lets us force chunked directory structures with chunks of size 1. needed in particular if we have dynamic chunking.
 #'
 #' @return a tibble of the time taken, main output is the saved data
 #' @export
@@ -34,7 +35,8 @@ process_data <- function(dataname,
                         maxPix = 100000,
                         rastRollArgs = NULL,
                         extraname = NULL,
-                        saveout = TRUE) {
+                        saveout = TRUE,
+                        forcechunk = FALSE) {
   start_time <- Sys.time()
 
   ## NAMING AND DIR MGMT
@@ -46,7 +48,8 @@ process_data <- function(dataname,
                              thischunk = thischunk,
                              nchunks = nchunks,
                              subchunkArgs = subchunkArgs,
-                             extraname = extraname)
+                             extraname = extraname,
+                             forcechunk = forcechunk)
 
   scriptOut <- dirinfo$scriptOut
   unique_chunkname <- dirinfo$unique_chunkname

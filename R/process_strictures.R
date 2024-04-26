@@ -42,6 +42,7 @@ process_strictures <- function(out_dir,
                   nchunks = nchunks,
                   whichcrs = whichcrs)
 
+  # Is there a clean way to chunk these? we'd need to handle it in `strict_fun`, probably? Because we'd need to get the right chunk of all the input data, and don't want to do that here, since there's an infinite possible set.
   strict_responses <- rlang::exec(strict_fun, !!!arglist)
 
   if (saveout) {

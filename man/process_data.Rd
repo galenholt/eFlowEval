@@ -18,7 +18,8 @@ process_data(
   maxPix = 1e+05,
   rastRollArgs = NULL,
   extraname = NULL,
-  saveout = TRUE
+  saveout = TRUE,
+  forcechunk = FALSE
 )
 }
 \arguments{
@@ -49,6 +50,8 @@ process_data(
 \item{extraname}{an extra level for the directory path, so, out_dir/dataname/summaryFun/extraname. Often used if there are multiple sets of rastRollArgs that get the same summaryFun, e.g. min moisture over different timeperiods.}
 
 \item{saveout}{default TRUE, save data out.}
+
+\item{forcechunk}{default FALSE, lets us force chunked directory structures with chunks of size 1. needed in particular if we have dynamic chunking.}
 }
 \value{
 a tibble of the time taken, main output is the saved data

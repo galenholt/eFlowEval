@@ -8,7 +8,6 @@ parallel_strictures(
   runframe,
   out_dir,
   strict_fun,
-  nchunks,
   extraname = NULL,
   whichcrs = 3577,
   saveout = TRUE,
@@ -21,8 +20,6 @@ parallel_strictures(
 \item{out_dir}{outer output directory}
 
 \item{strict_fun}{the function that calculates the strictures. Can be character or bare name, though character works best to avoid losing the name in the stack. Must have arguments \code{out_dir}, \code{catchment}, \code{thischunk}, \code{nchunks}, \code{whichcrs} and return a list. Often thischunk and nchunks aren't used, but should be included for generality. \emph{Note} this uses \code{rlang::exec}, and so if we need more flexibility we could take an arglist here in future.}
-
-\item{nchunks}{default 100, how many chunks to use. If 1, the chunked system cancels out and the data is just saved to out_dir/dataname/summaryFun/Catchment_summaryFun.rds.}
 
 \item{extraname}{an extra level for the directory path, so, out_dir/dataname/summaryFun/extraname. Often used if there are multiple sets of rastRollArgs that get the same summaryFun, e.g. min moisture over different timeperiods.}
 
