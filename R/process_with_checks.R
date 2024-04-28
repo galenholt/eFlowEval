@@ -96,9 +96,10 @@ process_with_checks <- function(dataname,
   runlist_end <- chunks_to_process(out_dir = out_dir,
                                    dataname = dataname,
                                    summaryFun = funname,
+                                   nchunks = nchunks,
+                                   poly_per_chunk = poly_per_chunk,
                                    catchment = catchment,
                                    extraname = extraname,
-                                   nchunks = nchunks,
                                    returnForR = TRUE,
                                    filetype = '.rds')
 
