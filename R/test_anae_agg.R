@@ -48,42 +48,6 @@ test_anae_agg <- function(catchment,
     # The data should all have the catchment names too
     in_list <- read_catchment_polys(datapath, thiscatchment) |>
       setNames(c('aggdata', 'indices')) # make names generic
-#
-#     if (filetype == '.rdata') {
-#
-#       rlang::warn("please switch to .rds")
-#
-#       # we need to read them in to a standard name, rather than the pre-named
-#       # objects they come in as.
-#       outerDir <- file.path(out_dir, dataname)
-#
-#       list_names <- c(paste0(catchment, '_', summaryFun),
-#                       paste0(catchment, '_', summaryFun, '_index'))
-#       list_path <- file.path(outerDir, summaryFun,
-#                              paste0(catchment, '_', summaryFun, filetype))
-#
-#       # Brind in the index file too- it's useful to make sure everything lines up
-#
-#       in_list <- load_rename(filepath = list_path,
-#                              knownnames = list_names,
-#                              newnames = c('aggdata', 'indices'))
-#
-#       anae_names <- paste0(catchment, 'ANAE')
-#       anae_path <- file.path(datOut, 'ANAEprocessed', paste0(catchment, 'ANAE.rdata'))
-#       anaes <- load_rename(filepath = anae_path,
-#                            returnOne = anae_names) |>
-#         st_transform(st_crs(in_list$aggdata)) |>
-#         st_make_valid()
-#     }
-#     if (filetype == '.rds') {
-#       in_list <- readRDS(file = list_path) |>
-#         setNames(c('aggdata', 'indices'))
-#       anae_path <- file.path(poly_path, paste0(catchment, 'ANAE.rds'))
-#       anaes <- readRDS(file = anae_path)
-#     }
-
-
-
 
     # Line everything up ------------------------------------------------------
 

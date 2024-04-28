@@ -127,6 +127,7 @@ process_with_checks <- function(dataname,
                                 summaryFun = process_function,
                                 catchment = catchment,
                                 poly_path = poly_path,
+                                extraname = extraname,
                                 filetype = '.rds')
 
     findfails <- check_aggs |>
