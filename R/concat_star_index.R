@@ -45,11 +45,20 @@ concat_star_index <- function(starindexlist, dimension,
 
   }
 
-  tempIndex <- foreach::foreach(l = 1:length(starindexlist),
-                       .combine=dplyr::bind_rows,
-                       .multicombine=TRUE) %do% {
-                         starindexlist[[l]][[2]]
-                       }
+  # glue together the geom indices if geometry, but not if time
+  if (grepl('geometry|shape', dimension, ignore.case = TRUE)) {
+    tempIndex <- foreach::foreach(l = 1:length(starindexlist),
+                                  .combine=dplyr::bind_rows,
+                                  .multicombine=TRUE) %do% {
+                                    starindexlist[[l]][[2]]
+                                  }
+  } else if (grepl('time', dimension, ignore.case = TRUE)) {
+    tempIndex <- starindexlist[[1]][[2]]
+  } else {
+    rlang::warn("dimension not defined, attemtpting to return input geometries")
+    tempIndex <- starindexlist[[1]][[2]]
+  }
+
   templist <- list(tempAns, tempIndex) |>
     setNames(c(starname, indexname))
 
