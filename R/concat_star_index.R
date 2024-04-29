@@ -22,6 +22,29 @@ concat_star_index <- function(starindexlist, dimension,
                        starindexlist[[l]][[1]]
                      }
 
+  # For some reason the time dimension sometimes loses times.
+    # WE SHOULD ALSO SORT SO TIMES ARE IN THE RIGHT ORDER
+    # AND TEST FOR DUPLICATE TIMES
+  if (dimension == 'time') {
+    # unfortunately, the safest way to do this is with another foreach
+    alltimes <- foreach::foreach(l = 1:length(starindexlist),
+                                 .combine = c, .multicombine = TRUE) %do% {
+                  st_get_dimension_values(starindexlist[[l]][[1]], 'time')
+                                 }
+
+    if (any(duplicated(alltimes))) {
+      rlang::abort("Duplicated times. Check your data.")
+    }
+
+    if (any(alltimes != sort(alltimes))) {
+      rlang::abort("Times out of order. Need to figure out a robust sorting method.")
+    }
+
+    tempAns <- st_set_dimensions(tempAns, 'time', values = alltimes)
+
+
+  }
+
   tempIndex <- foreach::foreach(l = 1:length(starindexlist),
                        .combine=dplyr::bind_rows,
                        .multicombine=TRUE) %do% {
