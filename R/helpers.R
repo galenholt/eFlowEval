@@ -412,8 +412,10 @@ clean_area <- function(in_geo, anaes, test = FALSE) {
     polyareas <- matrix(rep(anaeareas,
                             length(st_get_dimension_values(in_geo, which = 'time'))),
                         ncol = length(st_get_dimension_values(in_geo, which = 'time')))
-    repind <- which(in_geo[[1]] > polyareas)
-    in_geo[[1]][repind] <- polyareas[repind]
+    # repind <- which(in_geo[[1]] > polyareas)
+    # in_geo[[1]][repind] <- polyareas[repind]
+    # This should be faster.
+    in_geo[[1]] <- pmin(in_geo[[1]], polyareas)
   } else if (inherits(in_geo, 'sf')) {
     if (test) {
       inter <- diag(sf::st_intersects(sf::st_geometry(anaes),
