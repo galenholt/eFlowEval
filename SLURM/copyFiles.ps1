@@ -4,7 +4,8 @@
 # This also leaves out the 'chunked' subdirectories.
 
 # have to use powershell because it's the only thing with access to Bowen and C
-# SO, ignore all the putty/hpc stuff, and open powershell directly
+# SO, ignore all the putty/hpc stuff, and open powershell directly on the CSIRO computer in Citrix. 
+# That sees local C as \\Client\C$\ so you can copy to it
 # Then paste this in, one at a time (I guess- probably can run it as a script?)
 # I think I can probably cd "\\Client\C$\Users\Galen\Dropbox\Australia\MER\GalenGits\CC2"
 # and then ./copyFiles.ps1

@@ -1,14 +1,13 @@
-Package: CC2
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9047
+Package: eFlowEval
+Title: Tools for assesing ecological response to environmental flows
+Version: 0.0.0.9048
 Authors@R: c(
     person("Galen", "Holt", , "g.holt@deakin.edu.au", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-7455-9275")),
     person("Ashley", "Macqueen", , "ashley.macqueen@vewh.vic.gov.au", role = c("aut"))
     )
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+Description: This tool takes a general approach to linking environmental drivers, ecological response models and scaling to address water management needs. It was developed as part of the Flow-MER program targeting the Murray-Darling Basin, Australia. Its primary uses at present are assessing ecological response to wetland inundation across the Murray-Darling Basin.
+License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
