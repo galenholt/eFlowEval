@@ -1,6 +1,10 @@
 # eFlowEval modeling framework repository
 
-This repository contains the code for the eFlowEval modelling framework. It is built primarily in R, but is not (currently) an R package, and contains some shell scripts to manage running on SLURM HPCs.
+This repository contains the code for the eFlowEval modelling framework, built primarily in R. 
+
+This readme refers specifically to the version at the time of acceptance of Holt, Macqueen, and Lester 2024 A flexible consistent framework for modelling multiple interacting environmental responses to management in space and time. Journal of Enviromental Management, matching release 0.1.0. At acceptance and release, it is not yet an R package, and contains some shell scripts to manage running on SLURM HPCs.
+
+*The `dev` branch is now an R package and has significant improvements to streamline the workflow. Future work will merge with that branch following publication.*
 
 To get set up, clone this repository, and use {renv} to establish the package environment `renv::restore()` to ensure there are no package conflicts.
 

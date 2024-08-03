@@ -6,7 +6,7 @@
 # have to use powershell because it's the only thing with access to Bowen and C
 # SO, ignore all the putty/hpc stuff, and open powershell directly
 # Then paste this in, one at a time (I guess- probably can run it as a script?)
-# I think I can probably cd "\\Client\C$\Users\Galen\Dropbox\Australia\MER\GalenGits\CC2"
+# I think I can probably cd "\\Client\C$\Users\Galen\Dropbox\Australia\MER\GalenGits\eFlowEval"
 # and then ./copyFiles.ps1
 
 # I *think* this only copies if it's not already there. will test. 
@@ -14,12 +14,12 @@
 
 # The temperature version
 robocopy "\\fs1-cbr.nexus.csiro.au\{lw-mer}\work\galen_holt\datOut\TempAndProduction\Predictions" `
-"\\Client\C$\Users\Galen\Dropbox\Australia\MER\GalenGits\CC2\datOut\TempAndProduction\Predictions" `
+"\\Client\C$\Users\Galen\Dropbox\Australia\MER\GalenGits\eFlowEval\datOut\TempAndProduction\Predictions" `
 /E /XD dirs "chunked"
 
 # Climate
 robocopy "\\fs1-cbr.nexus.csiro.au\{lw-mer}\work\galen_holt\datOut\ClimateAndProduction\Predictions" `
-"\\Client\C$\Users\Galen\Dropbox\Australia\MER\GalenGits\CC2\datOut\ClimateAndProduction\Predictions" `
+"\\Client\C$\Users\Galen\Dropbox\Australia\MER\GalenGits\eFlowEval\datOut\ClimateAndProduction\Predictions" `
 /E /XD dirs "chunked"
 
 
@@ -28,7 +28,7 @@ robocopy "\\fs1-cbr.nexus.csiro.au\{lw-mer}\work\galen_holt\datOut\ClimateAndPro
 
 
 
-rsync -av /datasets/work/lw-mer/work/galen_holt/datOut/TEST //Client/C$/Users/Galen/Dropbox/Australia/MER/GalenGits/CC2/datOut/CHECK
+rsync -av /datasets/work/lw-mer/work/galen_holt/datOut/TEST //Client/C$/Users/Galen/Dropbox/Australia/MER/GalenGits/eFlowEval/datOut/CHECK
 
 
 
@@ -36,17 +36,17 @@ rsync -av /datasets/work/lw-mer/work/galen_holt/datOut/TEST //Client/C$/Users/Ga
 
 
 
-cp -rp /datastore/hol436/datOut/TempAndProduction/Predictions/logERdaysvalleys //Client/C$/Users/Galen/Dropbox/Australia/MER/GalenGits/CC2/datOut/TempAndProduction/Predictions
+cp -rp /datastore/hol436/datOut/TempAndProduction/Predictions/logERdaysvalleys //Client/C$/Users/Galen/Dropbox/Australia/MER/GalenGits/eFlowEval/datOut/TempAndProduction/Predictions
 
-cp -rp /datastore/hol436/datOut/TEST //Client/C$/Users/Galen/Dropbox/Australia/MER/GalenGits/CC2/datOut/CHECK
+cp -rp /datastore/hol436/datOut/TEST //Client/C$/Users/Galen/Dropbox/Australia/MER/GalenGits/eFlowEval/datOut/CHECK
 
 
 # POWERSHELL
-robocopy "\\fs1-cbr.nexus.csiro.au\{lw-mer}\work\galen_holt\datOut\TEST" \\Client\C$\Users\Galen\Dropbox\Australia\MER\GalenGits\CC2\datOut\CHECK/TEST /E
+robocopy "\\fs1-cbr.nexus.csiro.au\{lw-mer}\work\galen_holt\datOut\TEST" \\Client\C$\Users\Galen\Dropbox\Australia\MER\GalenGits\eFlowEval\datOut\CHECK/TEST /E
 
 # skip an internal directory
 
-robocopy "\\fs1-cbr.nexus.csiro.au\{lw-mer}\work\galen_holt\datOut\TEST" "\\Client\C$\Users\Galen\Dropbox\Australia\MER\GalenGits\CC2\datOut\CHECK/TEST" /E /XD dirs "passcheck"
+robocopy "\\fs1-cbr.nexus.csiro.au\{lw-mer}\work\galen_holt\datOut\TEST" "\\Client\C$\Users\Galen\Dropbox\Australia\MER\GalenGits\eFlowEval\datOut\CHECK/TEST" /E /XD dirs "passcheck"
 
 # looks like it does only copy things that aren't there already
 
@@ -57,5 +57,5 @@ robocopy "\\fs1-cbr.nexus.csiro.au\{lw-mer}\work\galen_holt\datOut\TEST" "\\Clie
 # trying to do line breaks so I can readit
 
 robocopy "\\fs1-cbr.nexus.csiro.au\{lw-mer}\work\galen_holt\datOut\TEST" `
-"\\Client\C$\Users\Galen\Dropbox\Australia\MER\GalenGits\CC2\datOut\CHECK/TEST" `
+"\\Client\C$\Users\Galen\Dropbox\Australia\MER\GalenGits\eFlowEval\datOut\CHECK/TEST" `
 /E /XD dirs "passcheck" #>
