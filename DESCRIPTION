@@ -1,6 +1,6 @@
 Package: eFlowEval
 Title: Tools for assesing ecological response to environmental flows
-Version: 0.0.0.9048
+Version: 0.0.0.9051
 Authors@R: c(
     person("Galen", "Holt", , "g.holt@deakin.edu.au", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-7455-9275")),
