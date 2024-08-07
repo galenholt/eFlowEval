@@ -8,7 +8,7 @@ This repository contains the code for the eFlowEval modelling framework. It is a
 
 To just use the package functionality, use
 
-``` R
+``` r
 # install.packages("devtools")
 devtools::install_github("galenholt/eFlowEval")
 ```

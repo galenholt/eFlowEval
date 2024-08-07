@@ -2,13 +2,13 @@
 # CITATION file partially created with {cffr} R package, v1.0.0
 # See also: https://docs.ropensci.org/cffr/
 # -----------------------------------------------------------
- 
+
 cff-version: 1.2.0
 message: 'To cite package "eFlowEval" in publications use:'
 type: software
 license: MIT
 title: 'eFlowEval: Tools for assesing ecological response to environmental flows'
-version: 0.1.0
+version: 0.2.0
 abstract: This package provides implementations of the bvstep forward/backward algorithm
   to find the best subset of the data that matches the full community. It further
   provides functions to iterate that algorithm over some number of random starts to
@@ -40,15 +40,15 @@ preferred-citation:
     email: ashley.macqueen@vewh.vic.gov.au
   - family-names: Lester
     given-names: Rebecca E.
-  doi:
-  url: 
+  doi: https://doi.org/10.1016/j.jenvman.2024.122054
+  url: https://www-sciencedirect-com.ezproxy-b.deakin.edu.au/science/article/pii/S0301479724020401
   year: '2024'
   publisher:
     name: Elsevier
-  volume: 
-  issue: 
+  volume: 367
+  issue:
   journal: Journal of Environmental Management
-  start: 
+  start: 122054
 repository: https://github.com/galenholt/eFlowEval
 repository-code: https://github.com/galenholt/eFlowEval
 url: https://github.com/galenholt/eFlowEval
