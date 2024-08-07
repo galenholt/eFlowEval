@@ -1,20 +1,35 @@
+---
+bibliography: references.bib
+---
+
 # eFlowEval modeling framework repository
 
-This repository contains the code for the eFlowEval modelling framework. It is built primarily in R, but is not (currently) an R package, and contains some shell scripts to manage running on SLURM HPCs.
+This repository contains the code for the eFlowEval modelling framework. It is an R package, but also contains significant additional files, including scripts, notebooks and shiny apps to create the results in [\@holt](https://aus01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fkwnsfk27.r.eu-west-1.awstrack.me%2FL0%2Fhttps%3A%252F%252Fauthors.elsevier.com%252Fsd%252Farticle%252FS0301-4797(24)02040-1%2F1%2F0102019123aeef55-b6f5b297-2e78-4477-8b90-0512da575c95-000000%2Fl-cNxJrDSqYVzHBoQi_zGzhcAAM%3D385&data=05%7C02%7Cg.holt%40deakin.edu.au%7C3d2618fd8713441b515008dcb577db77%7Cd02378ec168846d585401c28b5f470f6%7C0%7C0%7C638584775872420632%7CUnknown%7CTWFpbGZsb3d8eyJWIjoiMC4wLjAwMDAiLCJQIjoiV2luMzIiLCJBTiI6Ik1haWwiLCJXVCI6Mn0%3D%7C0%7C%7C%7C&sdata=ksU4qrR%2B%2FScJ4zqBQ1Q86leuZ%2BtBl4RcinmocoISoPY%3D&reserved=0) as well as shell scripts to manage running on SLURM HPCs.
 
-To get set up, clone this repository, and use {renv} to establish the package environment `renv::restore()` to ensure there are no package conflicts.
+To just use the package functionality, use
 
-## Structure
+``` R
+# install.packages("devtools")
+devtools::install_github("galenholt/eFlowEval")
+```
+
+If you want to use the other scripts available here, clone this repository, and use {renv} to establish the package environment `renv::restore()` to ensure there are no package conflicts.
+
+A version at the time of publication is available as release v0.1.0. Note that this does not have package functionality.
+
+## Structure of a typical workflow
 
 The `directorySet.R` script does some setup work to establish standard input and output directories, and make some other configuration changes depending on whether the eFlowEval framework is running on local Windows machines or remote HPCs at the CSIRO. It is likely to need to be edited to use in new environments.
 
-The core functionality is contained as a package, with functions in `/R`. These are then called by notebooks. Bespoke functions can be built for the response models, which can be provided here or by the user.
+The core functionality is contained as a package, with functions in `/R`. These are then called by notebooks. These provide tools for checking and processing data, running response models, and producing figures and other outputs. Bespoke functions can be built for the response models, which can be provided here or by the user.
 
-The most up-to-date example of this workflow is in `galenholt/SRA`, and this directory is in the process of being updated to that system.
+The most up-to-date example of this workflow is in the [SRA](https://github.com/galenholt/SRA) repository, and this directory is in the process of being updated to that system.
 
-The code structure consists of data processing code for the driver data, located in `/Scripts/DataProcessing`, which are typically functions to process each set of driver data. The data itself is typically large and so located elsewhere (with locations as set in `directorySet.R`). Sources for original data are provided in Supplementary Material. Because each response model needs different data or processes data in different ways, the functions in `Scripts/DataProcessing` are bespoke for each model while using the same fundamental backbone functions and format.
+Data itself is typically large and so located elsewhere (with locations as set in `directorySet.R`). Sources for original data are provided in Supplementary Material. The code will generate a `/datOut` folder, where processed data is saved, with location defined in `directorySet.R`.
 
-The code will generate a `/datOut` folder, where processed data is saved, with location defined in `directorySet.R`.
+The current best practice is to use the `process_with_checks` function to handle both data processing (calling `process_data`), creating bespoke response models, and calling those with `process_with_checks` through `process_strictures` to obtain the outputs. These functions can internally use the other functionality provided, such as weighted spatial aggregations or rolling averages.
+
+At the time of publication the workflow described above was done primarily through scripts. because each response model needs different data or processes data in different ways, the functions in `Scripts/DataProcessing` are bespoke for each model while using the same fundamental backbone functions and format.
 
 Stricture and other response relationships (e.g. metabolism) are defined with scripts and functions in `/Strictures`. Like the dataprocessing, these functions are bespoke, capturing the particular responses of each group to the data while using the same fundamental backbone functions and format.The processed responses are then saved to a `/strictOut` directory the code creates.
 
@@ -26,15 +41,13 @@ The data is expected to be in a directory outside the repo, (set as `datDir` in 
 
 ## Processing
 
-Most processing is designed to occur either locally or on an HPC running a SLURM job scheduler. The SLURM approach has changed through the life of the project. The most up-to-date approach is in `galenholt/SRA`, which dispenses with all but one SLURM script. And so the SLURM scripts in `/SLURM` here are deprecated but kept for reproducibility. The HPC process would likely need to be altered for other HPC environments.
+Most processing is designed to occur either locally or on an HPC running a SLURM job scheduler. The SLURM approach has changed through the life of the project. The most up-to-date approach is in in the [SRA](https://github.com/galenholt/SRA) repository which dispenses with all but one SLURM script. The SLURM scripts in `/SLURM` here are deprecated but kept for reproducibility. The HPC process would likely need to be altered for other HPC environments.
 
-The current flow is to have a method that works both locally or on an HPC. I want to have R control the HPC parallelisation through foreach and future, and so use foreach loops with %dofuture% and modify the `plan`.
+The current flow is to have a method that works both locally or on an HPC. By controlling the HPC parallelisation through foreach and future, and so use foreach loops with %dofuture% and modify the `plan`.
 
 That requires a central control process to spawn subsidiary runs.
 
-So, the thinking is
-
-Use `any_R.sh` as the control process. It should point to the file to run. But because we use notebooks, we need to `knitr::purl` them to R scripts. So any_R.sh calls `run_r_hpc.R`, which purls a notebook or passes through a script, and then runs it. Then, that script should start a bunch of jobs.
+In practice, that means we use `any_R.sh` as the control process. It should point to the file to run. But because we use notebooks, we need to `knitr::purl` them to R scripts. So any_R.sh calls `run_r_hpc.R`, which purls a notebook or passes through a script, and then runs it. Then, that script should start a bunch of jobs.
 
 HPCs often have to have some set of packages already installed that need compiled C libraries (especially sf). To access those, we need to add to libPaths, but that doesn't propagate through {future}s if it's done in a script. So, in the .Rprofile, add
 
