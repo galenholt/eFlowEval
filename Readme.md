@@ -4,7 +4,7 @@ bibliography: references.bib
 
 # eFlowEval modeling framework repository
 
-This repository contains the code for the eFlowEval modelling framework. It is an R package, but also contains significant additional files, including scripts, notebooks and shiny apps to create the results in [\@holt](https://aus01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fkwnsfk27.r.eu-west-1.awstrack.me%2FL0%2Fhttps%3A%252F%252Fauthors.elsevier.com%252Fsd%252Farticle%252FS0301-4797(24)02040-1%2F1%2F0102019123aeef55-b6f5b297-2e78-4477-8b90-0512da575c95-000000%2Fl-cNxJrDSqYVzHBoQi_zGzhcAAM%3D385&data=05%7C02%7Cg.holt%40deakin.edu.au%7C3d2618fd8713441b515008dcb577db77%7Cd02378ec168846d585401c28b5f470f6%7C0%7C0%7C638584775872420632%7CUnknown%7CTWFpbGZsb3d8eyJWIjoiMC4wLjAwMDAiLCJQIjoiV2luMzIiLCJBTiI6Ik1haWwiLCJXVCI6Mn0%3D%7C0%7C%7C%7C&sdata=ksU4qrR%2B%2FScJ4zqBQ1Q86leuZ%2BtBl4RcinmocoISoPY%3D&reserved=0) as well as shell scripts to manage running on SLURM HPCs.
+This repository contains the code for the eFlowEval modelling framework. It is an R package, but also contains significant additional files, including scripts, notebooks and shiny apps to create the results in [@holt2024](https://doi.org/10.1016/j.jenvman.2024.122054) as well as shell scripts to manage running on SLURM HPCs.
 
 To just use the package functionality, use
 
@@ -73,3 +73,5 @@ To start a master process in run_r_hpc that then fires off sub-slurms (presumabl
 ## Contact
 
 For more information, contact Galen Holt, g.holt\@deakin.edu.au.
+
+## Reference
