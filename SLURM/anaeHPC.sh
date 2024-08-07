@@ -34,8 +34,8 @@ echo Time taken for data readin: $elapsedDat
 
 module load R
 
-# cd cc2
-# cd  cc2/Scripts/DataProcessing
+# cd eFlowEval
+# cd  eFlowEval/Scripts/DataProcessing
 
 Rscript hpc_wrap.R "Scripts/DataProcessing/processANAE.R" "MER"
 # Rscript processANAE.R
@@ -58,7 +58,7 @@ echo Time taken for code: $elapsed
 # rsync -avr $JOBDIR/datOut $SCRATCH1DIR/datOut/TESTING/$(date +"%d-%m-%Y")
 
 # This example moves from $HOME to $SCRATCH. But I want to set things up to move in/out of $JOBDIR while jobs are runnign
-# rsync -avr $HOME/cc2/Scripts/Scenarios $SCRATCH1DIR/datOut
+# rsync -avr $HOME/eFlowEval/Scripts/Scenarios $SCRATCH1DIR/datOut
 postDataout=`date +%s`
 elapsedout=`expr $postDataout - $end`
 echo Time taken for data out: $completetime

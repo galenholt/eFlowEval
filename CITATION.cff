@@ -1,0 +1,59 @@
+# -----------------------------------------------------------
+# CITATION file partially created with {cffr} R package, v1.0.0
+# See also: https://docs.ropensci.org/cffr/
+# -----------------------------------------------------------
+ 
+cff-version: 1.2.0
+message: 'To cite package "eFlowEval" in publications use:'
+type: software
+license: MIT
+title: 'eFlowEval: Tools for assesing ecological response to environmental flows'
+version: 0.1.0
+abstract: This package provides implementations of the bvstep forward/backward algorithm
+  to find the best subset of the data that matches the full community. It further
+  provides functions to iterate that algorithm over some number of random starts to
+  assess consistency. The `peel` function then uses these to iteratively find the
+  best subset and remove it.
+authors:
+- family-names: Holt
+  given-names: Galen
+  email: g.holt@deakin.edu.au
+  orcid: https://orcid.org/0000-0002-7455-9275
+- family-names: Macqueen
+  given-names: Ashley
+  email: ashley.macqueen@vewh.vic.gov.au
+contact:
+- family-names: Holt
+  given-names: Galen
+  email: g.holt@deakin.edu.au
+  orcid: https://orcid.org/0000-0002-7455-9275
+preferred-citation:
+  type: article
+  title: 'A flexible consistent framework for modelling multiple interacting environmental responses to management in space and time'
+  authors:
+  - family-names: Holt
+    given-names: Galen
+    email: g.holt@deakin.edu.au
+    orcid: https://orcid.org/0000-0002-7455-9275
+  - family-names: Macqueen
+    given-names: Ashley
+    email: ashley.macqueen@vewh.vic.gov.au
+  - family-names: Lester
+    given-names: Rebecca E.
+  doi:
+  url: 
+  year: '2024'
+  publisher:
+    name: Elsevier
+  volume: 
+  issue: 
+  journal: Journal of Environmental Management
+  start: 
+repository: https://github.com/galenholt/eFlowEval
+repository-code: https://github.com/galenholt/eFlowEval
+url: https://github.com/galenholt/eFlowEval
+contact:
+- family-names: Holt
+  given-names: Galen
+  email: g.holt@deakin.edu.au
+  orcid: https://orcid.org/0000-0002-7455-9275
