@@ -1,9 +1,5 @@
 # Small helper functions
 
-
-
-
-
 # Aggregation and plotting in the catchment -------------------------------
 
 #' Spatial aggregation of stars objects
@@ -17,51 +13,46 @@
 #' @export
 #'
 catchAggW <- function(starObj, weights, FUN, summaryPoly) {
-
   # get area-proportion of success (same as area-days, but divided by days in year)
-  starObj[[1]] <- t(t(starObj[[1]])*weights)
+  starObj[[1]] <- t(t(starObj[[1]]) * weights)
 
   # Now aggregate over space
   sCatch <- aggregate(starObj, by = summaryPoly, FUN = FUN, na.rm = TRUE)
 
   return(sCatch)
-
-
 }
 
 catchAggPlot <- function(catchAgg, varname = NA, title = NULL, as_sf = FALSE) {
   # Plot. changing to viridis from red/green traffic light because traffic lights ugly and colorblind
   # The returned object is easier to modify as an sf, so default to that. It COULD blow up memory and time though
   if (as_sf) {
-
     catchAggsf <- st_as_sf(catchAgg, long = TRUE)
 
-  if (is.na(varname)) {
-    varname = names(catchAgg)
-  }
+    if (is.na(varname)) {
+      varname = names(catchAgg)
+    }
 
-   catchPlot <- ggplot() +
+    catchPlot <- ggplot() +
       geom_sf(data = catchAggsf, aes_string(fill = varname)) +
       facet_wrap(vars(as.character(time))) +
       scale_fill_viridis(option = 'plasma') +
-      theme_bw() + ggtitle('Yearly Life Cycle Success') +
+      theme_bw() +
+      ggtitle('Yearly Life Cycle Success') +
       theme_void() +
       scale_fill_viridis(option = 'plasma') +
       ggtitle(title)
-
   } else {
     catchPlot <- ggplot() +
       geom_stars(data = catchAgg) +
       coord_sf() +
-      facet_wrap(~as.character(time)) +
-      theme_void()  +
+      facet_wrap(~ as.character(time)) +
+      theme_void() +
       # scale_fill_gradient(low = 'firebrick', high = 'forestgreen' ) +
       scale_fill_viridis(option = 'plasma') +
       ggtitle(title)
   }
 
   return(catchPlot)
-
 }
 
 
@@ -79,21 +70,31 @@ catchAggPlot <- function(catchAgg, varname = NA, title = NULL, as_sf = FALSE) {
 #' @return an aggregated stars object
 #' @export
 #'
-tempaggregate <- function(starObj, by_t, FUN, na.rm = TRUE, dates_end_interval = FALSE) {
-
-
-
+tempaggregate <- function(
+  starObj,
+  by_t,
+  FUN,
+  na.rm = TRUE,
+  dates_end_interval = FALSE
+) {
   if (is.character(by_t)) {
     # If character, aggregate handles the time intervals correctly
     aggObj <- aggregate(starObj, by = by_t, FUN = FUN, na.rm = na.rm)
   } else {
     # If fed a date vector, aggregate needs different settings, and returns a final NA sheet.
     if (!(lubridate::is.POSIXct(by_t) | lubridate::is.Date(by_t))) {
-      warning('aggregation fix only tested with POSIXct and Date objects, assuming other non-character objects work the same way')
+      warning(
+        'aggregation fix only tested with POSIXct and Date objects, assuming other non-character objects work the same way'
+      )
     }
     # rightmost closed finishes the final day
-    aggObj <- aggregate(starObj, by = by_t, FUN = FUN, na.rm = na.rm, rightmost.closed = TRUE)
-
+    aggObj <- aggregate(
+      starObj,
+      by = by_t,
+      FUN = FUN,
+      na.rm = na.rm,
+      rightmost.closed = TRUE
+    )
 
     # check last sheet is really NA
     if (!all(is.na(slice(aggObj, time, length(by_t))[[1]]))) {
@@ -105,15 +106,17 @@ tempaggregate <- function(starObj, by_t, FUN, na.rm = TRUE, dates_end_interval =
 
     if (dates_end_interval) {
       # the first one gets dropped (just like the last one does if the dates are at the beginning- we can't aggregate into a period beyond the end)
-      aggObj <- sf::st_set_dimensions(aggObj, which = 'time', values = by_t[2:length(by_t)])
+      aggObj <- sf::st_set_dimensions(
+        aggObj,
+        which = 'time',
+        values = by_t[2:length(by_t)]
+      )
     }
-
   }
 
   # test <- 1
 
   return(aggObj)
-
 }
 
 
@@ -129,20 +132,23 @@ tempaggregate <- function(starObj, by_t, FUN, na.rm = TRUE, dates_end_interval =
 #' @export
 #'
 getWaterYear <- function(input.date) {
-  wateryear <- ifelse((lubridate::month(input.date) >= 7), lubridate::year(input.date),
-                      lubridate::year(input.date-lubridate::dyears()))
+  wateryear <- ifelse(
+    (lubridate::month(input.date) >= 7),
+    lubridate::year(input.date),
+    lubridate::year(input.date - lubridate::dyears())
+  )
   return(wateryear)
 }
 
 # Assign 'seasons'- I dont like this one very much, but I guess look at it
 # From https://stackoverflow.com/questions/36502140/determine-season-from-date-using-lubridate-in-r
 # Modified for southern hemisphere
-getSeason <- function(input.date){
-  numeric.date <- 100*month(input.date)+day(input.date)
+getSeason <- function(input.date) {
+  numeric.date <- 100 * month(input.date) + day(input.date)
   ## input Seasons upper limits in the form MMDD in the "break =" option:
-  cuts <- base::cut(numeric.date, breaks = c(0,319,0620,0921,1220,1231))
+  cuts <- base::cut(numeric.date, breaks = c(0, 319, 0620, 0921, 1220, 1231))
   # rename the resulting groups (could've been done within cut(...levels=) if "Winter" wasn't double
-  levels(cuts) <- c("Summer","Autumn","Winter","Spring","Summer")
+  levels(cuts) <- c("Summer", "Autumn", "Winter", "Spring", "Summer")
   return(cuts)
 }
 
@@ -169,10 +175,11 @@ getBimonth <- function(input.date) {
 
 # Get the number of days away from water year
 daysfromWY <- function(input.date) {
-  daysWY <- abs(yday(input.date)-
-                  yday(dmy(paste0('0107', as.character(year(input.date)))))) # get the day of the year that is July 1
+  daysWY <- abs(
+    yday(input.date) -
+      yday(dmy(paste0('0107', as.character(year(input.date)))))
+  ) # get the day of the year that is July 1
 }
-
 
 
 # Modeling and prediction -------------------------------------------------
@@ -180,8 +187,7 @@ daysfromWY <- function(input.date) {
 # A function to return NA when trying to predict new factor levels for fixed effects
 checklevels <- function(newdata, mod) {
   # Get the factor levels
-  faclevs <- model.frame(mod) |> select_if(is.factor) |>
-    map(unique)
+  faclevs <- model.frame(mod) |> select_if(is.factor) |> map(unique)
   # and the ones that are fixed factors (not random effects)
   fixedvars <- attributes(attributes(model.frame(mod))$terms)$varnames.fixed
   # throw out any potential random effects
@@ -199,14 +205,13 @@ checklevels <- function(newdata, mod) {
       map(unique)
   }
 
-
   # if no factors are needed, just short-circuit
   if (length(faclevs) == 0 & length(datalevs) == 0) {
     return(TRUE)
   }
 
   # function to check if they are in
-  checkin <- function(x,y) {
+  checkin <- function(x, y) {
     tf <- (x %in% y)
   }
 
@@ -219,9 +224,14 @@ checklevels <- function(newdata, mod) {
 # a new function to allow prediction over new levels of RANDOM effects
 # add_predictions is pretty slick, but seems to also not be very full-featured.
 # can I write my own?
-add_preds <- function(newdata, mod, predname = NULL,
-                      interval = 'none', level = 0.9,
-                      parTF = FALSE) {
+add_preds <- function(
+  newdata,
+  mod,
+  predname = NULL,
+  interval = 'none',
+  level = 0.9,
+  parTF = FALSE
+) {
   if (is.null(predname)) {
     predname <- deparse(substitute(mod))
   }
@@ -232,48 +242,62 @@ add_preds <- function(newdata, mod, predname = NULL,
     predf <- mutate(newdata, tempname = NA)
     # need the other terms if they'll be there for other catchments etc
     if ('prediction' %in% interval | interval %in% c('both', 'all')) {
-      predf <- mutate(predf,
-                      tempname_pfit = NA,
-                      tempname_pupr = NA,
-                      tempname_plwr = NA)
+      predf <- mutate(
+        predf,
+        tempname_pfit = NA,
+        tempname_pupr = NA,
+        tempname_plwr = NA
+      )
     }
 
     if ('confidence' %in% interval | interval %in% c('both', 'all')) {
-      predf <- mutate(predf,
-                      tempname_cfit = NA,
-                      tempname_cupr = NA,
-                      tempname_clwr = NA)
+      predf <- mutate(
+        predf,
+        tempname_cfit = NA,
+        tempname_cupr = NA,
+        tempname_clwr = NA
+      )
     }
+  } else {
+    preds <- predict(mod, newdata = newdata, allow.new.levels = TRUE)
+    predf <- bind_cols(newdata, tempname = preds)
 
-      } else {
-      preds <- predict(mod, newdata = newdata, allow.new.levels = TRUE)
-      predf <- bind_cols(newdata, tempname = preds)
+    # Easier to do the fit first, but I'll leave the $fit part of the predictIntervals on there too to check
 
-      # Easier to do the fit first, but I'll leave the $fit part of the predictIntervals on there too to check
-
-      # Prediction intervals
-        if ('prediction' %in% interval | interval %in% c('both', 'all')) {
-          predsP <- merTools::predictInterval(merMod = mod,
-                                             newdata = newdata,
-                                             level = level,
-                                             include.resid.var = TRUE,
-                                             .parallel = parTF)
-        predsP <- rename(predsP,
-                        tempname_pfit = fit, tempname_pupr = upr, tempname_plwr = lwr)
-        predf <- bind_cols(predf, predsP)
-        }
-      # Confidence intervals
-      if ('confidence' %in% interval | interval %in% c('both', 'all')) {
-        predsC <- merTools::predictInterval(merMod = mod,
-                                           newdata = newdata,
-                                           level = level,
-                                           include.resid.var = FALSE,
-                                           .parallel = parTF)
-        predsC <- rename(predsC,
-                        tempname_cfit = fit, tempname_cupr = upr, tempname_clwr = lwr)
-        predf <- bind_cols(predf, predsC)
-      }
-
+    # Prediction intervals
+    if ('prediction' %in% interval | interval %in% c('both', 'all')) {
+      predsP <- merTools::predictInterval(
+        merMod = mod,
+        newdata = newdata,
+        level = level,
+        include.resid.var = TRUE,
+        .parallel = parTF
+      )
+      predsP <- rename(
+        predsP,
+        tempname_pfit = fit,
+        tempname_pupr = upr,
+        tempname_plwr = lwr
+      )
+      predf <- bind_cols(predf, predsP)
+    }
+    # Confidence intervals
+    if ('confidence' %in% interval | interval %in% c('both', 'all')) {
+      predsC <- merTools::predictInterval(
+        merMod = mod,
+        newdata = newdata,
+        level = level,
+        include.resid.var = FALSE,
+        .parallel = parTF
+      )
+      predsC <- rename(
+        predsC,
+        tempname_cfit = fit,
+        tempname_cupr = upr,
+        tempname_clwr = lwr
+      )
+      predf <- bind_cols(predf, predsC)
+    }
   }
 
   # names(predf)[which(names(predf) == 'tempname')] <- predname # avoiding rlang to sort out the name programatically
@@ -306,7 +330,6 @@ crscheck <- function(obj, whichcrs) {
 #' @export
 #'
 sfandcatch <- function(starsObj, newname, polyinfo = NULL, larger_poly = NULL) {
-
   if (missing(newname)) {
     if (length(names(starsObj)) > 1) {
       newname = 'values'
@@ -316,13 +339,19 @@ sfandcatch <- function(starsObj, newname, polyinfo = NULL, larger_poly = NULL) {
   }
   starsObj <- starsObj |>
     sf::st_as_sf() |>
-    tidyr::pivot_longer(cols = -tidyselect::any_of(c('Shape', 'geometry')),
-                        names_to = 'date', values_to = {{newname}}) |>
+    tidyr::pivot_longer(
+      cols = -tidyselect::any_of(c('Shape', 'geometry')),
+      names_to = 'date',
+      values_to = {{ newname }}
+    ) |>
     dplyr::mutate(date = as.Date(date))
 
   # Join on info about these polys
   if (!is.null(polyinfo)) {
     starsObj <- starsObj |>
+      # old way. something changed and they're no longer exact, but they should
+      # be, so this likely needs updated data. Or develop a centroid based
+      # method?
       sf::st_join(polyinfo, join = sf::st_equals_exact, par = 1)
   }
 
@@ -346,15 +375,16 @@ sfandcatch <- function(starsObj, newname, polyinfo = NULL, larger_poly = NULL) {
 #' @export
 #'
 sf_and_aggforce <- function(starsobj, catchpoly, newname, funlist) {
-
   # typical name parsing
   # nameparser = paste0('{.fn}_{.col}')
 
   sfed <- starsobj |>
     sfandcatch(newname = newname) |> # This just does the sf and pivot
     sf::st_drop_geometry() |> # we know we're going to glue on the catchment
-    dplyr::summarise(dplyr::across(all_of(newname), {{funlist}}),
-                     .by = date) |>
+    dplyr::summarise(
+      dplyr::across(all_of(newname), {{ funlist }}),
+      .by = date
+    ) |>
     dplyr::bind_cols(catchpoly) |>
     sf::st_as_sf()
 
@@ -371,15 +401,18 @@ loadappend <- function(filename, append) {
 
   names(renamelist) <- paste0(objnames, '_', append)
 
-   return(renamelist)
-
+  return(renamelist)
 }
 
 # Similar to above, but for the situation where we know the names a priori, and
 # want to package them into a list we can name whatever we want (and
 # allows naming the list items whatever we want). Or just return one item.
-load_rename <- function(filepath, knownnames,
-                       newnames = knownnames, returnOne = NULL) {
+load_rename <- function(
+  filepath,
+  knownnames,
+  newnames = knownnames,
+  returnOne = NULL
+) {
   load(filepath)
 
   # Short-circuit if we really just want to get one of them
@@ -393,8 +426,6 @@ load_rename <- function(filepath, knownnames,
   names(renamelist) <- newnames
 
   return(renamelist)
-
-
 }
 
 #' Make sure areas aren't larger than areas of polygons. There are cases where the rounding is an issue.
@@ -409,19 +440,25 @@ clean_area <- function(in_geo, anaes, test = FALSE) {
   anaeareas <- as.numeric(st_area(anaes))
 
   if (inherits(in_geo, 'stars')) {
-    polyareas <- matrix(rep(anaeareas,
-                            length(st_get_dimension_values(in_geo, which = 'time'))),
-                        ncol = length(st_get_dimension_values(in_geo, which = 'time')))
+    polyareas <- matrix(
+      rep(anaeareas, length(st_get_dimension_values(in_geo, which = 'time'))),
+      ncol = length(st_get_dimension_values(in_geo, which = 'time'))
+    )
     # repind <- which(in_geo[[1]] > polyareas)
     # in_geo[[1]][repind] <- polyareas[repind]
     # This should be faster.
     in_geo[[1]] <- pmin(in_geo[[1]], polyareas)
   } else if (inherits(in_geo, 'sf')) {
     if (test) {
-      inter <- diag(sf::st_intersects(sf::st_geometry(anaes),
-                                       sf::st_geometry(in_geo), sparse = FALSE))
+      inter <- diag(sf::st_intersects(
+        sf::st_geometry(anaes),
+        sf::st_geometry(in_geo),
+        sparse = FALSE
+      ))
       if (!all(inter)) {
-        rlang::abort(glue::glue("ANAE geometry does not intersect geometry it will replace at positions {paste0(which(!inter))}"))
+        rlang::abort(glue::glue(
+          "ANAE geometry does not intersect geometry it will replace at positions {paste0(which(!inter))}"
+        ))
       }
     }
 
@@ -433,16 +470,20 @@ clean_area <- function(in_geo, anaes, test = FALSE) {
 
 # Plot helpers (themes) ---------------------------------------------------
 pubtheme <- ggplot2::theme_bw(base_size = 11) +
-  ggplot2::theme(strip.background = ggplot2::element_blank(),
-        plot.background = ggplot2::element_blank(),
-        panel.grid.major = ggplot2::element_blank(),
-        panel.grid.minor = ggplot2::element_blank())
+  ggplot2::theme(
+    strip.background = ggplot2::element_blank(),
+    plot.background = ggplot2::element_blank(),
+    panel.grid.major = ggplot2::element_blank(),
+    panel.grid.minor = ggplot2::element_blank()
+  )
 
 theme_pub <- function(base_size = 8, ...) {
   ggplot2::theme_bw(base_size = base_size) +
-    theme(strip.background = element_blank(),
-          plot.background = element_blank(),
-          panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
-          ...)
+    theme(
+      strip.background = element_blank(),
+      plot.background = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      ...
+    )
 }

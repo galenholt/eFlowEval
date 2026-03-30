@@ -10,18 +10,23 @@
 # The basin scale app reports dates at the *start* of the interval, because they have been tempaggregated.
 # The local scale app reports dates at the *end* of the interval, because they are indexed to the raw inundation data.
 
-
 library(shiny)
+# need the plotting libraries that don't get loaded in the data script
+library(tmap)
+library(colorspace)
 # setwd(here::here())
 
 # Kind of hacky check to only run if needed
 if (!('logGPPdays' %in% ls())) {
-  source(file.path(here::here(), 'Scripts', 'plotting', 'metabPlotSetup_Basin.R'))
+  source(file.path(
+    here::here(),
+    'Scripts',
+    'plotting',
+    'metabPlotSetup_Basin.R'
+  ))
 }
 
-# need the plotting libraries that don't get loaded in the data script
-library(tmap)
-library(colorspace)
+
 availDays <- st_get_dimension_values(logGPPdaysannual, which = 'time')
 
 # Can I make a UI with columns?
@@ -33,31 +38,21 @@ ui <- fluidPage(
     # column(4,
     #        h4("Two months following: ")
     # ),
-    column(4,
-           selectInput("datewanted", "Water year", choices = availDays)
-    )
+    column(4, selectInput("datewanted", "Water year", choices = availDays))
   ),
 
   fluidRow(column(12, h3("Drivers"))),
 
   fluidRow(
-    column(6,
-           tmap::tmapOutput("temp")
-    ),
-    column(6,
-           tmap::tmapOutput("inun")
-    )
+    column(6, tmap::tmapOutput("temp")),
+    column(6, tmap::tmapOutput("inun"))
   ),
 
   fluidRow(column(12, h3("Predictions"))),
 
   fluidRow(
-    column(6,
-           tmap::tmapOutput("gpp")
-    ),
-    column(6,
-           tmap::tmapOutput("er")
-    )
+    column(6, tmap::tmapOutput("gpp")),
+    column(6, tmap::tmapOutput("er"))
   )
 )
 
@@ -86,7 +81,6 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-
   output$temp <- tmap::renderTmap({
     # Works. the others might work, if I do something reactive?
     # Seee https://stackoverflow.com/questions/62836370/saving-a-tmap-plot-in-shiny

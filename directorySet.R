@@ -9,22 +9,23 @@ print(Sys.info())
 # Set directory structure for pearcey (or petrichor)
 # Pearcey seems to have all the nodes named 'c###'
 # trying to avoid needing to say sysname == Linux, because would be nice to run on local linux
-if (grepl('^petrichor', Sys.info()["nodename"]) |
+if (
+  grepl('^petrichor', Sys.info()["nodename"]) |
     grepl('^pearcey', Sys.info()["nodename"]) |
-    grepl('^c', Sys.info()["nodename"])) {
-
+    grepl('^c', Sys.info()["nodename"])
+) {
   if (dataWhere == 'SCRATCH') {
     # Let's assume I cp from flush/scratch/whatever into JOBDIR at the start of the job.
-    datDir <-  file.path(Sys.getenv('SCRATCH1DIR'), 'dataBase')
+    datDir <- file.path(Sys.getenv('SCRATCH1DIR'), 'dataBase')
     datOut <- file.path(Sys.getenv('SCRATCH1DIR'), 'datOut')
   } else if (dataWhere == 'JOB') {
     # Or, if we read to jobdir first
     # This needs a slightly different .sh, because it needs to read into/out of jobdir
-    datDir <-  file.path(Sys.getenv('JOBDIR'), 'dataBase')
+    datDir <- file.path(Sys.getenv('JOBDIR'), 'dataBase')
     datOut <- file.path(Sys.getenv('JOBDIR'), 'datOut')
   } else if (dataWhere == 'MER') {
     # Or, if we work straight out of Bowen
-    datDir <-  file.path('/datasets/work/lw-mer/work/galen_holt/dataBase')
+    datDir <- file.path('/datasets/work/lw-mer/work/galen_holt/dataBase')
     datOut <- file.path('/datasets/work/lw-mer/work/galen_holt/datOut')
   }
 
@@ -38,13 +39,16 @@ if (grepl('^petrichor', Sys.info()["nodename"]) |
 
   # set the future plan to actually use the CPUS
   parSet = 'hpc'
-
 } else if (grepl('^Windows', Sys.info()["sysname"])) {
   # myhome <- stringr::str_remove(path.expand("~"), "/Documents")
   myhome <- paste0('C:/Users/', Sys.getenv("USERNAME"))
   datDir <- file.path(myhome, "Deakin University/QAEL - MER/Model/dataBase") # "C:/Users/Galen/Deakin University/QAEL - MER/Model/dataBase"
 
-  datOut <- "datOut"
+  # For now, use the old CC2 datOut
+  datOut <- file.path(
+    myhome,
+    "Deakin University/QAEL - MER/CC2_USE_EFLOWEVAL/datOut"
+  ) # typically, would use a local "datOut"
 
   # Set up a multisession plan by default
   # The default workers argument works locally, so no need to specify
@@ -52,7 +56,9 @@ if (grepl('^petrichor', Sys.info()["nodename"]) |
 }
 
 # Make the out directory, in case it doesn't exist
-if (!dir.exists(datOut)) {dir.create(datOut, recursive = TRUE)}
+if (!dir.exists(datOut)) {
+  dir.create(datOut, recursive = TRUE)
+}
 # The in directory has to exist, or there won't be anything to use
 
 # # source everything in the functions folder. This really is turning into a package
